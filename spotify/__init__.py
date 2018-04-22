@@ -11,7 +11,7 @@ A basic wrapper for the Spotify API.
 __title__ = 'spotify'
 __author__ = 'mental'
 __license__ = 'MIT'
-__version__ = '0.0.1'
+__version__ = '0.0.2'
 
 from . import utils
 

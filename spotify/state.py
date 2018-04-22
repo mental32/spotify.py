@@ -59,8 +59,9 @@ class Cache:
                 if obj not in parent.tracks:
                     parent._cache[obj.id] = obj
 
-            if obj not in obj.album.tracks:
-                obj.album._cache[obj.id] = obj
+            if not obj.is_simple:
+                if obj not in obj.album.tracks:
+                    obj.album._cache[obj.id] = obj
 
         elif pool == '_albums':
             # update other
