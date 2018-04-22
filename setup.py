@@ -5,7 +5,7 @@ with open('requirements.txt') as inf:
     requirements = inf.readlines()
 
 with open('spotify/__init__.py') as inf:
-    match = re.search(r"__version__ = '((\d\.){2,5}\d)'", inf.read(), re.MULTILINE)
+    match = re.search(r"((\d\.){2,5}\d)", inf.read(), re.MULTILINE)
 
     if match is None:
         raise RuntimeError('Version could not be found.')
