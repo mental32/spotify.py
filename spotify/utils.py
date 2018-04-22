@@ -21,3 +21,19 @@ def get(iterable, **attrs):
         return True
 
     return find(predicate, iterable)
+
+
+def _filter_options(**kwargs):
+    payload = {}
+    for key, value in kwargs.items():
+        if value is not None:
+            payload[key] = value
+    else:
+        return payload
+
+
+def _unique_cache(lst, item):
+    for index, obj in enumerate(lst):
+        if hasattr(obj, 'id'):
+            if obj.id == item.id:
+                lst[index] = item

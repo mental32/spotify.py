@@ -2,14 +2,7 @@
 # -*- coding: utf-8 -*-
 ##
 from .model import SpotifyModel, Image
-
-def _filter_options(**kwargs):
-    payload = {}
-    for key, value in kwargs.items():
-        if value is not None:
-            payload[key] = value
-    else:
-        return payload
+from .utils import _filter_options
 
 class Artist(SpotifyModel):
     __slots__ = ['_client', '_cache', 'id', 'href', 'name', 'uri', 'external_urls', 'followers', 'genres', 'images', 'popularity']

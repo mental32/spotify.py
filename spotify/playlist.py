@@ -2,13 +2,9 @@
 # -*- coding: utf-8 -*-
 ##
 from .model import SpotifyModel, Image
+from .utils import _unique_cache
 from .http import Route
 
-def _unique_cache(lst, item):
-    for index, obj in enumerate(lst):
-        if hasattr(obj, 'id'):
-            if obj.id == item.id:
-                lst[index] = item
 
 class PartialTracks:
     __slots__ = ['data']

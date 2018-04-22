@@ -2,6 +2,7 @@
 # -*- coding: utf-8 -*-
 ##
 from .model import SpotifyModel, Image
+from .utils import _filter_options, _unique_cache
 
 _swap = {
 
@@ -13,7 +14,7 @@ class Album(SpotifyModel):
     def __init__(self, client, data):
         # data is defined in order:
         # str, int, object, seq: str, int, objects
-        self._cache = {}
+        self._cache = []
         self._client = client
         self.is_simple = ('tracks' not in data)
 
@@ -43,8 +44,7 @@ class Album(SpotifyModel):
             self.external_ids = data.get('external_ids')   # EXTERNAL ID OBJECT
             self.copyrights = data.get('copyrights')       # COPYRIGHT OBJECT
 
-            for track in (client._build('_tracks', _data) for _data in data.get('tracks').get('items', [])):
-                self._cache[track.id] = track
+            self._cache += [client._build('_tracks', _data) for _data in data.get('tracks').get('items', [])]
 
         client._cache.add('_albums', self)
 
@@ -53,7 +53,7 @@ class Album(SpotifyModel):
 
     @property
     def _shallow_cache(self):
-        return [obj for obj in self._cache.values()]
+        return [obj for obj in self._cache]
 
     def _update(self, new):
         '''updates the current object with a new one'''
@@ -72,10 +72,27 @@ class Album(SpotifyModel):
 
         for track in data['items']:
             model = self._client._build('_tracks', track)
-            self._cache[model.id] = model
+            _unique_cache(self._cache, model)
             raw.append(model)
 
         return raw
+
+    async def load_all_tracks(self, *, market='us'):
+        '''loads all of the albums tracks, depending on how many the album has this may be a long operation'''
+        offset = 0
+        args = _filter_options(market=None)
+
+        total = (await self._client.http.album_tracks(self.id, limit=1, offset=0, **args))['total']
+
+        while len(self.tracks) < total:
+            data = await self._client.http.album_tracks(self.id, limit=50, offset=offset, **args)
+            offset += 50
+
+            for track in data['items']:
+                model = self._client._construct(track, _type='track')
+                _unique_cache(self._cache, model)
+
+        return self._shallow_cache
 
     async def make_full(self):
         '''updates the Album object to a full album object if its a simplified one'''
