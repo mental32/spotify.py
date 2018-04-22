@@ -20,6 +20,7 @@ _swap = {
     'album': Album,
     'track': Track,
     'playlist': Playlist,
+    'user': User
 }
 
 class Client:
@@ -98,6 +99,9 @@ class Client:
 
     async def get_category(self, id, *, country=None, locale=None):
         return self._construct(await self.http.category(id, country=country, locale=locale), 'category')
+
+    async def get_user(self, id):
+        return User(data=await self.http.user(id))
 
     ### Get multiple objects ###
 

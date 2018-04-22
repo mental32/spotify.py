@@ -2,6 +2,7 @@
 # -*- coding: utf-8 -*-
 ##
 from .http import HTTPUserClient
+from .playlist import Playlist
 from .model import SpotifyModel, Image
 
 class User(SpotifyModel):
@@ -33,6 +34,13 @@ class User(SpotifyModel):
 
     def __repr__(self):
         try:
-            return '<spotify.User: "%s">' %(self.display_name)
+            return '<spotify.User: "%s">' %(self.display_name or self.id)
         except AttributeError:
             return '<spotify.User: BLANK_USER>'
+
+    async def add_tracks_to_playlist(self, playlist, *tracks):
+        if hasattr(self, 'http'):
+                playlist_id = (playlist.id if isinstance(playlist, Playlist) else playlist)
+                tracks = [(track.uri if not isinstance(track, str) else track) for track in tracks]
+                return await self.http.add_tracks_to_playlist(self.id, playlist_id, tracks=','.join(tracks))
+        raise AttributeError('type obj \'user\' has no attribute \'http\': To perform API requests User needs a HTTP presence.')
