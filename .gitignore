@@ -91,4 +91,4 @@ ENV/
 .ropeproject
 
 # spotify.py related stuff
-test.py
+test*.py
