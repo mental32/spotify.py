@@ -5,6 +5,8 @@ from .http import HTTPUserClient
 from .playlist import Playlist
 from .model import SpotifyModel, Image
 
+from .utils import ensure_http
+
 class User(SpotifyModel):
     __slots__ = ['http', 'display_name', 'external_urls', 'followers', 'id', 'href', 'uri', 'images', 'birthdate', 'country', 'email', 'premium', 'private', 'scopes']
 
@@ -39,8 +41,16 @@ class User(SpotifyModel):
             return '<spotify.User: BLANK_USER>'
 
     async def add_tracks_to_playlist(self, playlist, *tracks):
-        if hasattr(self, 'http'):
-                playlist_id = (playlist.id if isinstance(playlist, Playlist) else playlist)
-                tracks = [(track.uri if not isinstance(track, str) else track) for track in tracks]
-                return await self.http.add_tracks_to_playlist(self.id, playlist_id, tracks=','.join(tracks))
-        raise AttributeError('type obj \'user\' has no attribute \'http\': To perform API requests User needs a HTTP presence.')
+        ensure_http(self)
+
+        playlist_id = (playlist.id if isinstance(playlist, Playlist) else playlist)
+        tracks = [(track.uri if not isinstance(track, str) else track) for track in tracks]
+        return await self.http.add_tracks_to_playlist(self.id, playlist_id, tracks=','.join(tracks))
+        
+
+    async def edit_playlist(self, playlist, **new):
+        ensure_http(self)
+
+        playlist_id = (playlist.id if isinstance(playlist, Playlist) else playlist)
+        data = {key: value for key, value in new.items() if key in ('name', 'public', 'collaborative', 'description')}
+        return await self.http.change_playlist_details(self.id, playlist_id, data=data)

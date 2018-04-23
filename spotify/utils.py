@@ -37,3 +37,8 @@ def _unique_cache(lst, item):
         if hasattr(obj, 'id'):
             if obj.id == item.id:
                 lst[index] = item
+
+
+def ensure_http(self):
+    if not hasattr(self, 'http'):
+        raise AttributeError('type obj %s has no attribute \'http\': To perform API requests User needs a HTTP presence.' %(type(self)))
