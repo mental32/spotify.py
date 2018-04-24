@@ -23,3 +23,4 @@ if __name__ == '__main__':
     drake = '3TVXtAsR1Inumwj472S9r4'
     client.loop.run_until_complete(view_artist(drake))
 ```
+[Official discord](https://discord.gg/zRUBc9Z)
