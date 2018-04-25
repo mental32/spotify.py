@@ -92,3 +92,4 @@ ENV/
 
 # spotify.py related stuff
 test*.py
+examples/

@@ -44,11 +44,12 @@ class Client:
         '''take the raw json data and construct a model then return it.
         this is mainly to be used by the models themselves to avoid any circular dependencies.
         '''
-        return _swap.get(_type)(self, _object)
+        return _swap.get(_type)(client=self, data=_object)
 
     def _build(self, pool, data):
         '''like Client._construct but prefers to return the object from cache before constructing'''
         obj = self.__cache.get(pool, id=data.get('id'))
+
         if obj is None:
             return self._construct(data, data.get('type'))
         return obj
@@ -82,7 +83,7 @@ class Client:
         return BASE + '/?client_id={0}&response_type=code&redirect_uri={1}&scope={2}&state={3}'.format(self.http.client_id, quote(redirect_uri), scope, state)
 
     def user_from_token(self, token):
-        session = User(token=token)
+        session = User(self, token=token)
         self.user_sessions.append(session)
         return session
 
@@ -101,7 +102,7 @@ class Client:
         return self._construct(await self.http.category(id, country=country, locale=locale), 'category')
 
     async def get_user(self, id):
-        return User(data=await self.http.user(id))
+        return User(self, data=await self.http.user(id))
 
     ### Get multiple objects ###
 

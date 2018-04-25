@@ -443,7 +443,7 @@ class HTTPClient:
 
         return await self.request(route, data=json.dumps(payload))
 
-    async def add_tracks_to_playlist(self, user_id, playlist_id, tracks, *, position=None):
+    async def add_playlist_tracks(self, user_id, playlist_id, tracks, *, position=None):
         route = Route('POST', '/users/{user_id}/playlists/{playlist_id}/tracks', user_id=user_id, playlist_id=playlist_id)
         payload = {'uris': tracks}
 
@@ -496,7 +496,7 @@ class HTTPClient:
 
         return await self.request(route, params=payload)
 
-    async def remove_tracks_from_playlist(self, user_id, playlist_id, tracks, *, position=None, snapshot_id=None):
+    async def remove_playlist_tracks(self, user_id, playlist_id, tracks, *, position=None, snapshot_id=None):
         route = Route('DELETE ', '/users/{user_id}/playlists/{playlist_id}/tracks', user_id=user_id, playlist_id=playlist_id)
         payload = {'uris': tracks}
 
