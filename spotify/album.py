@@ -80,7 +80,7 @@ class Album(SpotifyModel):
     async def load_all_tracks(self, *, market='us'):
         '''loads all of the albums tracks, depending on how many the album has this may be a long operation'''
         offset = 0
-        args = _filter_options(market=None)
+        args = _filter_options(market=market)
 
         total = (await self._client.http.album_tracks(self.id, limit=1, offset=0, **args))['total']
 

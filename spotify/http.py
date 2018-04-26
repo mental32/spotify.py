@@ -373,7 +373,7 @@ class HTTPClient:
         return await self.request(route, params=payload)
 
     async def seek_playback(self, position_ms, *, device_id=None):
-        route = Route('PUT', '/me/player/repeat')
+        route = Route('PUT', '/me/player/seek')
         payload = {'position_ms': position_ms}
 
         if device_id:
@@ -382,8 +382,17 @@ class HTTPClient:
         return await self.request(route, params=payload)
 
     async def repeat_playback(self, state, *, device_id=None):
-        route = Route('PUT', '/me/player/seek')
+        route = Route('PUT', '/me/player/repeat')
         payload = {'state': state}
+
+        if device_id:
+            payload['device_id'] = device_id
+
+        return await self.request(route, params=payload)
+
+    async def set_playback_volume(self, volume, *, device_id=None):
+        route = Route('PUT', '/me/player/volume')
+        payload = {'volume_percent': volume}
 
         if device_id:
             payload['device_id'] = device_id

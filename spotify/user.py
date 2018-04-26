@@ -3,12 +3,12 @@
 ##
 from .http import HTTPUserClient
 from .playlist import Playlist
-from .model import SpotifyModel, Image
+from .model import (SpotifyModel, Image, Player, Device)
 
 from .utils import ensure_http, _unique_cache
 
 class User(SpotifyModel):
-    __slots__ = ['http', '_client', '_cache', 'display_name', 'external_urls', 'followers', 'id', 'href', 'uri', 'images', 'birthdate', 'country', 'email', 'premium', 'private', 'scopes']
+    __slots__ = ['http', '_client', '_cache', 'display_name', 'external_urls', 'followers', 'id', 'href', 'uri', 'images', 'birthdate', 'country', 'email', 'premium', 'private', 'scopes', 'player']
 
     def __init__(self, client, **kwargs):
         self._client = client
@@ -44,6 +44,16 @@ class User(SpotifyModel):
             return '<spotify.User: "%s">' %(self.display_name or self.id)
         except AttributeError:
             return '<spotify.User: BLANK_USER>'
+
+    async def get_player(self):
+        ensure_http(self)
+
+        self.player = player = Player(self._client)
+        return player.from_data(await self.http.current_player())
+
+    async def get_devices(self):
+        data = (await self.http.available_devices())
+        return [Device(seq) for seq in data['devices']]
 
     async def add_tracks(self, playlist, *tracks):
         ensure_http(self)
