@@ -49,10 +49,7 @@ class Client:
     def _build(self, pool, data):
         '''like Client._construct but prefers to return the object from cache before constructing'''
         obj = self.__cache.get(pool, id=data.get('id'))
-
-        if obj is None:
-            return self._construct(data, data.get('type'))
-        return obj
+        return obj or self._construct(data, data.get('type'))
 
     ### Client exposed cache points ###
 

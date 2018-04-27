@@ -3,9 +3,23 @@
 ##
 from .http import HTTPUserClient
 from .playlist import Playlist
-from .model import (SpotifyModel, Image, Player, Device)
+from .model import (SpotifyModel, Image, Player, Device, Context)
 
 from .utils import ensure_http, _unique_cache
+
+
+class PlayHistory:
+    __slots__ = ('played_at', 'context', 'track')
+
+    def __init__(self, client, data):
+        self.played_at = data.get('played_at')
+
+        self.context = Context(data.get('context'))
+        self.track = client._build('_tracks', data.get('track'))
+
+    def __repr__(self):
+        return '<spotify.PlayHistory: "%s">' %(self.track.name)
+
 
 class User(SpotifyModel):
     __slots__ = ['http', '_client', '_cache', 'display_name', 'external_urls', 'followers', 'id', 'href', 'uri', 'images', 'birthdate', 'country', 'email', 'premium', 'private', 'scopes', 'player']
@@ -15,7 +29,7 @@ class User(SpotifyModel):
         self._cache = []
 
         if kwargs.get('token'):
-            self.http = HTTPUserClient(kwargs.get('token'))
+            self.http = HTTPUserClient(self, kwargs.get('token'))
 
         if kwargs.get('data'):
             self._parse(kwargs.get('data'), kwargs.get('private', False))
@@ -45,15 +59,35 @@ class User(SpotifyModel):
         except AttributeError:
             return '<spotify.User: BLANK_USER>'
 
+    async def currently_playing(self):
+        ensure_http(self)
+
+        data = await self.http.currently_playing()
+
+        if data.get('item'):
+            data['context'] = Context(data.get('context'))
+            data['item'] = self._client._build('_tracks', data.get('item'))
+
+        return data
+
     async def get_player(self):
         ensure_http(self)
 
-        self.player = player = Player(self._client)
-        return player.from_data(await self.http.current_player())
+        self.player = player = Player(self)
+        player.from_data(await self.http.current_player())
+        return self.player
 
     async def get_devices(self):
+        ensure_http(self)
+
         data = (await self.http.available_devices())
         return [Device(seq) for seq in data['devices']]
+
+    async def recently_played(self):
+        ensure_http(self)
+
+        data = await self.http.recently_played()
+        return [PlayHistory(self._client, track) for track in data['items']]
 
     async def add_tracks(self, playlist, *tracks):
         ensure_http(self)

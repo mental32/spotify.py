@@ -14,7 +14,7 @@ class Album(SpotifyModel):
     def __init__(self, client, data):
         # data is defined in order:
         # str, int, object, seq: str, int, objects
-        self._cache = []
+        self._cache = {}
         self._client = client
         self.is_simple = ('tracks' not in data)
 
@@ -53,7 +53,7 @@ class Album(SpotifyModel):
 
     @property
     def _shallow_cache(self):
-        return [obj for obj in self._cache]
+        return [obj for obj in self._cache.values()]
 
     def _update(self, new):
         '''updates the current object with a new one'''
@@ -72,7 +72,7 @@ class Album(SpotifyModel):
 
         for track in data['items']:
             model = self._client._build('_tracks', track)
-            _unique_cache(self._cache, model)
+            self._cache[model.id] = self._cache
             raw.append(model)
 
         return raw
@@ -90,7 +90,7 @@ class Album(SpotifyModel):
 
             for track in data['items']:
                 model = self._client._construct(track, _type='track')
-                _unique_cache(self._cache, model)
+                self._cache[model.id] = self._cache
 
         return self._shallow_cache
 

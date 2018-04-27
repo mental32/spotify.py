@@ -54,7 +54,15 @@ class HTTPClient:
 
         return data
 
+    async def before_request(self):
+        pass
+
     async def request(self, route, **kwargs):
+        before_request = (kwargs.pop('before_request') if 'before_request' in kwargs else True)
+
+        if before_request:
+            await self.before_request()
+
         if self.bearer_info is None:
             self.bearer_info = await self.get_bearer_info()
             self.token = self.bearer_info.get('access_token')
@@ -68,7 +76,11 @@ class HTTPClient:
             r = await self._session.request(method, url, headers=headers, **kwargs)
             try:
                 status = r.status
-                data = json.loads(await r.text(encoding='utf-8'))
+
+                try:
+                    data = json.loads(await r.text(encoding='utf-8'))
+                except json.decoder.JSONDecodeError:
+                    data = {}
 
                 if 300 > status >= 200:
                     return data
@@ -91,7 +103,7 @@ class HTTPClient:
             finally:
                 await r.release()
 
-        return HTTPException(r, data)
+        raise HTTPException(r, data)
 
     async def close(self):
         await self._session.close()
@@ -575,8 +587,9 @@ class HTTPClient:
 
 class HTTPUserClient(HTTPClient):
     '''HTTPClient for access to user endpoints.'''
-    def __init__(self, token, loop=None):
+    def __init__(self, user, token, loop=None):
         self.loop = loop or asyncio.get_event_loop()
+        self.user = user
         self._session = aiohttp.ClientSession(loop=self.loop)
 
         self.bearer_info = {'access_token': token}
@@ -585,3 +598,10 @@ class HTTPUserClient(HTTPClient):
     async def get_bearer_info(self):
         '''for any reason if the bearer_info breaks this will restore it'''
         return {'access_token': self.token}
+
+    async def before_request(self):
+        if not hasattr(self.user, 'id'):
+            route = Route('GET', '/me')
+            data = await self.request(route, before_request=False)
+
+            self.user._parse(data)
