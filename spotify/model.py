@@ -31,6 +31,7 @@ class Context:
     def __repr__(self):
         return '<spotify.Context: "%s">' %(self.uri)
 
+
 class Device:
     __slots__ = ('id', 'name', 'type', 'volume', 'is_active', 'is_restricted')
 
@@ -49,6 +50,7 @@ class Device:
 
     def __repr__(self):
         return '<spotify.Device: "%s">' %(self.name or self.id)
+
 
 class Player:
     '''wrapper for a users current playback'''
@@ -106,3 +108,6 @@ class Player:
 
     async def previous(self):
         return await self._user.http.skip_previous()
+
+    async def set_repeat(self, state):
+        return await self._user.http.repeat_playback(state)
