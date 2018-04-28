@@ -7,6 +7,8 @@ To install the library simply clone it and run setup.py
 - `git clone https://github.com/mental32/spotify.py`
 - `python3 setup.py install`
 
+> this branch is currently unstable and is updated weekly.
+
 ## resources
 
 [Official discord](https://discord.gg/zRUBc9Z)
