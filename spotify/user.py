@@ -2,7 +2,6 @@
 # -*- coding: utf-8 -*-
 ##
 from .http import HTTPUserClient
-from .playlist import Playlist
 from .model import (SpotifyModel, Image, Player, Device, Context)
 
 from .utils import ensure_http, _unique_cache
@@ -92,40 +91,40 @@ class User(SpotifyModel):
     async def add_tracks(self, playlist, *tracks):
         ensure_http(self)
 
-        playlist_id = (playlist.id if isinstance(playlist, Playlist) else playlist)
-        tracks = [(track.uri if not isinstance(track, str) else track) for track in tracks]
+        playlist_id = (playlist.id if self._client._istype(playlist, 'playlist') else playlist)
+        tracks = [(track.uri if self._client._istype(track, 'track') else track) for track in tracks]
         return await self.http.add_playlist_tracks(self.id, playlist_id, tracks=','.join(tracks))
 
     async def replace_tracks(self, playlist, *tracks):
         ensure_http(self)
 
-        playlist_id = (playlist.id if isinstance(playlist, Playlist) else playlist)
-        tracks = [(track.uri if not isinstance(track, str) else track) for track in tracks]
+        playlist_id = (playlist.id if self._client._istype(playlist, 'playlist') else playlist)
+        tracks = [(track.uri if self._client._istype(track, 'track') else track) for track in tracks]
         return await self.http.replace_playlist_tracks(self.id, playlist_id, uris=','.join(tracks))
 
     async def remove_tracks(self, playlist, *tracks):
         ensure_http(self)
 
-        playlist_id = (playlist.id if isinstance(playlist, Playlist) else playlist)
-        tracks = [(track.uri if not isinstance(track, str) else track) for track in tracks]
+        playlist_id = (playlist.id if self._client._istype(playlist, 'playlist') else playlist)
+        tracks = [(track.uri if self._client._istype(track, 'track') else track) for track in tracks]
         return await self.http.remove_playlist_tracks(self.id, playlist_id, [{'uri': track} for track in tracks])
 
     async def reorder_tracks(self, playlist, range_info, *, snapshot_id=None):
         ensure_http(self)
 
         start, length, insert = range_info
-        playlist_id = (playlist.id if isinstance(playlist, Playlist) else playlist)
+        playlist_id = (playlist.id if self._client._istype(playlist, 'playlist') else playlist)
         return await self.http.reorder_playlists_tracks(self.id, playlist_id, start, length, insert, snapshot_id=snapshot_id)
 
     async def edit_playlist(self, playlist, **new):
         ensure_http(self)
 
-        playlist_id = (playlist.id if isinstance(playlist, Playlist) else playlist)
+        playlist_id = (playlist.id if self._client._istype(playlist, 'playlist') else playlist)
         data = {key: value for key, value in new.items() if key in ('name', 'public', 'collaborative', 'description')}
         return await self.http.change_playlist_details(self.id, playlist_id, data=data)
 
     async def edit_playlist_cover(self, playlist, image):
-        playlist_id = (playlist.id if isinstance(playlist, Playlist) else playlist)
+        playlist_id = (playlist.id if self._client._istype(playlist, 'playlist') else playlist)
         return await self.http.upload_playlist_cover_image(self.id, playlist_id, image)
 
     async def create_playlist(self, **data):
@@ -145,8 +144,36 @@ class User(SpotifyModel):
         data = await self.http.get_playlists(self.id, limit=limit, offset=offset)
 
         for playlist in data['items']:
-            model = await self._client._construct(playlist, 'playlist')
+            model = self._client._construct(playlist, 'playlist')
             _unique_cache(self._cache, model)
             raw.append(model)
 
         return raw
+
+    async def _top(self, s, data):
+        raw = []
+        _type = {'artists': 'artist', 'tracks': 'track'}[s]
+
+        data = {key: value for key, value in data.items() if key in ('limit', 'offset', 'time_range')}
+        resp = await self.http.top_artists_or_tracks(s, **data)
+
+        for item in resp['items']:
+            model = self._client._build('_%s' %(s), item)
+            _unique_cache(self._cache, model)
+            raw.append(model)
+
+        return raw
+
+    async def top_artists(self, **data):
+        ensure_http(self)
+
+        return await self._top('artists', data)
+
+    async def top_tracks(self, **data):
+        ensure_http(self)
+
+        return await self._top('tracks', data)
+
+    async def following(self, *artists):
+        artists = [(artist.id if self._client._istype(artist, 'artist') else artist) for artist in artists]
+        return await self.http.following_artists_or_users(','.join(artist for artist in artists))

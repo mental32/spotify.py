@@ -49,7 +49,10 @@ class Client:
     def _build(self, pool, data):
         '''like Client._construct but prefers to return the object from cache before constructing'''
         obj = self.__cache.get(pool, id=data.get('id'))
-        return obj or self._construct(data, data.get('type'))
+        return obj or self._construct(data, data['type'])
+
+    def _istype(self, obj, _type):
+        return isinstance(obj, _swap[_type])
 
     ### Client exposed cache points ###
 
@@ -78,6 +81,9 @@ class Client:
         BASE = 'https://accounts.spotify.com/authorize'
 
         return BASE + '/?client_id={0}&response_type=code&redirect_uri={1}&scope={2}&state={3}'.format(self.http.client_id, quote(redirect_uri), scope, state)
+
+    def refresh_token(self):
+        pass
 
     def user_from_token(self, token):
         session = User(self, token=token)

@@ -22,6 +22,9 @@ class PartialTracks:
         data = await client.http.request(route)
 
         for track in data['items']:
+            import pprint
+            
+            pprint.pprint(track)
             model = client._build('_tracks', track)
             raw.append(model)
 
@@ -33,7 +36,7 @@ class Playlist(SpotifyModel):
     def __init__(self, client, data):
         self._client = client
         self._cache = []
-        self.is_simple = ('followers' in data)
+        self.is_simple = ('followers' not in data)
 
         self.id = data.get('id')
         self.href = data.get('href')
@@ -44,13 +47,13 @@ class Playlist(SpotifyModel):
         self.public = data.get('public')
         self.collaborative = data.get('collaborative')
 
-        self.owner = client._build(data.get('owner'), 'user')
+        self.owner = data.get('owner') # client._build(data.get('owner'), 'user')
 
         self.images = [Image(**image) for image in data.get('images')]
         self.external_urls = data.get('external_urls') # EXTERNAL URL OBJECT
 
         if not self.is_simple:
-            self._cache += [client._build(track, 'track') for track in data.get('tracks')]
+            self._cache += [client._build('_tracks', track) for track in data.get('tracks')]
             self.total = len(self._cache)
         else:
             self._cache += [PartialTracks(data.get('tracks'))]
