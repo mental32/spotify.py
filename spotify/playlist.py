@@ -22,9 +22,6 @@ class PartialTracks:
         data = await client.http.request(route)
 
         for track in data['items']:
-            import pprint
-            
-            pprint.pprint(track)
             model = client._build('_tracks', track)
             raw.append(model)
 
