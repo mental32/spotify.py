@@ -22,7 +22,7 @@ class PartialTracks:
         data = await client.http.request(route)
 
         for track in data['items']:
-            model = client._build('_tracks', track)
+            model = client._build('_tracks', track['track'])
             raw.append(model)
 
         return raw
