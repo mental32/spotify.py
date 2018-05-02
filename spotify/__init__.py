@@ -21,6 +21,7 @@ from .client import Client
 from .album import Album
 from .artist import Artist
 from .playlist import Playlist
+from .track import Track
 
-from .model import Image
+from .model import Image, Player
 from .errors import *

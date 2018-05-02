@@ -42,7 +42,16 @@ class Artist(SpotifyModel):
         return [item for item in self._shallow_cache if item in self._client.albums]
 
     async def get_albums(self, *, limit=20, offset=0, include_groups=None, market=None):
-        '''return the artists albums, use `Artist.albums` if you don't want to make an api request.'''
+        '''get the artists albums from spotify.
+        
+        **parameters**
+
+         - *limit* (Optional :class:`int`)
+             The limit on how many albums to retrieve for this artist (default is 20).
+
+         - *offset* (Optional :class:`int`)
+             The offset from where the api should start from in the albums.
+        '''
         args = _filter_options(include_groups=None, market=None)
         data = await self._client.http.artist_albums(self.id, limit=limit, offset=offset, **args)
 
@@ -53,7 +62,13 @@ class Artist(SpotifyModel):
         return self._shallow_cache
 
     async def load_all_albums(self, *, include_groups=None, market='US'):
-        '''loads all of the artists albums, depending on how many the artist has this may be a long operation'''
+        '''loads all of the artists albums, depending on how many the artist has this may be a long operation.
+
+        **parameters**
+
+        - *market* (Optional :class:`str`)
+            An ISO 3166-1 alpha-2 country code. Provide this parameter if you want to apply Track Relinking.
+        '''
         offset = 0
         args = _filter_options(include_groups=None, market=None)
 
@@ -71,20 +86,18 @@ class Artist(SpotifyModel):
 
     @property
     def tracks(self):
-        '''retrive the artists albums from the internal cache'''
+        '''retrive the artists tracks from the internal cache'''
         return [item for item in self._shallow_cache if item in self._client.tracks]
 
-    async def get_tracks(self):
-        '''gets all the tracks from the internal cache of albums'''
-        raw = []
-
-        for item in self._cache:
-            if item in self._client.albums:
-                raw += (await item.load_all_tracks())
-
-        return raw
-
     async def top_tracks(self, country='US'):
+        '''Get Spotify catalog information about an artist’s top tracks by country.
+        
+        **parameters**
+
+        - *country* (:class:`str`)
+            The country to search for, it defaults to 'US'.
+        '''
+
         tracks = []
         for track in (await self._client.http.artist_top_tracks(self.id, country=country))['tracks']:
             model = self._client._build(track, 'track')
@@ -94,6 +107,8 @@ class Artist(SpotifyModel):
         return tracks
 
     async def related_artists(self):
+        '''Get Spotify catalog information about artists similar to a given artist. Similarity is based on analysis of the Spotify community’s listening history.'''
+
         artists = []
         for artist in (await self._client.http.artist_related_artists(self.id))['artists']:
             model = self._client._build(artist, 'artist')

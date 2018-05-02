@@ -63,9 +63,12 @@ class Playlist(SpotifyModel):
 
     @property
     def tracks(self):
+        '''retrive the playlists tracks from the internal cache'''
         return [obj for obj in self._cache]
 
     async def get_tracks(self):
+        '''Get the tracks of a playlist'''
+
         for item in self._cache:
             if isinstance(item, PartialTracks):
                 for track in (await item.build(self._client)):

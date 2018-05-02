@@ -36,9 +36,9 @@ class Track(SpotifyModel):
         return '<spotify.Track: "%s">' %(self.name)
 
     async def audio_analysis(self):
-        '''returns the audio analysis for this track'''
+        '''Get a detailed audio analysis for the track'''
         return await self._client.http.track_audio_analysis(self.id)
 
     async def audio_features(self):
-        '''returns the audio features for this track'''
+        '''Get audio feature information for the track'''
         return await self._client.http.track_audio_features(self.id)

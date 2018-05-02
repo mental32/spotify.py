@@ -50,7 +50,7 @@ class Cache:
         # typically artists exist before tracks or albums
         # so we have to update them of the new object
         #
-        # other times the object exists before the artist
+        # other times the object may exist before the artist does
         # so when adding an artist check for anything that it should be aware of
 
         if pool == '_tracks':

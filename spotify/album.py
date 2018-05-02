@@ -4,10 +4,6 @@
 from .model import SpotifyModel, Image
 from .utils import _filter_options, _unique_cache
 
-_swap = {
-
-}
-
 class Album(SpotifyModel):
     __slots__ = ['_cache', '_client', 'type', 'group', 'href', 'id', 'label', 'name', 'release_date', 'release_date_precision', 'uri', 'popularity', 'avaliable_markets', 'genres', 'external_ids', 'artists', 'external_urls', 'copyrights', 'images']
 
@@ -58,17 +54,27 @@ class Album(SpotifyModel):
     def _update(self, new):
         '''updates the current object with a new one'''
         for key, value in new.items():
-            setattr(self, _swap.get(key, key), value)
+            setattr(self, key, value)
 
     @property
     def tracks(self):
         '''return the track objects for this album found in cache'''
         return self._shallow_cache
 
-    async def get_tracks(self):
-        '''load the albums tracks from spotify'''
+    async def get_tracks(self, *, limit=20, offset=0):
+        '''get the albums tracks from spotify.
+        
+        **parameters**
+
+         - *limit* (Optional :class:`int`)
+             The limit on how many tracks to retrieve for this album (default is 20).
+
+         - *offset* (Optional :class:`int`)
+             The offset from where the api should start from in the tracks.
+        '''
         raw = []
-        data = await self._client.http.album_tracks(self.id)
+        opts = _filter_options(limit=limit, offset=offset)
+        data = await self._client.http.album_tracks(self.id, **opts)
 
         for track in data['items']:
             model = self._client._build('_tracks', track)
@@ -78,7 +84,13 @@ class Album(SpotifyModel):
         return raw
 
     async def load_all_tracks(self, *, market='us'):
-        '''loads all of the albums tracks, depending on how many the album has this may be a long operation'''
+        '''loads all of the albums tracks, depending on how many the album has this may be a long operation.
+
+        **parameters**
+
+        - *market* (Optional :class:`str`)
+            An ISO 3166-1 alpha-2 country code. Provide this parameter if you want to apply Track Relinking.
+        '''
         offset = 0
         args = _filter_options(market=market)
 
@@ -95,7 +107,6 @@ class Album(SpotifyModel):
         return self._shallow_cache
 
     async def make_full(self):
-        '''updates the Album object to a full album object if its a simplified one'''
         if self.is_simple:
             data = await self._client.http.album(self.id)
 
