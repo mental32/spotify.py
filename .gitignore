@@ -93,4 +93,3 @@ ENV/
 # spotify.py related stuff
 test*.py
 common.py
-docs/_build/
