@@ -9,7 +9,7 @@ Welcome to spotify.py's documentation!
 .. toctree::
    :maxdepth: 2
 
-   spotify
+   modules
 
 
 Indices and tables
