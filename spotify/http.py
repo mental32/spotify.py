@@ -36,7 +36,6 @@ class HTTPClient:
         self.client_secret = client_secret
 
         self.bearer_info = None
-        self.token = None
 
     async def get_bearer_info(self):
         '''gets the application bearer token from client_id and client_secret'''
@@ -53,10 +52,6 @@ class HTTPClient:
 
         return data
 
-    @property
-    def token(self):
-        return self.bearer_info['access_token']
-
     async def request(self, route, **kwargs):
         if self.bearer_info is None:
             self.bearer_info = await self.get_bearer_info()
@@ -64,7 +59,7 @@ class HTTPClient:
         method = route.method
         url = route.url
 
-        headers = {'Authorization': 'Bearer ' + self.token, 'Content-Type': kwargs.get('content_type', 'application/json')}
+        headers = {'Authorization': 'Bearer ' + self.bearer_info['access_token'], 'Content-Type': kwargs.get('content_type', 'application/json')}
 
         for _ in range(self.RETRY_AMOUNT):
             r = await self._session.request(method, url, headers=headers, **kwargs)
@@ -79,8 +74,9 @@ class HTTPClient:
                 if 300 > status >= 200:
                     return data
 
-                if status == 401 and hasattr(self, 'client_id'):
+                if status == 401:
                     self.bearer_info = await self.get_bearer_info()
+                    headers['Authorization'] = 'Bearer ' + self.bearer_info['access_token']
                     continue
 
                 if status == 429:
