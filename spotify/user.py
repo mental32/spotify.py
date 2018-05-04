@@ -238,6 +238,16 @@ class User(SpotifyModel):
         return [playlist for playlist in self._cache if playlist in self._client._cache._playlists]
 
     async def get_playlists(self, *, limit=20, offset=1):
+        '''get the users playlists from spotify.
+        
+        **parameters**
+
+         - *limit* (Optional :class:`int`)
+             The limit on how many playlists to retrieve for this user (default is 20).
+
+         - *offset* (Optional :class:`int`)
+             The offset from where the api should start from in the playlists.
+        '''
         ensure_http(self)
 
         raw = []

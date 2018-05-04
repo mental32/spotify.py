@@ -10,7 +10,6 @@ import aiohttp
 
 from .errors import HTTPException, Forbidden, NotFound
 
-
 class Route:
     BASE = 'https://api.spotify.com/v1'
 
@@ -54,18 +53,13 @@ class HTTPClient:
 
         return data
 
-    async def before_request(self):
-        pass
+    @property
+    def token(self):
+        return self.bearer_info['access_token']
 
     async def request(self, route, **kwargs):
-        before_request = (kwargs.pop('before_request') if 'before_request' in kwargs else True)
-
-        if before_request:
-            await self.before_request()
-
         if self.bearer_info is None:
             self.bearer_info = await self.get_bearer_info()
-            self.token = self.bearer_info.get('access_token')
 
         method = route.method
         url = route.url
@@ -84,6 +78,10 @@ class HTTPClient:
 
                 if 300 > status >= 200:
                     return data
+
+                if status == 401 and hasattr(self, 'client_id'):
+                    self.bearer_info = await self.get_bearer_info()
+                    continue
 
                 if status == 429:
                     # we're being rate limited.
@@ -605,3 +603,9 @@ class HTTPUserClient(HTTPClient):
             data = await self.request(route, before_request=False)
 
             self.user._parse(data)
+
+    async def request(self, route, **kwargs):
+        if kwargs.pop('before_request', True):
+            await self.before_request()
+
+        return (await super().request(route, **kwargs))

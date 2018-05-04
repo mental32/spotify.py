@@ -53,21 +53,15 @@ class Cache:
         # other times the object may exist before the artist does
         # so when adding an artist check for anything that it should be aware of
 
-        if pool == '_tracks':
+        if pool in ('_tracks', '_albums'):
             # update other
             for parent in obj.artists:
                 if obj not in parent.tracks:
                     parent._cache[obj.id] = obj
 
-            if not obj.is_simple:
+            if pool == '_tracks' and not obj.is_simple:
                 if obj not in obj.album.tracks:
                     obj.album._cache[obj.id] = obj
-
-        elif pool == '_albums':
-            # update other
-            for parent in obj.artists:
-                if obj not in parent.albums:
-                    parent._cache[obj.id] = obj
 
         elif pool == '_artists':
             # update self
