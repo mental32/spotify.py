@@ -100,7 +100,7 @@ class Artist(SpotifyModel):
 
         tracks = []
         for track in (await self._client.http.artist_top_tracks(self.id, country=country))['tracks']:
-            model = self._client._build(track, 'track')
+            model = self._client._build('_tracks', track)
             self._cache[model.id] = model
             tracks.append(model)
 
@@ -111,7 +111,7 @@ class Artist(SpotifyModel):
 
         artists = []
         for artist in (await self._client.http.artist_related_artists(self.id))['artists']:
-            model = self._client._build(artist, 'artist')
+            model = self._client._build('_artists', artist)
             self._cache[model.id] = model
             artists.append(model)
 
