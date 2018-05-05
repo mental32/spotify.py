@@ -61,6 +61,9 @@ class Album(SpotifyModel):
         '''return the track objects for this album found in cache'''
         return self._shallow_cache
 
+    async def total_tracks(self):
+        return (await self._client.http.album_tracks(self.id, limit=1, offset=0)).get('total')
+
     async def get_tracks(self, *, limit=20, offset=0):
         '''get the albums tracks from spotify.
         

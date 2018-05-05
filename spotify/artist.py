@@ -59,7 +59,7 @@ class Artist(SpotifyModel):
             model = self._client._construct(album, _type='album')
             self._cache[model.id] = model
 
-        return self._shallow_cache
+        return self.albums
 
     async def load_all_albums(self, *, include_groups=None, market='US'):
         '''loads all of the artists albums, depending on how many the artist has this may be a long operation.
