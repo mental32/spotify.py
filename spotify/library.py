@@ -19,7 +19,8 @@ class Library:
 
         **parameters**
 
-        - albums (either :class:`Album' objects or :class:`str` IDs)
+        - albums (:class:`Artist`/:class:`str`)
+            A sequence of artist objects or spotify IDs
         '''
         albums = [(album.id if self._client._istype(album, 'album') else album) for album in albums]
         return await self.user.http.is_saved_album(albums)
@@ -29,7 +30,8 @@ class Library:
 
         **parameters**
 
-        - tracks (either :class:`Track' objects or :class:`str` IDs)
+        - tracks (:class:`Track`/:class:`str`)
+            A sequence of track objects or spotify IDs
         '''
         tracks = [(track.id if self._client._istype(track, 'track') else track) for track in tracks]
         return await self.user.http.is_saved_track(tracks)
@@ -82,7 +84,8 @@ class Library:
 
         **parameters**
 
-        - albums (either :class:`Album' objects or :class:`str` IDs)
+        - albums (:class:`Artist`/:class:`str`)
+            A sequence of artist objects or spotify IDs
         '''
         albums = [(album.id if self._client._istype(album, 'album') else album) for album in albums]
         await self.user.http.delete_saved_albums(','.join(albums))
@@ -92,7 +95,8 @@ class Library:
 
         **parameters**
 
-        - tracks (either :class:`Track' objects or :class:`str` IDs)
+        - tracks (:class:`Track`/:class:`str`)
+            A sequence of track objects or spotify IDs
         '''
         tracks = [(track.id if self._client._istype(track, 'track') else track) for track in tracks]
         await self.user.http.delete_saved_tracks(','.join(tracks))
@@ -102,7 +106,8 @@ class Library:
 
         **parameters**
 
-        - albums (either :class:`Album' objects or :class:`str` IDs)
+        - albums (:class:`Artist`/:class:`str`)
+            A sequence of artist objects or spotify IDs
         '''
         albums = [(album.id if self._client._istype(album, 'album') else album) for album in albums]
         await self.user.http.save_albums(','.join(albums))
@@ -112,7 +117,8 @@ class Library:
 
         **parameters**
 
-        - tracks (either :class:`Track' objects or :class:`str` IDs)
+        - tracks (:class:`Track`/:class:`str`)
+            A sequence of track objects or spotify IDs
         '''
         tracks = [(track.id if self._client._istype(track, 'track') else track) for track in tracks]
         await self.user.http.save_tracks(','.join(tracks))

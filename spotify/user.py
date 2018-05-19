@@ -312,8 +312,8 @@ class User(SpotifyModel):
 
         return await self._top('tracks', data)
 
-    async def following(self, *artists):
-        '''Check to see if the current user is following one or more artists or other Spotify users.
+    async def following_artists(self, *artists):
+        '''Check to see if the current user is following one or more artists.
 
         **parameters**
 
@@ -321,4 +321,15 @@ class User(SpotifyModel):
             A sequence of artist objects or spotify IDs
         '''
         artists = [(artist.id if self._client._istype(artist, 'artist') else artist) for artist in artists]
-        return await self.http.following_artists_or_users(','.join(artist for artist in artists))
+        return await self.http.following_artists_or_users(','.join(artists))
+
+    async def following_users(self, *users):
+        '''Check to see if the current user is following one or more Spotify users.
+
+        **parameters**
+
+        - *users* (:class:`User`/:class:`str`)
+            A sequence of user objects or spotify IDs
+        '''
+        users = [(user.id if self._client._istype(user, 'user') else user) for user in users]
+        return await self.http.following_artists_or_users(','.join(users), type='user')
