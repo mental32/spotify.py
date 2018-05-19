@@ -3,6 +3,7 @@
 ##
 from .http import HTTPUserClient
 from .model import (SpotifyModel, Image, Player, Device, Context)
+from .library import Library
 
 from .utils import ensure_http, _unique_cache
 
@@ -21,7 +22,7 @@ class PlayHistory:
 
 
 class User(SpotifyModel):
-    __slots__ = ['http', '_client', '_cache', 'display_name', 'external_urls', 'followers', 'id', 'href', 'uri', 'images', 'birthdate', 'country', 'email', 'premium', 'private', 'scopes', 'player']
+    __slots__ = ['library', 'http', '_client', '_cache', 'display_name', 'external_urls', 'followers', 'id', 'href', 'uri', 'images', 'birthdate', 'country', 'email', 'premium', 'private', 'scopes', 'player']
 
     def __init__(self, client, **kwargs):
         self._client = client
@@ -29,6 +30,7 @@ class User(SpotifyModel):
 
         if kwargs.get('token'):
             self.http = HTTPUserClient(self, kwargs.get('token'))
+            self.library = Library(self)
 
         if kwargs.get('data'):
             self._parse(kwargs.get('data'), kwargs.get('private', False))
