@@ -92,4 +92,4 @@ ENV/
 
 # spotify.py related stuff
 test*.py
-common.py
+_old/

@@ -10,6 +10,7 @@ import aiohttp
 
 from .errors import HTTPException, Forbidden, NotFound
 
+
 class Route:
     BASE = 'https://api.spotify.com/v1'
 
@@ -37,6 +38,9 @@ class HTTPClient:
 
         self.bearer_info = None
 
+    def __del__(self):
+        asyncio.run_coroutine_threadsafe(self._session.close(), self.loop)
+
     async def get_bearer_info(self):
         '''gets the application bearer token from client_id and client_secret'''
         url = 'https://accounts.spotify.com/api/token'
@@ -53,11 +57,14 @@ class HTTPClient:
         return data
 
     async def request(self, route, **kwargs):
+        if isinstance(route, tuple):
+            method, url = route
+        else:
+            method = route.method
+            url = route.url
+
         if self.bearer_info is None:
             self.bearer_info = await self.get_bearer_info()
-
-        method = route.method
-        url = route.url
 
         headers = {'Authorization': 'Bearer ' + self.bearer_info['access_token'], 'Content-Type': kwargs.get('content_type', 'application/json')}
 
@@ -427,9 +434,10 @@ class HTTPClient:
         route = Route('PUT', '/me/player/play')
         payload = {}
 
-        if isinstance(context_uri, (list, tuple)):
-            payload['uris'] = list(*context_uri)
-        else:
+        if isinstance(context_uri ,(list, tuple)):
+            payload['uris'] = context_uri
+
+        elif context_uri is not None:
             payload['context_uri'] = context_uri
 
         if offset:
@@ -579,29 +587,15 @@ class HTTPClient:
 
         return await self.request(route, params=payload)
 
+
 class HTTPUserClient(HTTPClient):
     '''HTTPClient for access to user endpoints.'''
-    def __init__(self, user, token, loop=None):
+    def __init__(self, token, loop=None):
         self.loop = loop or asyncio.get_event_loop()
-        self.user = user
         self._session = aiohttp.ClientSession(loop=self.loop)
 
         self.bearer_info = {'access_token': token}
         self.token = token
 
     async def get_bearer_info(self):
-        '''for any reason if the bearer_info breaks this will restore it'''
         return {'access_token': self.token}
-
-    async def before_request(self):
-        if not hasattr(self.user, 'id'):
-            route = Route('GET', '/me')
-            data = await self.request(route, before_request=False)
-
-            self.user._parse(data)
-
-    async def request(self, route, **kwargs):
-        if kwargs.pop('before_request', True):
-            await self.before_request()
-
-        return (await super().request(route, **kwargs))

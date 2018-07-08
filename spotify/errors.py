@@ -12,7 +12,7 @@ class HTTPException(SpotifyException):
     def __init__(self, response, message):
         self.response = response
         self.status = response.status
-        error = message['error']
+        error = message.get('error')
 
         if isinstance(error, dict):
             self.text = error.get('message')

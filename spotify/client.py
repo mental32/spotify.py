@@ -2,31 +2,27 @@
 # -*- coding: utf-8 -*-
 ##
 import asyncio
-import random
 import json
 from urllib.parse import quote_plus as quote
 
-from .http import HTTPClient
-from .state import Cache
+from .http import HTTPClient, HTTPUserClient
 
-from .user import User
-from .artist import Artist
-from .album import Album
-from .track import Track
-from .playlist import Playlist
+from spotify import _types
+from spotify.models import User, Artist, Track, Playlist, Album, Library
 
-_swap = {
+_types.update({
     'artist': Artist,
-    'album': Album,
     'track': Track,
+    'user': User,
     'playlist': Playlist,
-    'user': User
-}
+    'album': Album,
+    'library': Library
+})
 
 class Client:
-    '''Represents a client connection to Spotify.
+    '''Represents an interface to Spotify.
 
-    This class is used to interact with the Spotify API.
+    This class is used to interact with the Spotify API
 
     **Parameters**
 
@@ -36,58 +32,21 @@ class Client:
     - *client_secret* (:class:`str`)
         The client secret for the app.
 
-    - *loop* (`event loop`)
+    - *loop* (`optional`:`event loop`)
         The event loop the client should run on, if no loop is specified `asyncio.get_event_loop()` is called and used instead.
     '''
-
     def __init__(self, client_id, client_secret, *, loop=None):
-        self.__cache = Cache()
-        self._cache = self.__cache
-
         self.loop = loop or asyncio.get_event_loop()
         self.http = HTTPClient(client_id, client_secret)
-        self.user_sessions = []
 
     def __repr__(self):
-        return '<spotify.Client: "%s">' %(self.http.client_id)
-
-    def _construct(self, _object, _type):
-        '''take the raw json data and construct a model then return it.
-        this is mainly to be used by the models themselves to avoid any circular dependencies.
-        '''
-        return _swap.get(_type)(client=self, data=_object)
-
-    def _build(self, pool, data):
-        '''like Client._construct but prefers to return the object from cache before constructing'''
-        obj = self.__cache.get(pool, id=data.get('id'))
-        return obj or self._construct(data, data['type'])
-
-    def _istype(self, obj, _type):
-        return isinstance(obj, _swap[_type])
-
-    ### Client exposed cache points ###
+        return '<spotify.Client: "%s"' % self.http.client_id
 
     @property
-    def artists(self):
-        '''[:class:`Artist`]: A tuple of Artist objects found in the internal cache.'''
-        return tuple(artist for artist in self.__cache._artists)
+    def client_id(self):
+        return self.http.client_id
 
-    @property
-    def albums(self):
-        '''[:class:`Album`]: A tuple of Album objects found in the internal cache.'''
-        return tuple(album for album in self.__cache._albums)
-
-    @property
-    def tracks(self):
-        '''[:class:`Track`]: A tuple of Track objects found in the internal cache.'''
-        return tuple(track for track in self._cache._tracks)
-
-    @property
-    def playlists(self):
-        '''[:class:`Playlist`]: A tuple of Playlist objects found in the internal cache.'''
-        return tuple(playlist for playlist in self._cache._playlists)
-
-    ### Custom constructors for other objects ###
+    ### External model contstructors
 
     def oauth2_url(self, redirect_uri, scope, state=None):
         '''Generate an outh2 url for user authentication
@@ -103,17 +62,13 @@ class Client:
         - *state* (:class:`str`)
             using a state value can increase your assurance that an incoming connection is the result of an authentication request.
         '''
-        if state is None:
-            state = ''.join(random.choice('abcdefghijklmnopqrstuvwxyz0123456789') for i in range(12))
 
+        state = state or ''
         BASE = 'https://accounts.spotify.com/authorize'
 
-        return BASE + '/?client_id={0}&response_type=code&redirect_uri={1}&scope={2}{3}'.format(self.http.client_id, quote(redirect_uri), scope, ('&state=' + state if state else ''))
+        return BASE + '/?client_id={0}&response_type=code&redirect_uri={1}&scope={2}{3}'.format(self.http.client_id, quote(redirect_uri), scope, state)
 
-    def refresh_token(self):
-        pass
-
-    def user_from_token(self, token):
+    async def user_from_token(self, token):
         '''Create a user session from a token
 
         **parameters**
@@ -121,56 +76,52 @@ class Client:
         - *token* (:class:`str`)
             The token to attatch the user session to
         '''
-        session = User(self, token=token)
-        self.user_sessions.append(session)
-        return session
+        http = HTTPUserClient(token)
+        data = await http.current_user()
+
+        return User(self, data=data, http=http)
 
     ### Get single objects ###
 
-    async def get_album(self, id, *, market='US'):
+    async def get_album(self, spotify_id, *, market='US'):
         '''Retrive an album with a spotify ID
         
         **parameters**
 
-        - id (:class:`str`) - the ID to look for
+        - spotify_id (:class:`str`) - the ID to look for
         '''
-        return self._construct(await self.http.album(id, market=market), 'album')
+        data = await self.http.album(spotify_id, market=market)
+        return Album(self, data)
 
-    async def get_artist(self, id):
+    async def get_artist(self, spotify_id):
         '''Retrive an artist with a spotify ID
         
         **parameters**
 
-        - id (:class:`str`) - the ID to look for
+        - spotify_id (:class:`str`) - the ID to look for
         '''
-        return self._construct(await self.http.artist(id), 'artist')
+        data = await self.http.artist(spotify_id)
+        return Artist(self, data)
 
-    async def get_track(self, id):
+    async def get_track(self, spotify_id):
         '''Retrive an track with a spotify ID
         
         **parameters**
 
-        - id (:class:`str`) - the ID to look for
+        - spotify_id (:class:`str`) - the ID to look for
         '''
-        return self._construct(await self.http.track(id), 'track')
+        data = await self.http.track(spotify_id)
+        return Track(self, data)
 
-    async def get_category(self, id, *, country=None, locale=None):
-        '''Retrive an category with a spotify ID
-        
-        **parameters**
-
-        - id (:class:`str`) - the ID to look for
-        '''
-        return self._construct(await self.http.category(id, country=country, locale=locale), 'category')
-
-    async def get_user(self, id):
+    async def get_user(self, spotify_id):
         '''Retrive an user with a spotify ID
         
         **parameters**
 
-        - id (:class:`str`) - the ID to look for
+        - spotify_id (:class:`str`) - the ID to look for
         '''
-        return User(self, data=await self.http.user(id))
+        data = await self.http.user(spotify_id)
+        return User(self, data)
 
     ### Get multiple objects ###
 
@@ -179,26 +130,20 @@ class Client:
         
         **parameters**
 
-        - id (:class:`str`) - the ID to look for
+        - ids (:class:`str`) - the ID to look for
         '''
-        raw = []
         data = await self.http.albums(','.join(ids), market=market)
-        for album in data['albums']:
-            raw.append(self._construct(json.loads(album), 'album'))
-        return raw
+        return [Album(self, album) for album in data['albums']]
 
     async def get_artists(self, *, ids):
         '''Retrive multiple artists with a list of spotify IDs
         
         **parameters**
 
-        - id (:class:`str`) - the ID to look for
+        - ids (:class:`str`) - the ID to look for
         '''
-        raw = []
         data = await self.http.artists(','.join(ids))
-        for artist in data['artists']:
-            raw.append(self._construct(artist, 'artist'))
-        return raw
+        return [Album(self, artist) for artist in data['artists']]
 
     async def search(self, q, *, types=['track', 'playlist', 'artist', 'album'], limit=20, offset=0, market=None):
         '''Access the spotify search functionality
@@ -244,6 +189,6 @@ class Client:
                 container[key] = []
 
             for _object in value['items']:
-                container[key].append(self._construct(_object, _object.get('type')))
+                container[key].append(_types[_object.get('type')](self, _object))
 
         return container

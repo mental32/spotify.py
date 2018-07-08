@@ -1,9 +1,9 @@
 ##
 # -*- coding: utf-8 -*-
 ##
+from spotify import _types
 
-class SpotifyModel:
-    __slots__ = ['is_simple']
+Track = _types.track
 
 
 class Image:
@@ -63,7 +63,7 @@ class Player:
     def __repr__(self):
         return '<spotify.Player: "%s">' %(self._user.display_name or self._user.id)
 
-    def from_data(self, data):
+    def populate(self, data):
         self.repeat_state = data.get('repeat_state')
 
         self.timestamp = data.get('timestamp')
@@ -79,29 +79,22 @@ class Player:
             self.device = Device(data.get('device'))
 
         if data.get('item'):
-            self.item = self._user._client._build('_tracks', data.get('item'))
+            self.item = Track(self._user._User__client, data.get('item'))
 
     async def pause(self):
         return await self._user.http.pause_playback()
 
-    async def transfer(self, device, ensure_playback=False):
-        await self._user.http.transfer_player(device.id, play=ensure_playback)
-        self.device = device
-
-    async def shuffle(self):
-        state = self.ctx['shuffle']
-        self.ctx['shuffle'] = not state
-
-        return await self._user.http.shuffle_playback(state)
-
-    async def start(self, context_uri, *, uris=None, offset=0):
-        return await self._user.http.play_playback(uris or context_uri, offset=offset)
-
-    async def set_volume(self, volume):
-        return await self._user.http.set_playback_volume(volume)
+    async def resume(self):
+        return await self._user.http.play_playback(None)
 
     async def seek(self, pos):
         return await self._user.http.seek_playback(pos)
+
+    async def set_repeat(self, state):
+        return await self._user.http.repeat_playback(state)
+
+    async def set_volume(self, volume):
+        return await self._user.http.set_playback_volume(volume)
 
     async def next(self):
         return await self._user.http.skip_next()
@@ -109,5 +102,31 @@ class Player:
     async def previous(self):
         return await self._user.http.skip_previous()
 
-    async def set_repeat(self, state):
-        return await self._user.http.repeat_playback(state)
+
+    async def play(self, context, *, offset=0, device=None):
+        if isinstance(context ,(list, tuple)):
+            context_uri = [uri for uri in context]
+        else:
+            context_uri = context
+
+        if device:
+            device = device.id
+
+        return await self._user.http.play_playback(context_uri, offset=offset, device_id=device)
+
+    async def shuffle(self):
+        state = self.ctx['shuffle']
+        self.ctx['shuffle'] = int(not state)
+
+        return await self._user.http.shuffle_playback(state)
+
+    async def transfer(self, device, ensure_playback=False):
+        is_dev = isinstance(device, Device)
+
+        if is_dev:
+            device = device.id
+
+        await self._user.http.transfer_player(device, play=ensure_playback)
+
+        if is_dev:
+            self.device = device

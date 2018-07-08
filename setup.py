@@ -1,22 +1,32 @@
 import re
 from setuptools import setup
 
-with open('requirements.txt') as inf:
-    requirements = inf.readlines()
+requirements = [
+  'aiohttp'
+]
 
-with open('spotify/__init__.py') as inf:
-    match = re.search(r"((\d\.){2,5}\d)", inf.read(), re.MULTILINE)
+def get_version():
+  with open('spotify/__init__.py') as inf:
+      match = re.search(r"((\d\.){2,5}\d)", inf.read(), re.MULTILINE)
 
-    if match is None:
-        raise RuntimeError('Version could not be found.')
+      if match is None:
+        inf.seek(0)
+        version_tag = '__version__ = '
 
-    version = match.groups()[0]
+        for line in inf.readlines():
+          if line.startswith(version_tag):
+            return line[len(version_tag):].strip()
+
+      if match is None:
+          raise RuntimeError('Version could not be found.')
+
+      return match.groups()[0]
 
 setup(name='spotify.py',
       author='mental',
       url='https://github.com/mental32/spotify.py',
-      version=version,
-      packages=['spotify'],
+      version=get_version(),
+      packages=['spotify', 'spotify.models'],
       license='MIT',
       description='spotify.py is an asynchronous API wrapper for Spotify written in Python.',
       include_package_data=True,
