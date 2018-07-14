@@ -1,6 +1,3 @@
-##
-# -*- coding: utf-8 -*-
-##
 from .common import Image
 
 from spotify import _types

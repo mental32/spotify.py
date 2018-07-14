@@ -1,6 +1,3 @@
-##
-# -*- coding: utf-8 -*-
-##
 import functools
 
 def ensure_http(func):

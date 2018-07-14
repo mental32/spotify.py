@@ -1,6 +1,3 @@
-##
-# -*- coding: utf-8 -*-
-##
 from ..utils import ensure_http
 from ..http import HTTPUserClient
 

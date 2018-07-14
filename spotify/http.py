@@ -1,6 +1,3 @@
-##
-# -*- coding: utf-8 -*-
-##
 import asyncio
 import json
 from base64 import b64encode

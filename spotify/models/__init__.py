@@ -1,7 +1,3 @@
-##
-# -*- coding: utf-8 -*-
-##
-
 from .user import User
 from .track import Track
 from .artist import Artist

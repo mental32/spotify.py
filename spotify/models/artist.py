@@ -1,6 +1,3 @@
-##
-# -*- coding: utf-8 -*-
-##
 from spotify import _types
 
 Track = _types.track

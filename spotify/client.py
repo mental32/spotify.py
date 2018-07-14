@@ -1,6 +1,3 @@
-##
-# -*- coding: utf-8 -*-
-##
 import asyncio
 import json
 from urllib.parse import quote_plus as quote
@@ -185,10 +182,8 @@ class Client:
 
         container = {}
         for key, value in data.items():
-            if key not in container:
-                container[key] = []
 
-            for _object in value['items']:
-                container[key].append(_types[_object.get('type')](self, _object))
+            items = [_types[_object.get('type')](self, _object) for _object in value['items']]
+            container.setdefault(key, []).extend(items)
 
         return container

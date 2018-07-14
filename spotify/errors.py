@@ -1,6 +1,3 @@
-##
-# -*- coding: utf-8 -*-
-##
 __all__ = ['SpotifyException', 'HTTPException', 'Forbidden', 'NotFound']
 
 class SpotifyException(Exception):
