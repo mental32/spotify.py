@@ -49,6 +49,12 @@ class User:
     def __repr__(self):
         return '<spotify.User: "%s"' % (self.display_name or self.id)
 
+    def __eq__(self, other):
+        return type(self) is type(other) and self.uri == other.uri
+
+    def __neq__(self, other):
+        return not self == other
+
     ### Attributes
 
     @property

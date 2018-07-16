@@ -10,6 +10,12 @@ class Artist:
     def __repr__(self):
         return '<spotify.Artist: "%s">' %(self.name)
 
+    def __eq__(self, other):
+        return type(self) is type(other) and self.uri == other.uri
+
+    def __neq__(self, other):
+        return not self == other
+
     @property
     def id(self):
         return self.__data.get('id')
