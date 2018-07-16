@@ -18,7 +18,7 @@ async def main():
 	user = await client.get_user(user_id)
 
 	# spotify.User object with a http presence
-	user await client.user_from_token(user_token)
+	user = await client.user_from_token(user_token)
 
 if __name__ == '__main__':
 	asyncio.loop.run_until_complete(main())
