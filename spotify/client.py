@@ -37,7 +37,7 @@ class Client:
         self.http = HTTPClient(client_id, client_secret)
 
     def __repr__(self):
-        return '<spotify.Client: "%s"' % self.http.client_id
+        return '<spotify.Client: "%s">' % self.http.client_id
 
     @property
     def client_id(self):
