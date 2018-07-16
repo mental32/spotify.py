@@ -16,6 +16,10 @@ _types.update({
     'library': Library
 })
 
+def _build(self, obj):
+    return _types[obj.get('type')](self, obj)
+
+
 class Client:
     '''Represents an interface to Spotify.
 
@@ -171,19 +175,12 @@ class Client:
         elif not isinstance(types, list):
             types = [item for item in types]
 
-        for qt in types:
-            if qt not in ['track', 'playlist', 'artist', 'album']:
-                raise ValueError(fmt %(qt))
+        if any(qt not in ['track', 'playlist', 'artist', 'album'] for qt in types):
+            raise ValueError(fmt % qt)
 
-        types = ','.join(_type.strip() for _type in types)
-
+        types = ','.join(qt.strip() for qt in types)
         kwargs = {'q': q.replace(' ', '%20').replace(':', '%3'), 'queary_type': types, 'market': market, 'limit': limit, 'offset': offset}
+
         data = await self.http.search(**kwargs)
 
-        container = {}
-        for key, value in data.items():
-
-            items = [_types[_object.get('type')](self, _object) for _object in value['items']]
-            container.setdefault(key, []).extend(items)
-
-        return container
+        return {key: [_build(self, obj) for obj in value['items']] for key, value in data.items()}
