@@ -18,8 +18,8 @@ class Album:
     def __eq__(self, other):
         return type(self) is type(other) and self.uri == other.uri
 
-    def __neq__(self, other):
-        return not self == other
+    def __ne__(self, other):
+        return not self.__eq__(other)
 
     @property
     def id(self):
@@ -77,8 +77,14 @@ class Album:
     def images(self):
         return [Image(**image) for image in self.__data.get('images')]    
 
-    async def total_tracks(self):
-        return (await self.__client.http.album_tracks(self.id, limit=1, offset=0)).get('total')
+    async def total_tracks(self, *, market=None):
+        '''get the total amout of tracks in the album.'''
+        kwargs = {'limit': 1, 'offset': 0}
+
+        if market:
+            kwargs['market'] = market
+
+        return (await self.__client.http.album_tracks(self.id, **kwargs)).get('total')
 
     async def get_tracks(self, *, limit=20, offset=0):
         '''get the albums tracks from spotify.
@@ -94,7 +100,7 @@ class Album:
         data = await self.__client.http.album_tracks(self.id, limit=limit, offset=offset)
         return [Track(self.__client, item) for item in data['items']]
 
-    async def get_all_tracks(self, *, market='us'):
+    async def get_all_tracks(self, *, market='US'):
         '''loads all of the albums tracks, depending on how many the album has this may be a long operation.
 
         **parameters**
@@ -104,12 +110,12 @@ class Album:
         '''
         tracks = []
         offset = 0
-        total = (await self.__client.http.album_tracks(self.id, limit=1, offset=0, market='us'))['total']
+        total = await self.total_tracks(market=market)
 
         while len(tracks) < total:
-            data = await self.__client.http.album_tracks(self.id, limit=50, offset=offset, market='us')
-            offset += 50
+            data = await self.__client.http.album_tracks(self.id, limit=50, offset=offset, market=market)
 
+            offset += 50
             tracks += [Track(self.__client, item) for item in data['items']]
 
         return tracks

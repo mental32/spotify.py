@@ -52,8 +52,8 @@ class User:
     def __eq__(self, other):
         return type(self) is type(other) and self.uri == other.uri
 
-    def __neq__(self, other):
-        return not self == other
+    def __ne__(self, other):
+        return not self.__eq__(other)
 
     ### Attributes
 
