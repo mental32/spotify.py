@@ -11,4 +11,4 @@ To install the library simply clone it and run setup.py
 
 ## resources
 
-For resources look at the [examples](/examples) or ask in the [discord](https://discord.gg/zRUBc9Z)
+For resources look at the [examples](/examples) or ask in the [discord](https://discord.gg/k43FSFF)
