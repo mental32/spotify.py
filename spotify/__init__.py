@@ -34,4 +34,4 @@ from .client import Client, _types
 __title__ = 'spotify'
 __author__ = 'mental'
 __license__ = 'MIT'
-__version__ = '0.1.0'
+__version__ = '0.1.1'
