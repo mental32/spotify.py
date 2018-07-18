@@ -1,6 +1,8 @@
 # spotify.py
 
-spotify.py is an asynchronous API wrapper for Spotify written in Python.
+An API for the spotify client and the Spotify Web API written in Python.
+
+spotify.py is 100% asyncronous meaning everything down to the HTTP library is designed to work with asyncio.<br>The library covers every endpoint in the Spotify web API and offsers control over the local Spotify app.
 
 ## Installing
 To install the library simply clone it and run setup.py
