@@ -14,4 +14,4 @@ from .http import HTTPClient
 __title__ = 'spotify'
 __author__ = 'mental'
 __license__ = 'MIT'
-__version__ = '0.1.1'
+__version__ = '0.1.2'

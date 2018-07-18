@@ -1,5 +1,7 @@
 import asyncio
 import json
+import random
+import string
 from base64 import b64encode
 from urllib.parse import quote
 
@@ -596,3 +598,60 @@ class HTTPUserClient(HTTPClient):
 
     async def get_bearer_info(self):
         return {'access_token': self.token}
+
+
+class LocalHTTPClient:
+    def __init__(self):
+        self._session = aiohttp.ClientSession()
+        self.bearer_info = None
+
+    async def close(self):
+        await self._session.close()
+
+    async def get_bearer_info(self):
+        self.bearer_info = {}
+
+        token = await self.get_token()
+        csrf = await self.request('/simplecsrf/token.json')
+
+        return {'oauth': token, 'csrf': csrf['token']}
+
+    async def request(self, path, **kwargs):
+        if self.bearer_info is None:
+            self.bearer_info = await self.get_bearer_info()
+
+        sub = '{0}.spotilocal.com'.format(''.join(random.choices(string.ascii_lowercase, k=10)))
+        url = 'http://{0}:{1}{2}'.format(sub, 4381, path)
+
+        if 'params' not in kwargs:
+            kwargs['params'] = {}
+
+        kwargs['headers'] = {'Origin': 'https://open.spotify.com'}
+        kwargs['params'].update(self.bearer_info)
+
+        async with self._session.get(url, **kwargs) as resp:
+            data = await resp.json()
+
+        return data
+
+    async def get_token(self):
+        url = 'https://open.spotify.com/token'
+        headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 6.1) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/41.0.2228.0 Safari/537.36'}
+
+        async with self._session.get(url, headers=headers) as resp:
+            data = await resp.json()
+
+        return data['t']
+
+    async def get_status(self):
+        return await self.request('/remote/status.json')
+
+    async def get_version(self):
+        return await self.request('/service/version.json', params={'service': 'remote'})
+
+    async def set_pause(self, mode):
+        return await self.request('/remote/pause.json', params={'pause': json.dumps(mode)})
+
+    async def play(self, uri):
+        params = {'uri': uri, 'context': uri}
+        return await self.request('/remote/play.json', params=params)
