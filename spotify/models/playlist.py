@@ -28,6 +28,9 @@ class Playlist:
     def __repr__(self):
         return '<spotify.Playlist: "%s">' %(self.name)
 
+    def __str__(self):
+        return self.uri
+
     def __eq__(self, other):
         return type(self) is type(other) and self.uri == other.uri
 
