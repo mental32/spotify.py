@@ -14,6 +14,7 @@ class PartialTracks:
         '''get the track object for each link in the partial tracks data'''
         link = self.data['href']
         data = await client.http.request(('GET', link))
+
         return [Track(client, track['track']) for track in data['items']]
 
 class Playlist:
@@ -75,7 +76,6 @@ class Playlist:
         if len(self.tracks) != total:
             data = await self.__client.http.get_playlist_tracks(self.owner.id, self.id)
 
-            for item in data['items']:
-                self._tracks.append(Track(self.__client, item))
+            self._tracks += [Track(self.__client, item) for item in data['items']]
 
         return [track for track in self._tracks]
