@@ -8,10 +8,10 @@ spotify.py is 100% asyncronous meaning everything down to the HTTP library is de
 
 Web API example
 ```py
-client = spotify.Client('somesid', 'sometoken')
+client = spotify.Client('someid', 'sometoken')
 
 async def example():
-    drake = await client.get_artist()
+    drake = await client.get_artist('3TVXtAsR1Inumwj472S9r4')
 
     for track in await drake.top_tracks():
         print(repr(track))
