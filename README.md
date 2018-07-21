@@ -19,7 +19,7 @@ async def example():
 
 Local client example
 ```py
-async with spotify.LocalClient as local:
+async with spotify.LocalClient() as local:
     await local.play('spotify:track:2G7V7zsVDxg1yRsu7Ew9RJ')
 ```
 ## Installing
