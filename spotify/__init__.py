@@ -1,6 +1,3 @@
-##
-# -*- coding: utf-8 -*-
-##
 from . import utils
 
 _types = utils._spotify__lookup()
