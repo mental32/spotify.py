@@ -1,5 +1,10 @@
 import functools
 
+def uri_to_id(string):
+    if string.startswith('spotify:'):
+        return string.rsplit(':', maxsplit=1)[-1]
+    return string
+
 def ensure_http(func):
 
     @functools.wraps(func)

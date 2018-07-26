@@ -4,7 +4,7 @@ from urllib.parse import quote_plus as quote
 
 from .http import HTTPClient, HTTPUserClient
 
-from spotify import _types
+from spotify import _types, utils
 from spotify.models import User, Artist, Track, Playlist, Album, Library
 
 _types.update({
@@ -91,7 +91,7 @@ class Client:
 
         - spotify_id (:class:`str`) - the ID to look for
         '''
-        data = await self.http.album(spotify_id, market=market)
+        data = await self.http.album(utils.uri_to_id(spotify_id), market=market)
         return Album(self, data)
 
     async def get_artist(self, spotify_id):
@@ -101,7 +101,7 @@ class Client:
 
         - spotify_id (:class:`str`) - the ID to look for
         '''
-        data = await self.http.artist(spotify_id)
+        data = await self.http.artist(utils.uri_to_id(spotify_id))
         return Artist(self, data)
 
     async def get_track(self, spotify_id):
@@ -111,7 +111,7 @@ class Client:
 
         - spotify_id (:class:`str`) - the ID to look for
         '''
-        data = await self.http.track(spotify_id)
+        data = await self.http.track(utils.uri_to_id(spotify_id))
         return Track(self, data)
 
     async def get_user(self, spotify_id):
@@ -121,7 +121,7 @@ class Client:
 
         - spotify_id (:class:`str`) - the ID to look for
         '''
-        data = await self.http.user(spotify_id)
+        data = await self.http.user(utils.uri_to_id(spotify_id))
         return User(self, data)
 
     ### Get multiple objects ###
@@ -133,7 +133,7 @@ class Client:
 
         - ids (:class:`str`) - the ID to look for
         '''
-        data = await self.http.albums(','.join(ids), market=market)
+        data = await self.http.albums(','.join(utils.uri_to_id(_id) for _id in ids), market=market)
         return [Album(self, album) for album in data['albums']]
 
     async def get_artists(self, *, ids):
@@ -143,7 +143,7 @@ class Client:
 
         - ids (:class:`str`) - the ID to look for
         '''
-        data = await self.http.artists(','.join(ids))
+        data = await self.http.artists(','.join(utils.uri_to_id(_id) for _id in ids))
         return [Album(self, artist) for artist in data['artists']]
 
     async def search(self, q, *, types=['track', 'playlist', 'artist', 'album'], limit=20, offset=0, market=None):
