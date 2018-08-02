@@ -101,10 +101,10 @@ class Player:
 
 
     async def play(self, context, *, offset=0, device=None):
-        if isinstance(context ,(list, tuple)):
+        if isinstance(context, (list, tuple)):
             context_uri = [uri for uri in context]
         else:
-            context_uri = context
+            context_uri = [context]
 
         if device:
             device = device.id
