@@ -7,6 +7,7 @@ from .models import *
 
 from .client import Client
 from .http import HTTPClient
+from .local import LocalClient
 
 __title__ = 'spotify'
 __author__ = 'mental'
