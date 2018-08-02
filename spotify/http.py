@@ -636,10 +636,15 @@ class LocalHTTPClient:
 
     async def get_token(self):
         url = 'https://open.spotify.com/token'
-        headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 6.1) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/41.0.2228.0 Safari/537.36'}
+        headers = {'User-Agent': 'Spotify (1.0.85.257.g0f8531bd)'}
 
         async with self._session.get(url, headers=headers) as resp:
-            data = await resp.json()
+            data = await resp.text(encoding='utf-8')
+
+            try:
+                data = await resp.json()
+            except Exception:
+                raise Exception('JSONDecodeError, maybe a faketoken was returned.')
 
         return data['t']
 
