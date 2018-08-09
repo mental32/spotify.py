@@ -3,6 +3,7 @@ from .common import Image
 
 User = _types.user
 Track = _types.track
+PlaylistTrack = _types.playlist_track
 
 class PartialTracks:
     __slots__ = ['data']
@@ -15,7 +16,7 @@ class PartialTracks:
         link = self.data['href']
         data = await client.http.request(('GET', link))
 
-        return [Track(client, track['track']) for track in data['items']]
+        return [PlaylistTrack(client, track) for track in data['items']]
 
 class Playlist:
     def __init__(self, client, data):
