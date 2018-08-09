@@ -162,12 +162,12 @@ class User:
         if not isinstance(playlist_id, str):
             playlist_id = playlist.id
 
-        return await self.http.add_playlist_tracks(self.id, playlist_id, tracks=','.join(tracks))
+        return await self.http.add_playlist_tracks(self.id, playlist_id, uris=','.join(tracks))
 
     @ensure_http
     async def replace_tracks(self, playlist, *tracks):
         '''Replace all the tracks in a playlist, overwriting its existing tracks. This powerful request can be useful for replacing tracks, re-ordering existing tracks, or clearing the playlist.
-        
+
         **parameters**
 
         - *playlist* (:class:`Playlist`)
@@ -182,7 +182,7 @@ class User:
         if not isinstance(playlist_id, str):
             playlist_id = playlist.id
 
-        return await self.http.replace_playlist_tracks(self.id, playlist_id, tracks=','.join(tracks))
+        return await self.http.replace_playlist_tracks(self.id, playlist_id, uris=','.join(tracks))
 
     @ensure_http
     async def remove_tracks(self, playlist, *tracks):
@@ -202,7 +202,7 @@ class User:
         if not isinstance(playlist_id, str):
             playlist_id = playlist.id
 
-        return await self.http.remove_playlist_tracks(self.id, playlist_id, tracks=','.join(tracks))
+        return await self.http.remove_playlist_tracks(self.id, playlist_id, uris=','.join(tracks))
 
     @ensure_http
     async def reorder_tracks(self, playlist, start, insert_before, length=1, *, snapshot_id=None):
@@ -228,6 +228,7 @@ class User:
         playlist_id = playlist
         if not isinstance(playlist_id, str):
             playlist_id = playlist.id
+
         return await self.http.reorder_playlists_tracks(self.id, playlist_id, start, length, insert_before, snapshot_id=snapshot_id)
 
     ### Playlist methods
