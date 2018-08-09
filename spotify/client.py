@@ -5,7 +5,7 @@ from urllib.parse import quote_plus as quote
 from .http import HTTPClient, HTTPUserClient
 
 from spotify import _types, utils
-from spotify.models import User, Artist, Track, Playlist, Album, Library
+from spotify.models import User, Artist, Track, Playlist, Album, Library, PlaylistTrack
 
 _types.update({
     'artist': Artist,
@@ -13,7 +13,8 @@ _types.update({
     'user': User,
     'playlist': Playlist,
     'album': Album,
-    'library': Library
+    'library': Library,
+    'playlist_track': PlaylistTrack
 })
 
 def _build(self, obj):

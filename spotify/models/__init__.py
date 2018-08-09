@@ -4,3 +4,4 @@ from .artist import Artist
 from .album import Album
 from .playlist import Playlist
 from .library import Library
+from .playlist_track import PlaylistTrack

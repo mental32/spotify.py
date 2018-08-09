@@ -18,7 +18,7 @@ def ensure_http(func):
 
 
 class _spotify__lookup(dict):
-    __types = ['artist', 'track', 'user', 'playlist', 'album', 'library']
+    __types = ['artist', 'track', 'user', 'playlist', 'album', 'library', 'playlist_track']
 
     def __getattribute__(self, key):
         _types = object.__getattribute__(self, '_spotify__lookup__types')
