@@ -3,7 +3,7 @@ from spotify import _types
 Artist = _types.artist
 
 class Track:
-    __slots__ = ['__data', '__client', 'artists']
+    __slots__ = ('__data', '__client', 'artists')
 
     def __init__(self, client, data):
         self.__client = client
