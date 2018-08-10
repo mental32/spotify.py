@@ -1,3 +1,5 @@
+import datetime
+
 from spotify import _types
 
 Artist = _types.artist
@@ -54,3 +56,17 @@ class Track:
     async def audio_features(self):
         '''Get audio feature information for the track'''
         return await self.__client.http.track_audio_features(self.id)
+
+
+class PlaylistTrack(Track):
+    __slots__ = ('added_at', 'added_by', 'is_local')
+
+    def __init__(self, client, data):
+        super().__init__(client, data['track'])
+
+        self.added_by = data['added_by']
+        self.is_local = data['is_local']
+        self.added_at = datetime.datetime.strptime(data['added_at'], '%Y-%m-%dT%H:%M:%SZ')
+
+    def __repr__(self):
+        return '<spotify.PlaylistTrack: "%s">' % self.name
