@@ -138,7 +138,7 @@ class User:
             track['context'] = Context(track.get('context'))
             track['track'] = Track('_tracks', data.get('track'))
 
-            raw.append(PlayHistory(track))
+            raw.append(track) # PlayHistory(track)
         return raw
 
     ### Playlist track omethods
@@ -146,7 +146,7 @@ class User:
     @ensure_http
     async def add_tracks(self, playlist, *tracks):
         '''Add one or more tracks to a user’s playlist.
-        
+
         **parameters**
 
         - *playlist* (:class:`Playlist`)
@@ -187,7 +187,7 @@ class User:
     @ensure_http
     async def remove_tracks(self, playlist, *tracks):
         '''Remove one or more tracks from a user’s playlist.
-        
+
         **parameters**
 
         - *playlist* (:class:`Playlist`)
@@ -304,12 +304,12 @@ class User:
         if description:
             data['description'] = description
 
-        playliast_data = await self.http.create_playlist(self.id, data)
-        return Playlist(self.__client, player_data)
+        playlist_data = await self.http.create_playlist(self.id, data)
+        return Playlist(self.__client, playlist_data)
 
     async def get_playlists(self, *, limit=20, offset=1):
         '''get the users playlists from spotify.
-        
+
         **parameters**
 
          - *limit* (Optional :class:`int`)
@@ -335,7 +335,7 @@ class User:
         **parameters**
 
         - *limit* (:class:`int`)
-            The number of entities to return. Default: 20. Minimum: 1. Maximum: 50. 
+            The number of entities to return. Default: 20. Minimum: 1. Maximum: 50.
 
         - *offset* (:class:`int`)
             The index of the first entity to return. Default: 0
@@ -352,7 +352,7 @@ class User:
         **parameters**
 
         - *limit* (:class:`int`)
-            The number of entities to return. Default: 20. Minimum: 1. Maximum: 50. 
+            The number of entities to return. Default: 20. Minimum: 1. Maximum: 50.
 
         - *offset* (:class:`int`)
             The index of the first entity to return. Default: 0

@@ -173,7 +173,7 @@ class HTTPClient:
             payload['country'] = country
 
         if locale:
-            payload['locale'] = locale 
+            payload['locale'] = locale
 
         return await self.request(route, params=payload)
 
@@ -283,7 +283,7 @@ class HTTPClient:
         route = Route('GET', '/me/albums/contains')
         payload = {'ids': ids}
 
-        return await self.request(route, params=payload) 
+        return await self.request(route, params=payload)
 
     async def is_saved_track(self, ids):
         route = Route('GET', '/me/tracks/contains')
@@ -372,7 +372,7 @@ class HTTPClient:
 
         if market:
             payload['market'] = market
-    
+
         return await self.request(route, params=payload)
 
     async def pause_playback(self, *, device_id=None):
@@ -433,7 +433,7 @@ class HTTPClient:
         route = Route('PUT', '/me/player/play')
         payload = {}
 
-        if isinstance(context_uri ,(list, tuple)):
+        if isinstance(context_uri, (list, tuple)):
             payload['uris'] = context_uri
 
         elif context_uri is not None:
@@ -508,7 +508,7 @@ class HTTPClient:
 
     async def get_playlist_tracks(self, user_id, playlist_id, *, fields=None, market=None, limit=20, offset=0):
         route = Route('GET', '/users/{user_id}/playlists/{playlist_id}/tracks', user_id=user_id, playlist_id=playlist_id)
-        payload = {'limit': limit, 'offset':  offset}
+        payload = {'limit': limit, 'offset': offset}
 
         if fields:
             payload['fields'] = fields

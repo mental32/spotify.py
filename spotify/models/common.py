@@ -12,7 +12,7 @@ class Image:
         self.url = url
 
     def __repr__(self):
-        return '<spotify.Image (width: %s, height: %s)>' %(self.width, self.height)
+        return '<spotify.Image (width: %s, height: %s)>' % (self.width, self.height)
 
 
 class Context:
@@ -26,7 +26,7 @@ class Context:
         self.uri = data.get('uri')
 
     def __repr__(self):
-        return '<spotify.Context: "%s">' %(self.uri)
+        return '<spotify.Context: "%s">' % (self.uri)
 
 
 class Device:
@@ -46,7 +46,7 @@ class Device:
         return self.id == other.id
 
     def __repr__(self):
-        return '<spotify.Device: "%s">' %(self.name or self.id)
+        return '<spotify.Device: "%s">' % (self.name or self.id)
 
 
 class Player:
@@ -58,7 +58,7 @@ class Player:
         self.ctx = {'shuffle': False}
 
     def __repr__(self):
-        return '<spotify.Player: "%s">' %(self._user.display_name or self._user.id)
+        return '<spotify.Player: "%s">' % (self._user.display_name or self._user.id)
 
     def populate(self, data):
         self.repeat_state = data.get('repeat_state')
@@ -98,7 +98,6 @@ class Player:
 
     async def previous(self):
         return await self._user.http.skip_previous()
-
 
     async def play(self, context, *, offset=0, device=None):
         if isinstance(context, (list, tuple)):

@@ -5,6 +5,7 @@ from spotify import _types
 Artist = _types.artist
 Track = _types.track
 
+
 class Album:
     def __init__(self, client, data):
         self.__client = client
@@ -13,7 +14,7 @@ class Album:
         self.artists = [Artist(client, artist) for artist in data.get('artists', [])]
 
     def __repr__(self):
-        return '<spotify.Album: "%s">' %(self.name or self.id or self.uri)
+        return '<spotify.Album: "%s">' % (self.name or self.id or self.uri)
 
     def __str__(self):
         return self.uri
@@ -70,7 +71,7 @@ class Album:
 
     @property
     def copyrights(self):
-        return self.__data.get('copyrights')    
+        return self.__data.get('copyrights')
 
     @property
     def markets(self):
@@ -78,7 +79,7 @@ class Album:
 
     @property
     def images(self):
-        return [Image(**image) for image in self.__data.get('images')]    
+        return [Image(**image) for image in self.__data.get('images')]
 
     async def total_tracks(self, *, market=None):
         '''get the total amout of tracks in the album.'''
@@ -91,7 +92,7 @@ class Album:
 
     async def get_tracks(self, *, limit=20, offset=0):
         '''get the albums tracks from spotify.
-        
+
         **parameters**
 
          - *limit* (Optional :class:`int`)

@@ -5,6 +5,7 @@ User = _types.user
 Track = _types.track
 PlaylistTrack = _types.playlist_track
 
+
 class PartialTracks:
     __slots__ = ('data', '__client', '__iter')
 
@@ -37,7 +38,8 @@ class PartialTracks:
     async def build(self):
         '''get the track object for each link in the partial tracks data'''
         data = await self.__client.http.request(('GET', self.data['href']))
-        return [PlaylistTrack(client, track) for track in data['items']]
+        return [PlaylistTrack(self.__client, track) for track in data['items']]
+
 
 class Playlist:
     def __init__(self, client, data):
@@ -48,7 +50,7 @@ class Playlist:
         self._tracks = PartialTracks(data.get('tracks'), client)
 
     def __repr__(self):
-        return '<spotify.Playlist: "%s">' %(self.name)
+        return '<spotify.Playlist: "%s">' % (self.name)
 
     def __str__(self):
         return self.uri

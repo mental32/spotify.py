@@ -1,5 +1,4 @@
 import asyncio
-import json
 from urllib.parse import quote_plus as quote
 
 from .http import HTTPClient, HTTPUserClient
@@ -16,6 +15,7 @@ _types.update({
     'library': Library,
     'playlist_track': PlaylistTrack
 })
+
 
 def _build(self, obj):
     return _types[obj.get('type')](self, obj)
@@ -52,7 +52,7 @@ class Client:
 
     def oauth2_url(self, redirect_uri, scope, state=None):
         '''Generate an outh2 url for user authentication
-        
+
         **parameters**
 
         - *redirect_uri* (:class:`str`)
@@ -87,7 +87,7 @@ class Client:
 
     async def get_album(self, spotify_id, *, market='US'):
         '''Retrive an album with a spotify ID
-        
+
         **parameters**
 
         - spotify_id (:class:`str`) - the ID to look for
@@ -97,7 +97,7 @@ class Client:
 
     async def get_artist(self, spotify_id):
         '''Retrive an artist with a spotify ID
-        
+
         **parameters**
 
         - spotify_id (:class:`str`) - the ID to look for
@@ -107,7 +107,7 @@ class Client:
 
     async def get_track(self, spotify_id):
         '''Retrive an track with a spotify ID
-        
+
         **parameters**
 
         - spotify_id (:class:`str`) - the ID to look for
@@ -117,7 +117,7 @@ class Client:
 
     async def get_user(self, spotify_id):
         '''Retrive an user with a spotify ID
-        
+
         **parameters**
 
         - spotify_id (:class:`str`) - the ID to look for
@@ -129,7 +129,7 @@ class Client:
 
     async def get_albums(self, *, ids, market='US'):
         '''Retrive multiple albums with a list of spotify IDs
-        
+
         **parameters**
 
         - ids (:class:`str`) - the ID to look for
@@ -139,7 +139,7 @@ class Client:
 
     async def get_artists(self, *, ids):
         '''Retrive multiple artists with a list of spotify IDs
-        
+
         **parameters**
 
         - ids (:class:`str`) - the ID to look for
@@ -176,8 +176,9 @@ class Client:
         elif not isinstance(types, list):
             types = [item for item in types]
 
-        if any(qt not in ['track', 'playlist', 'artist', 'album'] for qt in types):
-            raise ValueError(fmt % qt)
+        for qt in types:
+            if qt not in ['track', 'playlist', 'artist', 'album']:
+                raise ValueError(fmt % qt)
 
         types = ','.join(qt.strip() for qt in types)
         kwargs = {'q': q.replace(' ', '%20').replace(':', '%3'), 'queary_type': types, 'market': market, 'limit': limit, 'offset': offset}

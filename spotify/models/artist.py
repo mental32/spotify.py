@@ -3,13 +3,14 @@ from spotify import _types
 Track = _types.track
 Album = _types.album
 
+
 class Artist:
     def __init__(self, client, data):
         self.__client = client
         self.__data = data
 
     def __repr__(self):
-        return '<spotify.Artist: "%s">' %(self.name)
+        return '<spotify.Artist: "%s">' % (self.name)
 
     def __str__(self):
         return self.uri
@@ -38,7 +39,7 @@ class Artist:
 
     async def get_albums(self, *, limit=20, offset=0, include_groups=None, market=None):
         '''get the artists albums from spotify.
-        
+
         **parameters**
 
          - *limit* (Optional :class:`int`)
@@ -81,7 +82,7 @@ class Artist:
 
     async def top_tracks(self, country='US'):
         '''Get Spotify catalog information about an artist’s top tracks by country.
-        
+
         **parameters**
 
         - *country* (:class:`str`)

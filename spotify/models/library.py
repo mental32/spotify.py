@@ -3,6 +3,7 @@ from spotify import _types
 Track = _types.track
 Album = _types.album
 
+
 class Library:
     def __init__(self, user):
         self.user = user
@@ -91,7 +92,7 @@ class Library:
             A sequence of artist objects or spotify IDs
         '''
         _albums = [(obj if isinstance(obj, str) else obj.id) for obj in albums]
-        await self.user.http.save_albums(','.join(albums))
+        await self.user.http.save_albums(','.join(_albums))
 
     async def save_tracks(self, *tracks):
         '''Save one or more tracks to the current user’s ‘Your Music’ library.
@@ -102,4 +103,4 @@ class Library:
             A sequence of track objects or spotify IDs
         '''
         _tracks = [(obj if isinstance(obj, str) else obj.id) for obj in tracks]
-        await self.user.http.save_tracks(','.join(tracks))
+        await self.user.http.save_tracks(','.join(_tracks))

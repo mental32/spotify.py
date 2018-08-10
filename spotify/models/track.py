@@ -4,6 +4,7 @@ from spotify import _types
 
 Artist = _types.artist
 
+
 class Track:
     __slots__ = ('__data', '__client', 'artists')
 

@@ -1,8 +1,10 @@
 __all__ = ['SpotifyException', 'HTTPException', 'Forbidden', 'NotFound']
 
+
 class SpotifyException(Exception):
     '''base exception class for spotify.py'''
     pass
+
 
 class HTTPException(SpotifyException):
     '''exception that's thrown when a HTTP operation fails.'''
@@ -22,9 +24,11 @@ class HTTPException(SpotifyException):
 
         super().__init__(fmt.format(self.response, self.text))
 
+
 class Forbidden(HTTPException):
     '''exception that's thrown when status code 403 occurs'''
     pass
+
 
 class NotFound(HTTPException):
     '''exception that's thrown when status code 404 occurs'''
