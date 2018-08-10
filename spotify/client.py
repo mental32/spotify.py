@@ -4,18 +4,13 @@ from urllib.parse import quote_plus as quote
 from .http import HTTPClient, HTTPUserClient
 
 from spotify import _types, utils
-from spotify.models import User, Artist, Track, Playlist, Album, Library, PlaylistTrack
 
-_types.update({
-    'artist': Artist,
-    'track': Track,
-    'user': User,
-    'playlist': Playlist,
-    'album': Album,
-    'library': Library,
-    'playlist_track': PlaylistTrack
-})
-
+Artist = _types.artist
+Track = _types.track
+User = _types.user
+Playlist = _types.playlist
+Library = _types.library
+PlaylistTrack = _types.playlist_track
 
 def _build(self, obj):
     return _types[obj.get('type')](self, obj)
@@ -37,9 +32,11 @@ class Client:
     - *loop* (`optional`:`event loop`)
         The event loop the client should run on, if no loop is specified `asyncio.get_event_loop()` is called and used instead.
     '''
+    _default_http_client = HTTPClient
+
     def __init__(self, client_id, client_secret, *, loop=None):
         self.loop = loop or asyncio.get_event_loop()
-        self.http = HTTPClient(client_id, client_secret)
+        self.http = self._default_http_client(client_id, client_secret, loop=loop)
 
     def __repr__(self):
         return '<spotify.Client: "%s">' % self.http.client_id
