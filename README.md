@@ -5,6 +5,7 @@
 An API library for the spotify client and the Spotify Web API written in Python.
 
 spotify.py is 100% asyncronous meaning everything down to the HTTP library is designed to work with asyncio.<br>The library covers every endpoint in the Spotify web API and offers control over the local Spotify app.
+> spotify.py is in beta, there may be bugs.
 
 ## Examples
 
@@ -39,8 +40,6 @@ or use pypi
 
 - `pip3 install spotify`
 - `pip3 install -U git+https://github.com/mental32/spotify.py`
-
-> spotify.py is in beta, there may be bugs.
 
 ## Contributing
 To contribute you must:
