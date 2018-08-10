@@ -1,3 +1,5 @@
+__all__ = ['User', 'Track', 'PlaylistTrack', 'Artist', 'Album', 'Playlist', 'Library']
+
 from .user import User
 from .track import Track, PlaylistTrack
 from .artist import Artist
