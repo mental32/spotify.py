@@ -6,16 +6,37 @@ Track = _types.track
 PlaylistTrack = _types.playlist_track
 
 class PartialTracks:
-    __slots__ = ['data']
+    __slots__ = ('data', '__client', '__iter')
 
-    def __init__(self, data):
+    def __init__(self, data, client):
         self.data = data
+        self.__client = client
+        self.__iter = None
 
-    async def build(self, client):
+    def __repr__(self):
+        return '<spotify.PartialTracks: total="%s">' % self.data['total']
+
+    def __aiter__(self):
+        return self
+
+    async def __anext__(self):
+        if self.__iter is None:
+            data = await self.__client.http.request(('GET', self.data['href']))
+
+            def _iter_build():
+                for track in data['items']:
+                    yield PlaylistTrack(self.__client, track)
+
+            self.__iter = _iter_build()
+
+        try:
+            return next(self.__iter)
+        except StopIteration:
+            raise StopAsyncIteration
+
+    async def build(self):
         '''get the track object for each link in the partial tracks data'''
-        link = self.data['href']
-        data = await client.http.request(('GET', link))
-
+        data = await self.__client.http.request(('GET', self.data['href']))
         return [PlaylistTrack(client, track) for track in data['items']]
 
 class Playlist:
@@ -24,7 +45,7 @@ class Playlist:
         self.__data = data
 
         self.owner = User(client, data=data.get('owner'))
-        self._tracks = PartialTracks(data.get('tracks'))
+        self._tracks = PartialTracks(data.get('tracks'), client)
 
     def __repr__(self):
         return '<spotify.Playlist: "%s">' %(self.name)
@@ -75,7 +96,7 @@ class Playlist:
 
         if isinstance(self._tracks, PartialTracks):
             total = self._tracks.data['total']
-            self._tracks = await self._tracks.build(self.__client)
+            self._tracks = await self._tracks.build()
 
         if len(self.tracks) != total:
             data = await self.__client.http.get_playlist_tracks(self.owner.id, self.id)
