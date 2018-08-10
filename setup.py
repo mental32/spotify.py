@@ -13,6 +13,8 @@ def get_version():
       match = re.search(r"((\d\.){2,5}\d)", inf.read(), re.MULTILINE)
 
       if match is None:
+        # version regex broke
+        # use a primitive search method
         inf.seek(0)
         version_tag = '__version__ = '
 
