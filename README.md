@@ -24,7 +24,13 @@ Local client example
 async with spotify.LocalClient() as local:
     await local.play('spotify:track:2G7V7zsVDxg1yRsu7Ew9RJ')
 ```
+
+## Resources
+
+For resources look at the [examples](https://github.com/mental32/spotify.py/tree/master/examples) or ask in the [discord](https://discord.gg/k43FSFF)
+
 ## Installing
+
 To install the library simply clone it and run setup.py
 - `git clone https://github.com/mental32/spotify.py`
 - `python3 setup.py install`
@@ -32,9 +38,11 @@ To install the library simply clone it and run setup.py
 or use pypi
 
 - `pip3 install spotify`
+- `pip3 install -U git+https://github.com/mental32/spotify.py`
 
 > spotify.py is in beta, there may be bugs.
 
-## Resources
-
-For resources look at the [examples](/examples) or ask in the [discord](https://discord.gg/k43FSFF)
+## Contributing
+To contribute you must:
+- have a presence in the [discord](https://discord.gg/k43FSFF) server
+- fork and open a PR with changes.
