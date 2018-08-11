@@ -48,5 +48,6 @@ class SyncExecution(threading.Thread):
             self.out_queue.put(rv)
         self._loop.close()
 
+
 _thread = SyncExecution()
 _thread.start()

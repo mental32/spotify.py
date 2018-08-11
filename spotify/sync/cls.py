@@ -47,6 +47,7 @@ class Playlist(models.Playlist, SyncMeta):
 class Library(models.Library, SyncMeta):
     pass
 
+
 _types.update({
     'artist': Artist,
     'track': Track,
