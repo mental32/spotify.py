@@ -6,6 +6,7 @@ from .http import HTTPClient, HTTPUserClient
 from spotify import _types, utils
 
 Artist = _types.artist
+Album = _types.album
 Track = _types.track
 User = _types.user
 Playlist = _types.playlist
