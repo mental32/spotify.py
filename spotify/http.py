@@ -577,7 +577,7 @@ class HTTPClient:
         route = Route('GET', '/users/{user_id}', user_id=user_id)
         return await self.request(route)
 
-    async def search(self, q, queary_type, market='US', limit=20, offset=0):
+    async def search(self, q, queary_type='track,playlist,artist,album', market='US', limit=20, offset=0):
         route = Route('GET', '/search')
         payload = {'q': q, 'type': queary_type, 'limit': limit, 'offset': offset}
 
