@@ -31,8 +31,8 @@ class SyncExecution(threading.Thread):
     def run_coro(self, coro):
         if self.running:
             return coro
-        self.running = True
 
+        self.running = True
         self.in_queue.put(coro)
 
         while True:
