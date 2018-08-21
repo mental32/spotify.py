@@ -12,7 +12,9 @@ from spotify.sync import spotify # and now no methods require the async/await sy
 
 ## Examples
 
-Web API example
+Web API examples
+
+- drakes top tracks
 ```py
 client = spotify.Client('someid', 'sometoken')
 
@@ -21,6 +23,38 @@ async def example():
 
     for track in await drake.top_tracks():
         print(repr(track))
+```
+
+- backing up playlists
+```py
+import json
+import time
+
+client = spotify.Client('someid', 'sometoken')
+
+async def backup():
+	user = await client.user_from_token('sometoken')
+	backup_data = []
+
+	for playlist in await user.get_playlists():
+		backup_data.append({'metadata': [playlist.name, playlist.public, playlist.collaborative, playlist.description], 'tracks': []})
+		for track in await playlist.get_tracks():
+			backup_data[-1]['tracks'].append(track.uri)
+
+	with open('spotify_playlists_%s_%s.json' % (user.id, int(time.time())), 'w') as file:
+		json.dump(backup_data, file)
+
+async def restore(filename):
+	user = await client.user_from_token('sometoken')
+
+	with open(filename) as file:
+		data = json.load(file)
+
+	for playlist in data:
+		name, public, collab, desc = playlist['metadata']
+		playlist_obj = await user.create_playlist(name, public=public, collaborative=collab, description=desc)
+
+		await user.replace_tracks(playlist_obj, playlist['tracks'])
 ```
 
 Local client example
