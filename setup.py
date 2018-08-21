@@ -35,7 +35,6 @@ setup(name='spotify',
       license='MIT',
       description='spotify.py is an asynchronous API wrapper for Spotify written in Python.',
       long_description=long_description,
-      long_description_content_type='text/markdown',
       include_package_data=True,
       install_requires=requirements,
       classifiers=[
