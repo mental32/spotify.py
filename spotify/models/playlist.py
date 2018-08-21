@@ -22,18 +22,15 @@ class PartialTracks:
 
     async def __anext__(self):
         if self.__iter is None:
-            data = await self.__client.http.request(('GET', self.data['href']))
+            async def _iter_build():
+                data = await self.__client.http.request(('GET', self.data['href']))
 
-            def _iter_build():
                 for track in data['items']:
                     yield PlaylistTrack(self.__client, track)
 
-            self.__iter = _iter_build()
+            self.__iter = await _iter_build()
 
-        try:
-            return next(self.__iter)
-        except StopIteration:
-            raise StopAsyncIteration
+        return await self.__iter.___anext__()
 
     async def build(self):
         '''get the track object for each link in the partial tracks data'''
@@ -86,6 +83,10 @@ class Playlist:
         return self.__data.get('collaborative')
 
     @property
+    def description(self):
+        return self.__data.get('description')
+
+    @property
     def images(self):
         return [Image(**image) for image in self.__data.get('images')]
 
@@ -100,9 +101,11 @@ class Playlist:
             total = self._tracks.data['total']
             self._tracks = await self._tracks.build()
 
-        if len(self.tracks) != total:
-            data = await self.__client.http.get_playlist_tracks(self.owner.id, self.id)
+        offset = 0
+        while len(self.tracks) < total:
+            data = await self.__client.http.get_playlist_tracks(self.owner.id, self.id, limit=50, offset=offset)
 
-            self._tracks += [Track(self.__client, item) for item in data['items']]
+            self._tracks += [PlaylistTrack(self.__client, item) for item in data['items']]
+            offset += 50
 
-        return [track for track in self._tracks]
+        return list(self._tracks)
