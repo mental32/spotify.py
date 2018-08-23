@@ -14,7 +14,7 @@ from spotify.sync import spotify # and now no methods require the async/await sy
 
 Web API examples
 
-- drakes top tracks
+drakes top tracks
 ```py
 client = spotify.Client('someid', 'sometoken')
 
@@ -25,7 +25,7 @@ async def example():
         print(repr(track))
 ```
 
-- backing up playlists
+backing up playlists
 ```py
 import json
 import time
