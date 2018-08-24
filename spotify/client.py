@@ -5,13 +5,13 @@ from .http import HTTPClient, HTTPUserClient
 
 from spotify import _types, utils
 
-Artist = _types.artist
-Album = _types.album
-Track = _types.track
-User = _types.user
-Playlist = _types.playlist
-Library = _types.library
-PlaylistTrack = _types.playlist_track
+Artist = _types['artist']
+Album = _types['album']
+Track = _types['track']
+User = _types['user']
+Playlist = _types['playlist']
+Library = _types['library']
+PlaylistTrack = _types['playlist_track']
 
 def _build(self, obj):
     return _types[obj.get('type')](self, obj)
@@ -46,6 +46,10 @@ class Client:
     def client_id(self):
         return self.http.client_id
 
+    def close(self):
+        '''Close the underlying HTTP session to spotify'''
+        self.http._sync_close()
+
     ### External model contstructors
 
     def oauth2_url(self, redirect_uri, scope, state=None):
@@ -60,13 +64,11 @@ class Client:
             Space seperated spotify scopes for different levels of access.
 
         - *state* (:class:`str`)
-            using a state value can increase your assurance that an incoming connection is the result of an authentication request.
+            Using a state value can increase your assurance that an incoming connection is the result of an authentication request.
         '''
 
         state = state or ''
-        BASE = 'https://accounts.spotify.com/authorize'
-
-        return BASE + '/?client_id={0}&response_type=code&redirect_uri={1}&scope={2}{3}'.format(self.http.client_id, quote(redirect_uri), scope, state)
+        return 'https://accounts.spotify.com/authorize/?client_id={0}&response_type=code&redirect_uri={1}&scope={2}{3}'.format(self.http.client_id, quote(redirect_uri), scope, state)
 
     async def user_from_token(self, token):
         '''Create a user session from a token
