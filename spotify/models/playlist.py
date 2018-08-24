@@ -28,9 +28,9 @@ class PartialTracks:
                 for track in data['items']:
                     yield PlaylistTrack(self.__client, track)
 
-            self.__iter = await _iter_build()
+            self.__iter = _iter_build()
 
-        return await self.__iter.___anext__()
+        return await self.__iter.__anext__()
 
     async def build(self):
         '''get the track object for each link in the partial tracks data'''
