@@ -15,7 +15,7 @@ class Track:
         self.artists = [Artist(client, artist) for artist in data.get('artists', [])]
 
     def __repr__(self):
-        return '<spotify.Track: "%s">' % (self.name)
+        return '<spotify.Track: "%s">' % self.name
 
     def __str__(self):
         return self.uri
