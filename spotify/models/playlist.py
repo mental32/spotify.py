@@ -111,4 +111,5 @@ class Playlist:
             self._tracks += [PlaylistTrack(self.__client, item) for item in data['items']]
             offset += 50
 
+        self.total_tracks = len(self._tracks)
         return list(self._tracks)
