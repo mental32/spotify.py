@@ -45,6 +45,7 @@ class Playlist:
 
         self.owner = User(client, data=data.get('owner'))
         self._tracks = PartialTracks(data.get('tracks'), client)
+        self.total_tracks = self._tracks.data['total']
 
     def __repr__(self):
         return '<spotify.Playlist: "%s">' % (self.name)
@@ -95,14 +96,16 @@ class Playlist:
         return self._tracks
 
     async def get_tracks(self):
-        '''Get the tracks of a playlist'''
-
+        '''Get all playlist tracks from the playlist
+        If called more than once this will update the stored tracks.
+        '''
         if isinstance(self._tracks, PartialTracks):
-            total = self._tracks.data['total']
             self._tracks = await self._tracks.build()
+        else:
+            self._tracks = []
 
         offset = 0
-        while len(self.tracks) < total:
+        while len(self.tracks) < self.total_tracks:
             data = await self.__client.http.get_playlist_tracks(self.owner.id, self.id, limit=50, offset=offset)
 
             self._tracks += [PlaylistTrack(self.__client, item) for item in data['items']]
