@@ -32,18 +32,12 @@ class User:
         self.__data = kwargs.pop('data', None) or {}
 
         token = kwargs.pop('token', None)
-        http = kwargs.pop('http', None)
 
         self.library = None
+        self.http = http = kwargs.pop('http', None)
 
-        if http:
-            self.http = http
-        elif token:
+        if http is None and token:
             self.http = HTTPUserClient(token)
-        else:
-            self.http = None
-
-        if self.http is not None:
             self.library = Library(self)
 
     def __repr__(self):
@@ -162,7 +156,7 @@ class User:
         if not isinstance(playlist_id, str):
             playlist_id = playlist.id
 
-        return await self.http.add_playlist_tracks(self.id, playlist_id, uris=','.join(tracks))
+        return await self.http.add_playlist_tracks(self.id, playlist_id, tracks=','.join(tracks))
 
     @ensure_http
     async def replace_tracks(self, playlist, *tracks):
@@ -182,7 +176,7 @@ class User:
         if not isinstance(playlist_id, str):
             playlist_id = playlist.id
 
-        return await self.http.replace_playlist_tracks(self.id, playlist_id, uris=','.join(tracks))
+        return await self.http.replace_playlist_tracks(self.id, playlist_id, tracks=','.join(tracks))
 
     @ensure_http
     async def remove_tracks(self, playlist, *tracks):
@@ -202,7 +196,7 @@ class User:
         if not isinstance(playlist_id, str):
             playlist_id = playlist.id
 
-        return await self.http.remove_playlist_tracks(self.id, playlist_id, uris=','.join(tracks))
+        return await self.http.remove_playlist_tracks(self.id, playlist_id, tracks=','.join(tracks))
 
     @ensure_http
     async def reorder_tracks(self, playlist, start, insert_before, length=1, *, snapshot_id=None):
