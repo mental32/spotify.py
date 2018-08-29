@@ -5,8 +5,17 @@ Album = _types.album
 
 
 class Artist:
+    __slots__ = ('__client', '__data', 'id', 'name', 'href', 'uri', 'popularity', '_type')
+
     def __init__(self, client, data):
         self.__client = client
+        self._type = _types[data['type']]
+
+        self.id = data.pop('id')
+        self.name = data.pop('name')
+        self.href = data.pop('href')
+        self.uri = data.pop('uri')
+
         self.__data = data
 
     def __repr__(self):
@@ -22,20 +31,16 @@ class Artist:
         return not self.__eq__(other)
 
     @property
-    def id(self):
-        return self.__data.get('id')
+    def followers(self):
+        return self.__data['followers']['total'] if 'followers' in self.__data else None
 
     @property
-    def name(self):
-        return self.__data.get('name')
+    def genres(self):
+        return self.__data.get('genres')
 
     @property
-    def href(self):
-        return self.__data.get('href')
-
-    @property
-    def uri(self):
-        return self.__data.get('uri')
+    def images(self):
+        return self.__data.get('images')
 
     async def get_albums(self, *, limit=20, offset=0, include_groups=None, market=None):
         '''get the artists albums from spotify.
