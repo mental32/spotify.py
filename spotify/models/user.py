@@ -43,7 +43,7 @@ class User:
             self.library = Library(client, self)
 
     def __repr__(self):
-        return '<spotify.User: "%s"' % (self.display_name or self.id)
+        return '<spotify.User: "%s">' % (self.display_name or self.id)
 
     def __str__(self):
         return self.uri
