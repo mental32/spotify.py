@@ -2,7 +2,7 @@ import functools
 
 
 def uri_to_id(string):
-    if string.startswith('spotify:'):
+    if string[:8] == 'spotify:':
         return string.rsplit(':', maxsplit=1)[-1]
     return string
 
@@ -11,7 +11,7 @@ def ensure_http(func):
     @functools.wraps(func)
     async def decorator(self, *args, **kwargs):
         if not hasattr(self, 'http'):
-            raise AttributeError('type obj {0} has no attribute \'http\': To perform API requests {0} needs a HTTP presence.'.format(type(self)))
+            raise AttributeError('"{0}" has no attribute \'http\': To perform API requests {0} needs a HTTP presence.'.format(self))
 
         return await func(self, *args, **kwargs)
 
