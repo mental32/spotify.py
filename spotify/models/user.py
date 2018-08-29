@@ -37,8 +37,10 @@ class User:
         self.http = http = kwargs.pop('http', None)
 
         if http is None and token:
-            self.http = HTTPUserClient(token)
-            self.library = Library(self)
+            self.http = http = HTTPUserClient(token)
+
+        if http is not None:
+            self.library = Library(client, self)
 
     def __repr__(self):
         return '<spotify.User: "%s"' % (self.display_name or self.id)

@@ -5,9 +5,9 @@ Album = _types.album
 
 
 class Library:
-    def __init__(self, user):
+    def __init__(self, client, user):
         self.user = user
-        self.__client = user._User__client
+        self.__client = client
 
     async def contains_albums(self, *albums):
         '''Check if one or more albums is already saved in the current Spotify user’s ‘Your Music’ library.
