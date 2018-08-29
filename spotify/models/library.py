@@ -9,6 +9,15 @@ class Library:
         self.user = user
         self.__client = client
 
+    def __repr__(self):
+        return '<spotify.Library: %s>' % (repr(self.user))
+
+    def __eq__(self, other):
+        return type(self) is type(other) and self.user == other.user
+
+    def __ne__(self, other):
+        return not self.__eq__(other)
+
     async def contains_albums(self, *albums):
         '''Check if one or more albums is already saved in the current Spotify user’s ‘Your Music’ library.
 
