@@ -39,13 +39,22 @@ class PartialTracks:
 
 
 class Playlist:
+    __slots__ = ('__client', '_type', 'owner', '_tracks', 'total_tracks', 'id', 'name', 'href', 'uri', '__data')
+
     def __init__(self, client, data):
         self.__client = client
-        self.__data = data
+        self._type = _types[data['type']]
 
         self.owner = User(client, data=data.get('owner'))
         self._tracks = PartialTracks(data.get('tracks'), client)
         self.total_tracks = self._tracks.data['total']
+
+        self.id = data.pop('id')
+        self.name = data.pop('name')
+        self.href = data.pop('href')
+        self.uri = data.pop('uri')
+
+        self.__data = data
 
     def __repr__(self):
         return '<spotify.Playlist: "%s">' % (self.name)
@@ -58,22 +67,6 @@ class Playlist:
 
     def __ne__(self, other):
         return not self.__eq__(other)
-
-    @property
-    def id(self):
-        return self.__data.get('id')
-
-    @property
-    def name(self):
-        return self.__data.get('name')
-
-    @property
-    def href(self):
-        return self.__data.get('href')
-
-    @property
-    def uri(self):
-        return self.__data.get('uri')
 
     @property
     def public(self):
