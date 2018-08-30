@@ -1,4 +1,5 @@
 import asyncio
+import warnings
 
 from .http import LocalHTTPClient
 
@@ -12,6 +13,8 @@ class LocalClient:
         The event loop the client should run on, if no loop is specified `asyncio.get_event_loop()` is called and used instead.
     '''
     def __init__(self, loop=None):
+        warnings.warn('LocalClient is currently depreciated.', DeprecationWarning)
+
         self.loop = loop or asyncio.get_event_loop()
         self.http = LocalHTTPClient()
 
