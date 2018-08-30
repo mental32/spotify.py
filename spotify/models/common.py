@@ -15,6 +15,9 @@ class Image:
     def __repr__(self):
         return '<spotify.Image (width: %s, height: %s)>' % (self.width, self.height)
 
+    def __eq__(self, other):
+        return type(self) is type(other) and self.url == other.url
+
 
 class Context:
     __slots__ = ('external_urls', 'type', 'href', 'uri')
@@ -28,6 +31,9 @@ class Context:
 
     def __repr__(self):
         return '<spotify.Context: "%s">' % (self.uri)
+
+    def __eq__(self, other):
+        return type(self) is type(other) and self.uri == other.uri
 
 
 class Device:
@@ -44,7 +50,7 @@ class Device:
         self.is_restricted = data.get('is_restricted')
 
     def __eq__(self, other):
-        return self.id == other.id
+        return type(self) is type(other) and self.id == other.id
 
     def __repr__(self):
         return '<spotify.Device: "%s">' % (self.name or self.id)
