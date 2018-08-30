@@ -24,11 +24,10 @@ async def _top(self, s, data):
 
 
 class User:
-    __slots__ = ('__client', '__cache', '__data', 'http', 'library', '_player')
+    __slots__ = ('__client', '__data', 'http', 'library', '_player')
 
     def __init__(self, client, **kwargs):
         self.__client = client
-        self.__cache = {}
         self.__data = kwargs.pop('data', None) or {}
 
         token = kwargs.pop('token', None)
