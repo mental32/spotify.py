@@ -7,10 +7,18 @@ Track = _types.track
 
 
 class Album:
+    __slots__ = ('__client', '_type', 'id', 'name', 'href', 'uri', '__data', 'artists')
+
     def __init__(self, client, data):
         self.__client = client
-        self.__data = data
+        self._type = _types[data['type']]
 
+        self.id = data.pop('id')
+        self.name = data.pop('name')
+        self.href = data.pop('href')
+        self.uri = data.pop('uri')
+
+        self.__data = data
         self.artists = [Artist(client, artist) for artist in data.get('artists', [])]
 
     def __repr__(self):
@@ -24,22 +32,6 @@ class Album:
 
     def __ne__(self, other):
         return not self.__eq__(other)
-
-    @property
-    def id(self):
-        return self.__data.get('id')
-
-    @property
-    def name(self):
-        return self.__data.get('name')
-
-    @property
-    def href(self):
-        return self.__data.get('href')
-
-    @property
-    def uri(self):
-        return self.__data.get('uri')
 
     @property
     def album_group(self):
