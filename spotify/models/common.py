@@ -1,4 +1,5 @@
 from spotify import _types
+from spotify.errors import HTTPException
 
 Track = _types.track
 
@@ -117,12 +118,16 @@ class Player:
         return await self._user.http.shuffle_playback(state)
 
     async def transfer(self, device, ensure_playback=False):
-        is_dev = isinstance(device, Device)
+        try:
+            if isinstance(device, Device):
+                device = device.id
+                self.device, old_device = device, self.device
+            else:
+                self.device, old_device = None, self.device
 
-        if is_dev:
-            device = device.id
-
-        await self._user.http.transfer_player(device, play=ensure_playback)
-
-        if is_dev:
-            self.device = device
+            await self._user.http.transfer_player(device, play=ensure_playback)
+        except HTTPException:
+            self.device = old_device
+            raise
+        else:
+            return self.device
