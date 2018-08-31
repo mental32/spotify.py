@@ -1,7 +1,8 @@
 from ..utils import ensure_http
 from ..http import HTTPUserClient
 
-from .common import (Image, Player, Device, Context)
+from .common import (Image, Device, Context)
+from .player import Player
 
 from spotify import _types
 
