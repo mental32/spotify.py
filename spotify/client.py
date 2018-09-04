@@ -1,9 +1,9 @@
 import asyncio
-from urllib.parse import quote_plus as quote
 
 from .http import HTTPClient, HTTPUserClient
 
 from spotify import _types, utils
+from spotify.utils import OAuth2
 
 Artist = _types['artist']
 Album = _types['album']
@@ -52,7 +52,7 @@ class Client:
 
     ### External model contstructors
 
-    def oauth2_url(self, redirect_uri, scope, state=None):
+    def oauth2_url(self, redirect_uri, scope=None, state=None):
         '''Generate an outh2 url for user authentication
 
         **parameters**
@@ -66,9 +66,7 @@ class Client:
         - *state* (:class:`str`)
             Using a state value can increase your assurance that an incoming connection is the result of an authentication request.
         '''
-
-        state = state or ''
-        return 'https://accounts.spotify.com/authorize/?client_id={0}&response_type=code&redirect_uri={1}&scope={2}{3}'.format(self.http.client_id, quote(redirect_uri), scope, state)
+        return OAuth2.url_(self.http.client_id, redirect_uri, scope=scope, state=state)
 
     async def user_from_token(self, token):
         '''Create a user session from a token

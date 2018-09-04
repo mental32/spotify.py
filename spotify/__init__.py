@@ -1,4 +1,5 @@
 from . import utils
+from .utils import OAuth2
 
 _types = utils._spotify__lookup()
 
