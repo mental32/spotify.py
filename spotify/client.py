@@ -13,6 +13,7 @@ Playlist = _types['playlist']
 Library = _types['library']
 PlaylistTrack = _types['playlist_track']
 
+
 class Client:
     '''Represents an interface to Spotify.
 
