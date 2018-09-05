@@ -13,10 +13,6 @@ Playlist = _types['playlist']
 Library = _types['library']
 PlaylistTrack = _types['playlist_track']
 
-def _build(self, obj):
-    return _types[obj.get('type')](self, obj)
-
-
 class Client:
     '''Represents an interface to Spotify.
 
@@ -183,4 +179,4 @@ class Client:
 
         data = await self.http.search(**kwargs)
 
-        return {key: [_build(self, obj) for obj in value['items']] for key, value in data.items()}
+        return {key: [_types[obj['type']](self, obj) for obj in value['items']] for key, value in data.items()}
