@@ -80,7 +80,7 @@ class Album:
         if market:
             kwargs['market'] = market
 
-        return (await self.__client.http.album_tracks(self.id, **kwargs)).get('total')
+        return (await self.__client.http.album_tracks(self.id, **kwargs))['total']
 
     async def get_tracks(self, *, limit=20, offset=0):
         '''get the albums tracks from spotify.
