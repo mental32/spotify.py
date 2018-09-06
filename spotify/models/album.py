@@ -7,7 +7,7 @@ Track = _types.track
 
 
 class Album:
-    __slots__ = ('__client', '_type', 'id', 'name', 'href', 'uri', '__data', 'artists')
+    __slots__ = ('__client', '__data', '_type', 'id', 'name', 'href', 'uri', 'artists')
 
     def __init__(self, client, data):
         self.__client = client
