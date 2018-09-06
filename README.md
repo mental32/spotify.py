@@ -7,7 +7,7 @@ An API library for the spotify client and the Spotify Web API written in Python.
 spotify.py is 100% asyncronous meaning everything down to the HTTP library is designed to work with asyncio.<br>The library covers every endpoint in the Spotify web API and offers control over the local Spotify app.<br><br>As of v0.1.5 it is possible to use spotify.py in a syncronous manner. No await/async syntax required! To do this simply use
 
 ```py
-from spotify.sync import spotify # and now no methods require the async/await syntax.
+import spotify.sync as spotify # and now no methods require the async/await syntax.
 ```
 
 ## Examples
