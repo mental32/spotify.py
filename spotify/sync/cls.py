@@ -1,7 +1,22 @@
+import inspect
+import functools
+
 import spotify
 from spotify import _types, models
+from spotify.sync import _thread
 
-from .sync import SyncMeta, _thread
+
+class SyncMeta:
+    def __getattribute__(self, key):
+        attr = object.__getattribute__(self, key)
+
+        if inspect.iscoroutinefunction(attr):
+            @functools.wraps(attr)
+            def decorator(*args, **kwargs):
+                return _thread.run_coro(attr(*args, **kwargs))
+            setattr(self, key, decorator)
+            return decorator
+        return attr
 
 
 class HTTPClient(spotify.HTTPClient, SyncMeta):

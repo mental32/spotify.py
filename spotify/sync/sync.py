@@ -1,21 +1,6 @@
 import asyncio
-import inspect
-import functools
 import threading
 import queue
-
-
-class SyncMeta:
-    def __getattribute__(self, key):
-        attr = object.__getattribute__(self, key)
-
-        if inspect.iscoroutinefunction(attr):
-            @functools.wraps(attr)
-            def decorator(*args, **kwargs):
-                return _thread.run_coro(attr(*args, **kwargs))
-            setattr(self, key, decorator)
-            return decorator
-        return attr
 
 
 class SyncExecution(threading.Thread):
@@ -38,16 +23,19 @@ class SyncExecution(threading.Thread):
         while True:
             if self.out_queue.full():
                 self.running = False
-                return self.out_queue.get()
+                value = self.out_queue.get()
+                if isinstance(value, BaseException):
+                    raise value
+                return value
 
     def run(self):
         asyncio.set_event_loop(self._loop)
         while True:
             coro = self.in_queue.get()
-            rv = self._loop.run_until_complete(coro)
+            try:
+                rv = self._loop.run_until_complete(coro)
+            except BaseException as error:
+                rv = error
+
             self.out_queue.put(rv)
         self._loop.close()
-
-
-_thread = SyncExecution()
-_thread.start()
