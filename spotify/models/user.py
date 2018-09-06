@@ -54,6 +54,13 @@ class User:
     def __ne__(self, other):
         return not self.__eq__(other)
 
+    @classmethod
+    async def from_token(cls, token):
+        http = HTTPUserClient(token)
+        data = await http.current_user()
+
+        return User(http, data=data, http=http)
+
     ### Attributes
 
     @property

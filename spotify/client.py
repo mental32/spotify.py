@@ -73,10 +73,7 @@ class Client:
         - *token* (:class:`str`)
             The token to attatch the user session to
         '''
-        http = HTTPUserClient(token)
-        data = await http.current_user()
-
-        return User(self, data=data, http=http)
+        return User.from_token(token)
 
     ### Get single objects ###
 
