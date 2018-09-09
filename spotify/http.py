@@ -557,7 +557,7 @@ class HTTPClient:
 
     def replace_playlist_tracks(self, user_id, playlist_id, tracks):
         route = Route('PUT', '/users/{user_id}/playlists/{playlist_id}/tracks', user_id=user_id, playlist_id=playlist_id)
-        payload = {'uris': uris}
+        payload = {'uris': tracks}
 
         return self.request(route, params=payload)
 
