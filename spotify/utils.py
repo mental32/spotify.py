@@ -60,7 +60,7 @@ class OAuth2:
     def attrs(self):
         data =  {
             'client_id': self.client_id,
-            'redirect_uri': self.redirect_uri,
+            'redirect_uri': qoute(self.redirect_uri),
         }
 
         if self.scope is not None:
