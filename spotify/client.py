@@ -73,7 +73,7 @@ class Client:
         - *token* (:class:`str`)
             The token to attatch the user session to
         '''
-        return User.from_token(self, token)
+        return await User.from_token(self, token)
 
     ### Get single objects ###
 
