@@ -13,9 +13,6 @@ Playlist = _types.playlist
 Library = _types.library
 
 
-
-
-
 class User:
     __slots__ = ('__client', '__data', 'http', 'library', '_player', 'id', 'href', 'uri', 'display_name', 'followers')
 
@@ -23,9 +20,7 @@ class User:
         self.__client = client
 
         token = kwargs.pop('token', None)
-
-        self.library = None
-        self.http = http = kwargs.pop('http', None)
+        http = kwargs.pop('http', None)
 
         if http is None and token:
             self.http = http = HTTPUserClient(token)
@@ -133,7 +128,7 @@ class User:
             track['context'] = Context(track.get('context'))
             track['track'] = Track('_tracks', data.get('track'))
 
-            raw.append(track) # PlayHistory(track)
+            raw.append(track)  # PlayHistory(track)
         return raw
 
     ### Playlist track omethods
