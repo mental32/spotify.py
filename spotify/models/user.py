@@ -1,6 +1,6 @@
 from ..utils import ensure_http
 from ..http import HTTPUserClient
-from ..errors import SpotifyError
+from ..errors import SpotifyException
 
 from .common import (Image, Device, Context)
 from .player import Player
@@ -17,11 +17,10 @@ Library = _types.library
 
 
 class User:
-    __slots__ = ('__client', '__data', 'http', 'library', '_player')
+    __slots__ = ('__client', '__data', 'http', 'library', '_player', 'id', 'href', 'uri', 'display_name', 'followers')
 
-    def __init__(self, client, **kwargs):
+    def __init__(self, client, data, **kwargs):
         self.__client = client
-        self.__data = kwargs.pop('data', None) or {}
 
         token = kwargs.pop('token', None)
 
@@ -33,6 +32,14 @@ class User:
 
         if http is not None:
             self.library = Library(client, self)
+
+        self.id = data.pop('id')
+        self.display_name = data.pop('display_name')
+        self.followers = data.pop('followers').get('total')
+        self.href = data.pop('href')
+        self.uri = data.pop('uri')
+
+        self.__data = data
 
     def __repr__(self):
         return '<spotify.User: "%s">' % (self.display_name or self.id)
@@ -52,7 +59,7 @@ class User:
         elif s == 'tracks':
             klass = Track
         else:
-            raise SpotifyError('`_get_top` Expected either "artists" or "tracks", instead got {0!r}'.format(s))
+            raise SpotifyException('`_get_top` Expected either "artists" or "tracks", instead got {0!r}'.format(s))
 
         data = {key: value for key, value in data.items() if key in ('limit', 'offset', 'time_range')}
         resp = await self.http.top_artists_or_tracks(s, **data)
@@ -69,28 +76,8 @@ class User:
     ### Attributes
 
     @property
-    def display_name(self):
-        return self.__data.get('display_name')
-
-    @property
     def external_urls(self):
         return self.__data.get('external_urls')
-
-    @property
-    def followers(self):
-        return self.__data.get('followers').get('total')
-
-    @property
-    def id(self):
-        return self.__data.get('id')
-
-    @property
-    def href(self):
-        return self.__data.get('href')
-
-    @property
-    def uri(self):
-        return self.__data.get('uri')
 
     @property
     def images(self):
