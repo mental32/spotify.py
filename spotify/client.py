@@ -1,6 +1,6 @@
 import asyncio
 
-from .http import HTTPClient, HTTPUserClient
+from .http import HTTPClient
 
 from spotify import _types, utils
 from spotify.utils import OAuth2
