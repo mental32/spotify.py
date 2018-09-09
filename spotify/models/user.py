@@ -1,5 +1,6 @@
 from ..utils import ensure_http
 from ..http import HTTPUserClient
+from ..errors import SpotifyError
 
 from .common import (Image, Device, Context)
 from .player import Player
@@ -12,16 +13,7 @@ Playlist = _types.playlist
 Library = _types.library
 
 
-async def _top(self, s, data):
-    data = {key: value for key, value in data.items() if key in ('limit', 'offset', 'time_range')}
-    resp = await self.http.top_artists_or_tracks(s, **data)
 
-    if s == 'artists':
-        klass = Artist
-    else:
-        klass = Track
-
-    return [klass(self._User__client, item) for item in resp['items']]
 
 
 class User:
@@ -54,12 +46,25 @@ class User:
     def __ne__(self, other):
         return not self.__eq__(other)
 
+    async def _get_top(self, s, data):
+        if s == 'artists':
+            klass = Artist
+        elif s == 'tracks':
+            klass = Track
+        else:
+            raise SpotifyError('`_get_top` Expected either "artists" or "tracks", instead got {0!r}'.format(s))
+
+        data = {key: value for key, value in data.items() if key in ('limit', 'offset', 'time_range')}
+        resp = await self.http.top_artists_or_tracks(s, **data)
+
+        return [klass(self.__client, item) for item in resp['items']]
+
     @classmethod
-    async def from_token(cls, token):
+    async def from_token(cls, client, token):
         http = HTTPUserClient(token)
         data = await http.current_user()
 
-        return User(http, data=data, http=http)
+        return User(client, data=data, http=http)
 
     ### Attributes
 
@@ -346,7 +351,7 @@ class User:
         - *time_range* (:class:`str`)
             Over what time frame the affinities are computed. (long_term, short_term, medium_term)
         '''
-        return await _top(self, 'artists', data)
+        return await self._get_top('artists', data)
 
     @ensure_http
     async def top_tracks(self, **data):
@@ -363,4 +368,4 @@ class User:
         - *time_range* (:class:`str`)
             Over what time frame the affinities are computed. (long_term, short_term, medium_term)
         '''
-        return await _top(self, 'tracks', data)
+        return await self._get_top('tracks', data)
