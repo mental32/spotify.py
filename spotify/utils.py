@@ -17,7 +17,6 @@ def ensure_http(func):
     return decorator
 
 
-
 class OAuth2:
     _BASE = '{protocol}://accounts.spotify.com/authorize/?response_type=code&{parameters}'
     protocol = 'https'
@@ -58,9 +57,9 @@ class OAuth2:
 
     @property
     def attrs(self):
-        data =  {
+        data = {
             'client_id': self.client_id,
-            'redirect_uri': qoute(self.redirect_uri),
+            'redirect_uri': quote(self.redirect_uri),
         }
 
         if self.scope is not None:
