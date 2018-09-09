@@ -20,7 +20,7 @@ class SyncExecution(threading.Thread):
         self.running = True
         self.in_queue.put(coro)
 
-        while True:
+        while self.running:
             if self.out_queue.full():
                 self.running = False
                 value = self.out_queue.get()
@@ -30,6 +30,7 @@ class SyncExecution(threading.Thread):
 
     def run(self):
         asyncio.set_event_loop(self._loop)
+
         while True:
             coro = self.in_queue.get()
             try:
