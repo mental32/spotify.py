@@ -1,6 +1,8 @@
 import functools
 from urllib.parse import quote_plus as quote
 
+from .errors import SpotifyException
+
 def uri_to_id(string):
     if string[:8] == 'spotify:':
         return string.rsplit(':', maxsplit=1)[-1]
@@ -10,7 +12,7 @@ def ensure_http(func):
     @functools.wraps(func)
     async def decorator(self, *args, **kwargs):
         if not hasattr(self, 'http'):
-            raise AttributeError('"{0}" has no attribute \'http\': To perform API requests {0} needs a HTTP presence.'.format(self))
+            raise SpotifyException('{0!r} has no HTTP presence to perform API requests'.format(self))
 
         return await func(self, *args, **kwargs)
 
