@@ -4,7 +4,7 @@
 
 An API library for the spotify client and the Spotify Web API written in Python.
 
-spotify.py is 100% asyncronous meaning everything down to the HTTP library is designed to work with asyncio.<br>The library covers every endpoint in the Spotify web API and offers control over the local Spotify app.<br><br>As of v0.1.5 it is possible to use spotify.py in a syncronous manner. No await/async syntax required! To do this simply use
+spotify.py is 100% asyncronous meaning everything down to the HTTP library is designed to work with asyncio.<br>The library offers coverage over every endpoint in the Spotify web API.<br><br>As of v0.1.5 it is possible to use spotify.py in a syncronous manner. No await/async syntax required! To do this simply use
 
 ```py
 import spotify.sync as spotify # and now no methods require the async/await syntax.
@@ -33,34 +33,16 @@ import time
 client = spotify.Client('someid', 'sometoken')
 
 async def backup():
-	user = await client.user_from_token('sometoken')
-	backup_data = []
+    user = await client.user_from_token('sometoken')
+    backup_data = []
 
-	for playlist in await user.get_playlists():
-		backup_data.append({'metadata': [playlist.name, playlist.public, playlist.collaborative, playlist.description], 'tracks': []})
-		for track in await playlist.get_tracks():
-			backup_data[-1]['tracks'].append(track.uri)
+    for playlist in await user.get_playlists():
+        backup_data.append({'metadata': [playlist.name, playlist.public, playlist.collaborative, playlist.description], 'tracks': []})
+        for track in await playlist.get_tracks():
+            backup_data[-1]['tracks'].append(track.uri)
 
-	with open('spotify_playlists_%s_%s.json' % (user.id, int(time.time())), 'w') as file:
-		json.dump(backup_data, file)
-
-async def restore(filename):
-	user = await client.user_from_token('sometoken')
-
-	with open(filename) as file:
-		data = json.load(file)
-
-	for playlist in data:
-		name, public, collab, desc = playlist['metadata']
-		playlist_obj = await user.create_playlist(name, public=public, collaborative=collab, description=desc)
-
-		await user.replace_tracks(playlist_obj, playlist['tracks'])
-```
-
-Local client example
-```py
-async with spotify.LocalClient() as local:
-    await local.play('spotify:track:2G7V7zsVDxg1yRsu7Ew9RJ')
+    with open('spotify_playlists_%s_%s.json' % (user.id, int(time.time())), 'w') as file:
+        json.dump(backup_data, file)
 ```
 
 ## Resources
