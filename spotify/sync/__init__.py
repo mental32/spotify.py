@@ -6,16 +6,16 @@ _thread = SyncExecution()
 _thread.start()
 
 from .cls import (
-	HTTPClient, 
-	HTTPUserClient, 
-	Client, 
-	Track, 
-	User, 
-	PlaylistTrack, 
-	Artist, 
-	Album, 
-	Playlist, 
-	Library
+    HTTPClient,
+    HTTPUserClient,
+    Client,
+    Track,
+    User,
+    PlaylistTrack,
+    Artist,
+    Album,
+    Playlist,
+    Library
 )
 
 signal.signal(signal.SIGINT, signal.SIG_DFL)
