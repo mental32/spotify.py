@@ -7,7 +7,7 @@ class Image:
         self.url = url
 
     def __repr__(self):
-        return '<spotify.Image (width: %s, height: %s)>' % (self.width, self.height)
+        return '<spotify.Image: "%s" (width: %s, height: %s)>' % (self.url, self.width, self.height)
 
     def __eq__(self, other):
         return type(self) is type(other) and self.url == other.url
