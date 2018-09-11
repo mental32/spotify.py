@@ -44,18 +44,19 @@ class HTTPClient:
 
     async def get_bearer_info(self):
         '''gets the application bearer token from client_id and client_secret'''
-        url = 'https://accounts.spotify.com/api/token'
-        if self.client_id is None:
-            raise KeyError('HTTPClient has no client id, while performing a non user based request.')
+        if self.client_id is None or self.client_secret is None:
+            raise KeyError('client_id or client_secret is None, while attempting to perform a http request.')
 
-        basic = 'Basic ' + b64encode('{0}:{1}'.format(self.client_id, self.client_secret).encode()).decode()
-        headers = {'Authorization': basic}
-        payload = {'grant_type': 'client_credentials'}
+        token = b64encode(':'.join((self.client_id, self.client_secret)).encode())
 
-        async with self._session.post(url, data=payload, headers=headers) as r:
-            data = json.loads(await r.text(encoding='utf-8'))
+        kwargs = {
+            'url': 'https://accounts.spotify.com/api/token',
+            'data': {'grant_type': 'client_credentials'},
+            'headers': {'Authorization': 'Basic %s' % token.decode()}
+        }
 
-        return data
+        async with self._session.post(**kwargs) as resp:
+            return json.loads(await resp.text(encoding='utf-8'))
 
     async def request(self, route, **kwargs):
         if isinstance(route, tuple):
@@ -109,10 +110,10 @@ class HTTPClient:
 
     def _sync_close(self):
         # aiohttp.ClientSession.close is an asyncronous coroutine function.
-        # despite it doing nothing asyncronous it has no useful reason for 
+        # despite it doing nothing asyncronous it has no useful reason for
         # being an async coro func apart from consistent api design.
 
-        # The code here is exactly the same as what you would find if you 
+        # The code here is exactly the same as what you would find if you
         # looked at what aiohttp.ClientSession.close did.
 
         session = self._session
