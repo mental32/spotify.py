@@ -1,4 +1,4 @@
-__all__ = ['SpotifyException', 'HTTPException', 'Forbidden', 'NotFound']
+__all__ = ('SpotifyException', 'HTTPException', 'Forbidden', 'NotFound')
 
 
 class SpotifyException(Exception):
