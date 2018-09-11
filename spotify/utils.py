@@ -3,10 +3,12 @@ from urllib.parse import quote_plus as quote
 
 from .errors import SpotifyException
 
+
 def uri_to_id(string):
     if string[:8] == 'spotify:':
         return string.rsplit(':', maxsplit=1)[-1]
     return string
+
 
 def ensure_http(func):
     @functools.wraps(func)
