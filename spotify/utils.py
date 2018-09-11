@@ -41,6 +41,11 @@ class OAuth2:
     def __str__(self):
         return self.url
 
+    @classmethod
+    def from_client(cls, client, redirect_uri, *, scope=None, state=None, secure=True):
+        '''Instead of having to pass the client_id directly you can just pass in the client'''
+        return cls(client.http.client_id, redirect_uri, scope=scope, state=state, secure=secure)
+
     @staticmethod
     def url_(client_id, redirect_uri, *, scope=None, state=None, secure=True):
         attrs = {
@@ -49,7 +54,7 @@ class OAuth2:
         }
 
         if scope is not None:
-            attrs['scope'] = scope
+            attrs['scope'] = quote(scope)
 
         if state is not None:
             attrs['state'] = state
@@ -67,7 +72,7 @@ class OAuth2:
         }
 
         if self.scope is not None:
-            data['scope'] = self.scope
+            data['scope'] = quote(self.scope)
 
         if self.state is not None:
             data['state'] = self.state
