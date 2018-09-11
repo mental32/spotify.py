@@ -30,7 +30,7 @@ class User:
 
         self.id = data.pop('id')
         self.display_name = data.pop('display_name')
-        self.followers = data.pop('followers').get('total')
+        self.followers = data.pop('followers', {}).get('total')
         self.href = data.pop('href')
         self.uri = data.pop('uri')
 
