@@ -6,19 +6,9 @@ _types = utils._spotify__lookup()
 from .errors import *
 from .models import *
 
-_types.update({
-    'artist': Artist,
-    'track': Track,
-    'user': User,
-    'playlist': Playlist,
-    'album': Album,
-    'library': Library,
-    'playlist_track': PlaylistTrack
-})
-
 from .client import Client
-from .http import HTTPClient, HTTPUserClient
 from .local import LocalClient
+from .http import HTTPClient, HTTPUserClient
 
 __title__ = 'spotify'
 __author__ = 'mental'
