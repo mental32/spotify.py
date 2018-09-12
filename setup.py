@@ -13,17 +13,6 @@ def get_version():
       match = re.search(r"((\d\.){2,5}\d)", inf.read(), re.MULTILINE)
 
       if match is None:
-        # version regex broke
-        # use a primitive search method
-        inf.seek(0)
-        version_tag = '__version__ = '
-        version_tag_len = len(version_tag)
-
-        for line in inf.readlines():
-          if line[:version_tag_len] == version_tag:
-            return line[version_tag_len:].strip()
-
-      if match is None:
           raise RuntimeError('Version could not be found.')
 
       return match.groups()[0]
