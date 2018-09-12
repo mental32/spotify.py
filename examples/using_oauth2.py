@@ -24,19 +24,14 @@ oauth.scope = 'some-scope another-scope'
 # A spotify.OAuth2 object has only three properties
 # attrs, parameters and url.
 
-# attrs is a key value dict of the OAuth2 parameters
-print(oauth.attrs)
-
-# parameters is a url encoded string of the attrs
-print(oauth.parameters)
-
-# url is the auth path with the parameters suffixed
-print(oauth.url)
+print(oauth.attrs)       # A key value dict of the OAuth2 parameters.
+print(oauth.parameters)  # A url encoded string of the attrs.
+print(oauth.url)         # The auth path with the parameters suffixed.
 
 # It is highly recommended you provide a 
 # cryptographically secure state parameter
-# you may also dynamically set the state
-# see here: https://auth0.com/docs/protocols/oauth2/oauth-state
+# (you may also dynamically set the state)
+# (additionally see here: https://auth0.com/docs/protocols/oauth2/oauth-state)
 
 oauth.state = 'cryptographically-random-state'
 
@@ -45,4 +40,4 @@ oauth.state = 'cryptographically-random-state'
 # sets the protocol to be used in the url either
 # `http` or `https`. secure defaults to True and when
 # secure is not True the protocol will `http` instead
-# of https
+# of `https`
