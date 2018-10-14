@@ -16,7 +16,7 @@ oauth_url = OAuth2.url_('clientid', 'redirectL//uri')
 oauth = OAuth2('clientid', 'redirect://uri')
 
 # requiring scopes is simply instantiating an OAuth2 object
-# with `scopes='some-scope another-scope' or if you prefer
+# with `scopes='some-scope another-scope'`or if you prefer
 # dynamically assigning the scope after the object init
 # for instance:
 oauth.scope = 'some-scope another-scope'
