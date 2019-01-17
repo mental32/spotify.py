@@ -7,7 +7,6 @@ from .errors import *
 from .models import *
 
 from .client import Client
-from .local import LocalClient
 from .http import HTTPClient, HTTPUserClient
 
 __title__ = 'spotify'
