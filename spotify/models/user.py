@@ -328,7 +328,7 @@ class User:
         - *time_range* (:class:`str`)
             Over what time frame the affinities are computed. (long_term, short_term, medium_term)
         '''
-        return self._get_top(Artist, data)
+        return await self._get_top(Artist, data)
 
     @ensure_http
     async def top_tracks(self, **data):
@@ -345,4 +345,4 @@ class User:
         - *time_range* (:class:`str`)
             Over what time frame the affinities are computed. (long_term, short_term, medium_term)
         '''
-        return self._get_top(Track, data)
+        return await self._get_top(Track, data)
