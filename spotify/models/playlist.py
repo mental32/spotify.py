@@ -1,3 +1,5 @@
+from functools import partial
+
 from spotify import _types
 from .common import Image
 
@@ -7,11 +9,12 @@ PlaylistTrack = _types.playlist_track
 
 
 class PartialTracks:
-    __slots__ = ('data', '__client', '__iter')
+    __slots__ = ('data', '__func', '__iter', '__client')
 
     def __init__(self, data, client):
         self.data = data
         self.__client = client
+        self.__func = partial(client.http.request, ('GET', data['href']))
         self.__iter = None
 
     def __repr__(self):
@@ -22,19 +25,18 @@ class PartialTracks:
 
     async def __anext__(self):
         if self.__iter is None:
-            async def _iter_build():
-                data = await self.__client.http.request(('GET', self.data['href']))
+            self.__iter = iter((await self.__func())['items'])
 
-                for track in data['items']:
-                    yield PlaylistTrack(self.__client, track)
+        try:
+            track = next(self.__iter)
+        except StopIteration:
+            raise StopAsyncIteration
 
-            self.__iter = _iter_build()
-
-        return await self.__iter.__anext__()
+        return PlaylistTrack(self.__client, track)
 
     async def build(self):
         '''get the track object for each link in the partial tracks data'''
-        data = await self.__client.http.request(('GET', self.data['href']))
+        data = await self.__func()
         return [PlaylistTrack(self.__client, track) for track in data['items']]
 
 
