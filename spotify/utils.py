@@ -22,6 +22,17 @@ def ensure_http(func):
 
 
 class OAuth2:
+    '''Abstract class for Spotify OAuth2 operations
+
+    **parameters**
+
+    - *client_id* (:class:`str`)
+    - *redirect_uri* (:class:`str`)
+    - *scope* (Optional :class:`str`)
+    - *state* (Optional :class:`str`)
+    - *secure* (Optional :class:`bool`)
+
+    '''
     _BASE = '{protocol}://accounts.spotify.com/authorize/?response_type=code&{parameters}'
     protocol = 'https'
 

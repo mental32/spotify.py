@@ -83,6 +83,7 @@ class Client:
         **parameters**
 
         - spotify_id (:class:`str`) - the ID to look for
+        - market (Optional :class:`str`) - An ISO 3166-1 alpha-2 country code
         '''
         data = await self.http.album(utils.uri_to_id(spotify_id), market=market)
         return Album(self, data)
@@ -125,6 +126,7 @@ class Client:
         **parameters**
 
         - ids (:class:`str`) - the ID to look for
+        - market (Optional :class:`str`) - An ISO 3166-1 alpha-2 country code
         '''
         data = await self.http.albums(','.join(utils.uri_to_id(_id) for _id in ids), market=market)
         return [Album(self, album) for album in data['albums']]
@@ -146,7 +148,7 @@ class Client:
 
         - *q* (:class:`str`) - the search query
 
-        - *types* (Optional `iterable`)
+        - *types* (Optional :class:`iterable`)
             A sequence of search types (can be any of `track`, `playlist`, `artist` or `album`) to refine the search request.
             A `ValueError` may be raised if a search type is found that is not valid.
 

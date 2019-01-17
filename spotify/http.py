@@ -24,7 +24,19 @@ class Route:
 
 
 class HTTPClient:
-    '''Represents an HTTP client sending HTTP requests to the Spotify API.'''
+    '''Represents an HTTP client sending HTTP requests to the Spotify API.
+
+    **Parameters**
+
+    - *client_id* (:class:`str`)
+        The client id provided by spotify for the app.
+
+    - *client_secret* (:class:`str`)
+        The client secret for the app.
+
+    - *loop* (`optional`:`event loop`)
+        The event loop the client should run on, if no loop is specified `asyncio.get_event_loop()` is called and used instead.
+    '''
 
     RETRY_AMOUNT = 10
 
@@ -59,6 +71,7 @@ class HTTPClient:
             return json.loads(await resp.text(encoding='utf-8'))
 
     async def request(self, route, **kwargs):
+        '''Make a request to the spotify API with the current bearer credentials.'''
         if isinstance(route, tuple):
             method, url = route
         else:
@@ -123,6 +136,7 @@ class HTTPClient:
             session._connector = None
 
     async def close(self):
+        '''close the HTTP session'''
         await self._session.close()
 
     def album(self, spotify_id, market='US'):

@@ -7,6 +7,8 @@ Track = _types.track
 
 
 class Album:
+    '''Representation of an Album on spotify'''
+
     __slots__ = ('__client', '__data', '_type', 'id', 'name', 'href', 'uri', 'artists')
 
     def __init__(self, client, data):
