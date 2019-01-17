@@ -49,11 +49,6 @@ class HTTPClient:
 
         self.bearer_info = None
 
-    def __del__(self):
-        # Close the underlying session if we're being del'd
-        # this also avoids annoying warnings about unclosed connectors
-        self._sync_close()
-
     async def get_bearer_info(self):
         '''gets the application bearer token from client_id and client_secret'''
         if self.client_id is None or self.client_secret is None:
@@ -120,20 +115,6 @@ class HTTPClient:
                 await r.release()
 
         raise HTTPException(r, data)
-
-    def _sync_close(self):
-        # aiohttp.ClientSession.close is an asyncronous coroutine function.
-        # despite it doing nothing asyncronous it has no useful reason for
-        # being an async coro func apart from consistent api design.
-
-        # The code here is exactly the same as what you would find if you
-        # looked at what aiohttp.ClientSession.close did.
-
-        session = self._session
-        if not session.closed:
-            if session._connector_owner:
-                session._connector.close()
-            session._connector = None
 
     async def close(self):
         '''close the HTTP session'''
