@@ -20,7 +20,7 @@ class User:
         self.__client = client
 
         token = kwargs.pop('token', None)
-        http = kwargs.pop('http', None)
+        self.http = http = kwargs.pop('http', None)
 
         if http is None and token:
             self.http = http = HTTPUserClient(token)
@@ -66,7 +66,7 @@ class User:
         http = HTTPUserClient(token)
         data = await http.current_user()
 
-        return User(client, data=data, http=http)
+        return User(client, data=data, http=http, token=token)
 
     ### Attributes
 
