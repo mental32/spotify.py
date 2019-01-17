@@ -48,16 +48,11 @@ class User:
     def __ne__(self, other):
         return not self.__eq__(other)
 
-    async def _get_top(self, s, data):
-        if s == 'artists':
-            klass = Artist
-        elif s == 'tracks':
-            klass = Track
-        else:
-            raise SpotifyException('`_get_top` Expected either "artists" or "tracks", instead got {0!r}'.format(s))
-
+    async def _get_top(self, klass, data):
+        _str = {Artist: 'artists', Track: 'tracks'}[klass]
         data = {key: value for key, value in data.items() if key in ('limit', 'offset', 'time_range')}
-        resp = await self.http.top_artists_or_tracks(s, **data)
+
+        resp = await self.http.top_artists_or_tracks(_str, **data)
 
         return [klass(self.__client, item) for item in resp['items']]
 
@@ -333,7 +328,7 @@ class User:
         - *time_range* (:class:`str`)
             Over what time frame the affinities are computed. (long_term, short_term, medium_term)
         '''
-        return await self._get_top('artists', data)
+        return self._get_top(Artist, data)
 
     @ensure_http
     async def top_tracks(self, **data):
@@ -350,4 +345,4 @@ class User:
         - *time_range* (:class:`str`)
             Over what time frame the affinities are computed. (long_term, short_term, medium_term)
         '''
-        return await self._get_top('tracks', data)
+        return self._get_top(Track, data)
