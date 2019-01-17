@@ -75,6 +75,10 @@ class OAuth2:
 
         return OAuth2._BASE.format(protocol=protocol, parameters=parameters)
 
+    @staticmethod
+    def url_only(*args, **kwargs):
+        return OAuth2.url_(*args, **kwargs)
+
     @property
     def attrs(self):
         data = {
