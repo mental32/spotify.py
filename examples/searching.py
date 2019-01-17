@@ -18,7 +18,7 @@ async def main():
     # }
 
     # Filtering search types
-    # by default the results returns all types until a filter is applied
+    # if a filter is unspecified all result types are returned.
     # Here we only look for Artists and Tracks with the search query
     results = await client.search('drake', types=['artist', 'track'])
 
@@ -28,4 +28,4 @@ async def main():
     results = await client.search('drake', limit=5, offset=20, market='JP')
 
 if __name__ == '__main__':
-    asyncio.loop.run_until_complete(main())
+    asyncio.get_event_loop().run_until_complete(main())
