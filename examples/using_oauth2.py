@@ -10,7 +10,7 @@ from spotify import OAuth2
 # OAuth2.url_ has an identical signature to creating
 # a regular OAuth2 object, it simply skips creating
 # the object and returns a 'valid' url quickly
-oauth_url = OAuth2.url_('clientid', 'redirect://uri')
+oauth_url = OAuth2.url_('clientid', 'redirect://uri', scope='some-scope another-scope', state='cryptographically-random-state')
 
 # Since v0.2.0 `OAuth2.url_` has an alias `OAuth2.url_only`
 
