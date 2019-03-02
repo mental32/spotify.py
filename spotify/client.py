@@ -43,6 +43,10 @@ class Client:
     def client_id(self):
         return self.http.client_id
 
+    @property
+    def id(self):
+        return self.http.client_id
+
     def close(self):
         '''Close the underlying HTTP session to spotify'''
         self.http._sync_close()
