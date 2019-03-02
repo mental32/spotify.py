@@ -38,7 +38,7 @@ from spotify import User
 client = spotify.Client('someid', 'sometoken')
 
 async def backup():
-    user = await User.from_token('sometoken')
+    user = await User.from_token(client, 'sometoken')
     backup_data = []
 
     for playlist in await user.get_playlists():
