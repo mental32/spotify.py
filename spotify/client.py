@@ -68,6 +68,8 @@ class Client:
     async def user_from_token(self, token):
         '''Create a user session from a token
 
+        This code is equivelent to `User.from_token(client, token)`
+
         **parameters**
 
         - *token* (:class:`str`)
