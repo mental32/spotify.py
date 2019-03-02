@@ -12,10 +12,11 @@ import spotify.sync as spotify # and now no methods require the async/await synt
 
 ## Examples
 
-Web API examples
+- Top tracks (drake)
 
-drakes top tracks
 ```py
+import spotify
+
 client = spotify.Client('someid', 'sometoken')
 
 async def example():
@@ -25,19 +26,28 @@ async def example():
         print(repr(track))
 ```
 
-backing up playlists
+- Backing up playlists
+
 ```py
 import json
 import time
 
+import spotify
+from spotify import User
+
 client = spotify.Client('someid', 'sometoken')
 
 async def backup():
-    user = await client.user_from_token('sometoken')
+    user = await User.from_token('sometoken')
     backup_data = []
 
     for playlist in await user.get_playlists():
-        backup_data.append({'metadata': [playlist.name, playlist.public, playlist.collaborative, playlist.description], 'tracks': []})
+
+        backup_data.append({
+            'metadata': [playlist.name, playlist.public, playlist.collaborative, playlist.description], 
+            'tracks': []
+        })
+
         for track in await playlist.get_tracks():
             backup_data[-1]['tracks'].append(track.uri)
 
@@ -58,7 +68,7 @@ To install the library simply clone it and run setup.py
 or use pypi
 
 - `pip3 install spotify`
-- `pip3 install -U git+https://github.com/mental32/spotify.py`
+- `pip3 install -U git+https://github.com/mental32/spotify.py` (recommened)
 
 ## Contributing
 To contribute you must:
