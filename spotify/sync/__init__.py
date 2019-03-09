@@ -58,4 +58,9 @@ from .cls import (
     Library
 )
 
+from ..errors import *
+
+from .. import utils
+from ..utils import OAuth2
+
 signal.signal(signal.SIGINT, signal.SIG_DFL)
