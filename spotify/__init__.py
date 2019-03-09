@@ -12,4 +12,4 @@ from .http import HTTPClient, HTTPUserClient
 __title__ = 'spotify'
 __author__ = 'mental'
 __license__ = 'MIT'
-__version__ = '0.2.0'
+__version__ = '0.2.1'
