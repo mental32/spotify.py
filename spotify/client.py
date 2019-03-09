@@ -49,7 +49,7 @@ class Client:
 
     async def close(self):
         '''Close the underlying HTTP session to spotify'''
-        self.http.close()
+        await self.http.close()
 
     ### External model contstructors
 
