@@ -72,3 +72,6 @@ _types.update({
     'library': Library,
     'playlist_track': PlaylistTrack
 })
+
+for klass in _types.values():
+    setattr(spotify.client, klass.__name__, klass)
