@@ -47,9 +47,9 @@ class Client:
     def id(self):
         return self.http.client_id
 
-    def close(self):
+    async def close(self):
         '''Close the underlying HTTP session to spotify'''
-        self.http._sync_close()
+        self.http.close()
 
     ### External model contstructors
 
