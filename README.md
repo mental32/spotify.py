@@ -4,11 +4,16 @@
 
 An API library for the spotify client and the Spotify Web API written in Python.
 
-spotify.py is 100% asyncronous meaning everything down to the HTTP library is designed to work with asyncio.<br>The library offers coverage over every endpoint in the Spotify web API.<br><br>As of v0.1.5 it is possible to use spotify.py in a syncronous manner. No await/async syntax required! To do this simply use
+spotify.py is 100% asyncronous meaning everything down to the HTTP library is designed to work with asyncio.<br>The library offers coverage over every endpoint in the Spotify web API.
+
+
+As of v0.1.5 it is possible to use spotify.py in a syncronous manner. No await/async syntax required! To do this simply use
 
 ```py
 import spotify.sync as spotify # and now no methods require the async/await syntax.
 ```
+
+Added in v0.3.0 it's now possible to have self refreshing User sessions, this update allows for users to hand off the second half of the OAuth flow directly to the library which will ensure an authenticated session for the duration of the User objects lifetime. See the [example](examples/user_auth.py)!
 
 ## Examples
 
