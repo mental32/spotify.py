@@ -1,5 +1,5 @@
 from ..utils import ensure_http
-from ..http import HTTPUserClient
+from ..http import HTTPUserClient, Route
 from ..errors import SpotifyException
 
 from .common import (Image, Device, Context)
@@ -12,9 +12,10 @@ Artist = _types.artist
 Playlist = _types.playlist
 Library = _types.library
 
+REFRESH_TOKEN_URL = 'https://accounts.spotify.com/api/token?grant_type=refresh_token&refresh_token={refresh_token}'
 
 class User:
-    __slots__ = ('__client', '__data', 'http', 'library', '_player', 'id', 'href', 'uri', 'display_name', 'followers')
+    __slots__ = ('__client', '__data', 'http', 'library', '_player', 'id', 'href', 'uri', 'display_name', 'followers', '_refresh_task')
 
     def __init__(self, client, data, **kwargs):
         self.__client = client
@@ -56,14 +57,58 @@ class User:
 
         return [klass(self.__client, item) for item in resp['items']]
 
+
+    async def _refreshing_token(self, expires, token):
+        while True:
+            await asyncio.sleep(expires - 1)
+
+            route = Route('POST', REFRESH_TOKEN_URL.format(refresh_token=token))
+            data = await self.client.http.request(route, content_type='application/x-www-form-urlencoded')
+
+            expires = data['expires_in']
+            self.http.token = data['access_token']
+
+    ### Alternate constructors
+
     @classmethod
-    async def from_token(cls, client, token):
+    async def from_code(cls, client, code, *, redirect_uri, refresh=False):
+        route = Route('POST', 'https://accounts.spotify.com/api/token')
+        payload = {
+            'redirect_uri': redirect_uri,
+            'grant_type': 'authorization_code',
+            'code': code
+        }
+
+        raw = await client.http.request(route, content_type='application/x-www-form-urlencoded')
+
+        token = raw['access_token']
+
         http = HTTPUserClient(token)
         data = await http.current_user()
 
-        return User(client, data=data, http=http, token=token)
+        if refresh:
+            expires_in = raw['expires_in']
+            refresh_token = raw['refresh_token']
+            self._refresh_task = self.client.loop.create_task(self._refreshing_token(expires_in, refresh_token))
 
-    ### Attributes
+        return cls(client, data=data, http=http, token=token)
+
+    @classmethod
+    async def from_token(cls, client, token, *, refresh=None):
+        http = HTTPUserClient(token)
+        data = await http.current_user()
+
+        if refresh is not None:
+            expires_in, refresh_token, = refresh
+            self._refresh_task = self.client.loop.create_task(self._refreshing_token(expires_in, refresh_token))
+
+        return cls(client, data=data, http=http, token=token)
+
+    ### Attributes (read only)
+
+    @property
+    def refresh(self):
+        return self._refresh_task
 
     @property
     def external_urls(self):
