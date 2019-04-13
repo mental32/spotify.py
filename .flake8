@@ -1,0 +1,13 @@
+[flake8]
+max-line-length = 160
+ignore = 
+	# Docstring should start with a leading newline
+	D413,
+	# Missing docstring in magic method
+	D105,
+	# Missing docstring in __init__
+	D107,
+	# 1 blank line required after class docstring
+	D204,
+	# Too many leading '#' for block comment
+	E266
