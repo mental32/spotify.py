@@ -6,6 +6,9 @@ __pycache__/
 # C extensions
 *.so
 
+# mypy
+\.mypy_cache/
+
 # Distribution / packaging
 .Python
 env/
@@ -91,6 +94,5 @@ ENV/
 .ropeproject
 
 # spotify.py related stuff
-test*.py
 _old/
 docs/_build
