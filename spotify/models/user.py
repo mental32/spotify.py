@@ -337,7 +337,7 @@ class User:
         playlist_data = await self.http.create_playlist(self.id, data)
         return Playlist(self.__client, playlist_data)
 
-    async def get_playlists(self, *, limit=20, offset=1):
+    async def get_playlists(self, *, limit=20, offset=0):
         '''get the users playlists from spotify.
 
         **parameters**
