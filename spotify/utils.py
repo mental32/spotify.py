@@ -113,20 +113,6 @@ class OAuth2:
         return '&'.join('{0}={1}'.format(*item) for item in self.attrs.items())
 
     @property
-    def url(self):
-        return self._BASE.format(protocol=self.protocol, parameters=self.parameters)
-
-
-class _spotify__lookup(dict):
-    __types = ('artist', 'track', 'user', 'playlist', 'album', 'library', 'playlist_track')
-
-    def __getattribute__(self, key):
-        _types = object.__getattribute__(self, '_spotify__lookup__types')
-
-        if key in _types:
-            def _lookup(*args, **kwargs):
-                return self[key](*args, **kwargs)
-
-            return _lookup
-
-        return object.__getattribute__(self, key)
+    def url(self) -> str:
+        """Return a URL for an OAuth2."""
+        return self._BASE.format(parameters=self.parameters)
