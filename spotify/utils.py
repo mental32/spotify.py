@@ -1,13 +1,16 @@
 import functools
+from contextlib import contextmanager
 from urllib.parse import quote_plus as quote
 
 from .errors import SpotifyException
 
 
-def uri_to_id(string):
-    if string[:8] == 'spotify:':
-        return string.rsplit(':', maxsplit=1)[-1]
-    return string
+
+@contextmanager
+def clean(l: dict, *names):
+    yield
+    for name in names:
+        l.pop(name)
 
 
 def ensure_http(func):
