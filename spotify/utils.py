@@ -25,18 +25,30 @@ def ensure_http(func):
 
 
 class OAuth2:
-    '''Abstract class for Spotify OAuth2 operations
+    """Helper object for Spotify OAuth2 operations.
 
-    **parameters**
+    Parameters
+    ----------
+    client_id : str
+        The client id provided by spotify for the app.
+    redirect_uri : str
+        The URI Spotify should redirect to.
+    scope : str
+        The scopes to be requested.
+    state : str
+        The state used to secure sessions.
 
-    - *client_id* (:class:`str`)
-    - *redirect_uri* (:class:`str`)
-    - *scope* (Optional :class:`str`)
-    - *state* (Optional :class:`str`)
-    - *secure* (Optional :class:`bool`)
+    Attributes
+    ----------
+    attrs : Dict[str, str]
+        The attributes used when constructing url parameters
+    parameters : str
+        The URL parameters used
+    url : str
+        The URL for OAuth2
+    """
 
-    '''
-    _BASE = '{protocol}://accounts.spotify.com/authorize/?response_type=code&{parameters}'
+    _BASE = 'https://accounts.spotify.com/authorize/?response_type=code&{parameters}'
     protocol = 'https'
 
     def __init__(self, client_id, redirect_uri, *, scope=None, state=None, secure=True):
@@ -57,11 +69,12 @@ class OAuth2:
 
     @classmethod
     def from_client(cls, client, redirect_uri, *, scope=None, state=None, secure=True):
-        '''Instead of having to pass the client_id directly you can just pass in the client'''
+        """Construct a OAuth2 object from a  `spotify.Client`."""
         return cls(client.http.client_id, redirect_uri, scope=scope, state=state, secure=secure)
 
     @staticmethod
-    def url_(client_id, redirect_uri, *, scope=None, state=None, secure=True):
+    def url_(client_id: str, redirect_uri: str, *, scope: str = None, state: str = None, secure: bool = True) -> str:
+        """Construct a OAuth2 URL instead of an OAuth2 object."""
         attrs = {
             'client_id': client_id,
             'redirect_uri': quote(redirect_uri)
@@ -80,10 +93,12 @@ class OAuth2:
 
     @staticmethod
     def url_only(*args, **kwargs):
+        """Construct a OAuth2 URL instead of an OAuth2 object."""
         return OAuth2.url_(*args, **kwargs)
 
     @property
     def attrs(self):
+        """Attributes used when constructing url parameters."""
         data = {
             'client_id': self.client_id,
             'redirect_uri': quote(self.redirect_uri),
@@ -98,7 +113,8 @@ class OAuth2:
         return data
 
     @property
-    def parameters(self):
+    def parameters(self) -> str:
+        """URL parameters used."""
         return '&'.join('{0}={1}'.format(*item) for item in self.attrs.items())
 
     @property
