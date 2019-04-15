@@ -49,7 +49,6 @@ class OAuth2:
     """
 
     _BASE = 'https://accounts.spotify.com/authorize/?response_type=code&{parameters}'
-    protocol = 'https'
 
     def __init__(self, client_id, redirect_uri, *, scope=None, state=None, secure=True):
         self.client_id = client_id
@@ -57,9 +56,6 @@ class OAuth2:
 
         self.state = state
         self.scope = scope
-
-        if not secure:
-            self.protocol = 'http'
 
     def __repr__(self):
         return '<spotfy.OAuth2: client_id={0!r}, scope={1!r}>'.format(self.client_id, self.scope)
@@ -87,9 +83,8 @@ class OAuth2:
             attrs['state'] = state
 
         parameters = '&'.join('{0}={1}'.format(*item) for item in attrs.items())
-        protocol = 'https' if secure else 'http'
 
-        return OAuth2._BASE.format(protocol=protocol, parameters=parameters)
+        return OAuth2._BASE.format(parameters=parameters)
 
     @staticmethod
     def url_only(*args, **kwargs):
