@@ -64,9 +64,9 @@ class OAuth2:
         return self.url
 
     @classmethod
-    def from_client(cls, client, redirect_uri, *, scope=None, state=None, secure=True):
+    def from_client(cls, client, *args, **kwargs):
         """Construct a OAuth2 object from a  `spotify.Client`."""
-        return cls(client.http.client_id, redirect_uri, scope=scope, state=state, secure=secure)
+        return cls(client.http.client_id, *args, **kwargs)
 
     @staticmethod
     def url_(client_id: str, redirect_uri: str, *, scope: str = None, state: str = None, secure: bool = True) -> str:
