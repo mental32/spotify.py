@@ -1,9 +1,8 @@
 import re
 from setuptools import setup
 
-requirements = [
-  'aiohttp'
-]
+with open('requirements.txt') as inf:
+  requirements = [line.strip() for line in inf.readlines()]
 
 with open('README.md') as inf:
   long_description = inf.read()
