@@ -6,6 +6,8 @@ from .client import Client
 from .models import SpotifyBase
 from .http import HTTPClient, HTTPUserClient
 
+__all__ = tuple(name for name in locals() if name[0] != '_')
+
 __title__ = 'spotify'
 __author__ = 'mental'
 __license__ = 'MIT'
