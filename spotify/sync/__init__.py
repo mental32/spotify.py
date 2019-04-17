@@ -1,66 +1,14 @@
-import signal
-import asyncio
-import threading
-import queue
+from spotify import *
+from spotify import __all__, _types
+from spotify.utils import clean as _clean_namespace
 
+from . import models
+from .models import Client, _install
 
-class SyncExecution(threading.Thread):
-    def __init__(self):
-        super().__init__()
-        self._loop = asyncio.new_event_loop()
-        self.running = False
-        self.daemon = True
-
-        self.in_queue = queue.Queue(maxsize=1)
-        self.out_queue = queue.Queue(maxsize=1)
-
-    def run_coro(self, coro):
-        if self.running:
-            return coro
-
-        self.running = True
-        self.in_queue.put(coro)
-
-        while self.running:
-            if self.out_queue.full():
-                self.running = False
-                value = self.out_queue.get()
-                if isinstance(value, BaseException):
-                    raise value
-                return value
-
-    def run(self):
-        asyncio.set_event_loop(self._loop)
-
-        while True:
-            coro = self.in_queue.get()
-            try:
-                rv = self._loop.run_until_complete(coro)
-            except BaseException as error:
-                rv = error
-
-            self.out_queue.put(rv)
-        self._loop.close()
-
-_thread = SyncExecution()
-_thread.start()
-
-from .cls import (
-    HTTPClient,
-    HTTPUserClient,
-    Client,
-    Track,
-    User,
-    PlaylistTrack,
-    Artist,
-    Album,
-    Playlist,
-    Library
-)
-
-from ..errors import *
-
-from .. import utils
-from ..utils import OAuth2
-
-signal.signal(signal.SIGINT, signal.SIG_DFL)
+with _clean_namespace(locals(), 'name', 'klass'):
+    for name, klass in _install(_types):
+        klass.__name__ = name
+        locals()[name] = klass
+        setattr(models, name, klass)
+    else:
+        Client._default_http_client = locals()['HTTPClient']
