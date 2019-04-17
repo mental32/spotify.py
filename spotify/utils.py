@@ -1,9 +1,14 @@
+import inspect
 import functools
+import re
 from contextlib import contextmanager
 from urllib.parse import quote_plus as quote
+from typing import Callable
 
 from .errors import SpotifyException
 
+_URI_RE = re.compile(r'^.*:([a-zA-Z0-9]+)$')
+_OPEN_RE = re.compile(r'http[s]?:\/\/open\.spotify\.com\/(.*)\/(.*)')
 
 
 @contextmanager
@@ -13,14 +18,38 @@ def clean(l: dict, *names):
         l.pop(name)
 
 
-def ensure_http(func):
-    @functools.wraps(func)
-    async def decorator(self, *args, **kwargs):
-        if not hasattr(self, 'http'):
-            raise SpotifyException('{0!r} has no HTTP presence to perform API requests'.format(self))
+def to_id(string: str) -> str:
+    """Get a spotify ID from a URI or open.spotify URL."""
+    string = string.strip()
 
-        return await func(self, *args, **kwargs)
+    match = _URI_RE.match(string)
 
+    if match is None:
+        match = _OPEN_RE.match(string)
+
+        if match is None:
+            return string
+        else:
+            return match.group(2)
+    else:
+        return match.group(1)
+
+
+def assert_hasattr(attr: str, msg: str, tp: BaseException = SpotifyException) -> Callable:
+    """decorator to assert an object has an attribute when run."""
+    def decorator(func: Callable) -> Callable:
+        @functools.wraps(func)
+        def decorated(self, *args, **kwargs):
+            if not hasattr(self, attr):
+                raise tp(msg)
+            return func(self, *args, **kwargs)
+
+        if inspect.iscoroutinefunction(func):
+            @functools.wraps(func)
+            async def decorated(*args, **kwargs):
+                return await decorated(*args, **kwargs)
+
+        return decorated
     return decorator
 
 
