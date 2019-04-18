@@ -1,7 +1,19 @@
 class Image:
+    """An object representing a Spotify image resource.
+
+    Attributes
+    ----------
+    height : str
+        The height of the image.
+    width : str
+        The width of the image.
+    url : str
+        The URL of the image.
+    """
+
     __slots__ = ('height', 'width', 'url')
 
-    def __init__(self, *, height, width, url):
+    def __init__(self, *, height: str, width: str, url: str):
         self.height = height
         self.width = width
         self.url = url
@@ -14,6 +26,8 @@ class Image:
 
 
 class Context:
+    """  # TODO: Add Context documenataion.
+    """
     __slots__ = ('external_urls', 'type', 'href', 'uri')
 
     def __init__(self, data):
@@ -31,6 +45,8 @@ class Context:
 
 
 class Device:
+    """  # TODO: Add Device documentation.
+    """
     __slots__ = ('id', 'name', 'type', 'volume', 'is_active', 'is_restricted')
 
     def __init__(self, data):

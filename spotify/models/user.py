@@ -1,55 +1,94 @@
-from ..utils import ensure_http
+from typing import Optional, Dict, Union, List, Tuple
+
+from ..utils import assert_hasattr
 from ..http import HTTPUserClient, Route
 from ..errors import SpotifyException
+from . import (
+    SpotifyBase, URIBase,
+    Image, Device, Context,
+    Player,
+    Track,
+    Artist,
+    Library
+)
 
-from .common import (Image, Device, Context)
-from .player import Player
-
-from spotify import _types
-
-Track = _types.track
-Artist = _types.artist
-Playlist = _types.playlist
-Library = _types.library
+Playlist: Optional[SpotifyBase] = None
 
 REFRESH_TOKEN_URL = 'https://accounts.spotify.com/api/token?grant_type=refresh_token&refresh_token={refresh_token}'
 
-class User:
-    __slots__ = ('__client', '__data', 'http', 'library', '_player', 'id', 'href', 'uri', 'display_name', 'followers', '_refresh_task')
+ensure_http = assert_hasattr('http', '{0!r} has no HTTP presence to perform API requests')
+
+
+class User(URIBase):
+    """A Spotify User.
+
+    Attributes
+    ----------
+    id : str
+        The Spotify user ID for the user.
+    uri : str
+        The Spotify URI for the user.
+    url : str
+        The open.spotify URL.
+    href : str
+        A link to the Web API endpoint for this user.
+    display_name : str
+        The name displayed on the user’s profile. 
+        `None` if not available.
+    followers : int
+        The total number of followers.
+    images : List[Image]
+        The user’s profile image.
+    email : str
+        The user’s email address, as entered by the user when creating their account.
+    country : str
+        The country of the user, as set in the user’s account profile. An ISO 3166-1 alpha-2 country code.
+    birthdate : str
+        The user’s date-of-birth.
+    product : str
+        The user’s Spotify subscription level: “premium”, “free”, etc. 
+        (The subscription level “open” can be considered the same as “free”.)
+    """
+
+    __slots__ = (
+        '__client', 'http', 'library', 
+        '_player', 'id', 'href', 'uri',
+        'url', 'display_name', 'email',
+        'followers', 'images', 'product',
+        'country', 'birthdate', '_refresh_task'
+    )
 
     def __init__(self, client, data, **kwargs):
         self.__client = client
 
         token = kwargs.pop('token', None)
-        self.http = http = kwargs.pop('http', None)
 
-        if http is None and token:
-            self.http = http = HTTPUserClient(token)
-
-        if http is not None:
+        try:
+            self.http = http = kwargs.pop('http')
+        except KeyError:
+            pass
+        else:
             self.library = Library(client, self)
 
+        # Public user object attributes
         self.id = data.pop('id')
-        self.display_name = data.pop('display_name')
-        self.followers = data.pop('followers', {}).get('total')
-        self.href = data.pop('href')
         self.uri = data.pop('uri')
+        self.url = data.pop('external_urls').get('spotify', None)
+        self.display_name = data.pop('display_name', None)
+        self.href = data.pop('href')
+        self.followers = data.pop('followers', {}).get('total', None)
+        self.images = list(Image(**image) for image in data.pop('images'))
 
-        self.__data = data
+        # Private user object attributes
+        self.email = data.pop('email', None)
+        self.country = data.pop('country', None)
+        self.birthdate = data.pop('birthdate', None)
+        self.product = data.pop('product', None)
 
     def __repr__(self):
         return '<spotify.User: "%s">' % (self.display_name or self.id)
 
-    def __str__(self):
-        return self.uri
-
-    def __eq__(self, other):
-        return type(self) is type(other) and self.uri == other.uri
-
-    def __ne__(self, other):
-        return not self.__eq__(other)
-
-    async def _get_top(self, klass, data):
+    async def _get_top(self, klass, data) -> List[Union[Track, Artist]]:
         _str = {Artist: 'artists', Track: 'tracks'}[klass]
         data = {key: value for key, value in data.items() if key in ('limit', 'offset', 'time_range')}
 
@@ -62,7 +101,7 @@ class User:
         while True:
             await asyncio.sleep(expires - 1)
 
-            route = Route('POST', REFRESH_TOKEN_URL.format(refresh_token=token))
+            route = ('POST', REFRESH_TOKEN_URL.format(refresh_token=token))
             data = await self.client.http.request(route, content_type='application/x-www-form-urlencoded')
 
             expires = data['expires_in']
@@ -72,7 +111,7 @@ class User:
 
     @classmethod
     async def from_code(cls, client, code, *, redirect_uri, refresh=False):
-        route = Route('POST', 'https://accounts.spotify.com/api/token')
+        route = ('POST', 'https://accounts.spotify.com/api/token')
         payload = {
             'redirect_uri': redirect_uri,
             'grant_type': 'authorization_code',
@@ -83,15 +122,12 @@ class User:
 
         token = raw['access_token']
 
-        http = HTTPUserClient(token)
-        data = await http.current_user()
-
         if refresh:
-            expires_in = raw['expires_in']
-            refresh_token = raw['refresh_token']
-            self._refresh_task = self.client.loop.create_task(self._refreshing_token(expires_in, refresh_token))
+            refresh = (raw['expires_in'], raw['refresh_token'])
+        else:
+            refresh = None
 
-        return cls(client, data=data, http=http, token=token)
+        return await cls.from_token(client, token, refresh=refresh)
 
     @classmethod
     async def from_token(cls, client, token, *, refresh=None):
@@ -104,37 +140,23 @@ class User:
 
         return cls(client, data=data, http=http, token=token)
 
-    ### Attributes (read only)
+    ### Attributes
 
     @property
     def refresh(self):
         return self._refresh_task
 
-    @property
-    def external_urls(self):
-        return self.__data.get('external_urls')
-
-    @property
-    def images(self):
-        return [Image(**image) for image in self.__data.get('images')]
-
-    @property
-    def birthdate(self):
-        return self.__data.get('birthdate')
-
-    @property
-    def country(self):
-        return self.__data.get('country')
-
-    @property
-    def email(self):
-        return self.__data.get('email')
-
     ### Contextual methods
 
     @ensure_http
-    async def currently_playing(self):
-        '''Get the users currently playing track.'''
+    async def currently_playing(self) -> Tuple[Context, Track]:
+        """Get the users currently playing track.
+
+        Returns
+        -------
+        context, track : Tuple[Context, Track]
+            A tuple of the context and track.
+        """
         data = await self.http.currently_playing()
 
         if data.get('item'):
@@ -144,151 +166,142 @@ class User:
         return data
 
     @ensure_http
-    async def get_player(self):
-        '''Get information about the users current playback.'''
-        self._player = player = Player(self)
+    async def get_player(self) -> Player:
+        """Get information about the users current playback.
 
-        player_data = await self.http.current_player()
-        player.populate(player_data)
+        Returns
+        -------
+        player : Player
+            A player object representing the current playback.
+        """
+        self._player = player = Player(self.__client, self, await self.http.current_player())
         return player
 
     @ensure_http
-    async def get_devices(self):
-        '''Get information about the users avaliable devices.'''
+    async def get_devices(self) -> List[Device]:
+        """Get information about the users avaliable devices.
+
+        Returns
+        -------
+        devices : List[Device]
+            The devices the user has available.
+        """
         data = await self.http.available_devices()
         return [Device(item) for item in data['devices']]
 
     @ensure_http
-    async def recently_played(self):
-        '''Get tracks from the current users recently played tracks.'''
-        raw = []
+    async def recently_played(self) -> List[Dict[str, Union[Track, Context, str]]]:
+        """Get tracks from the current users recently played tracks.
+
+        Returns
+        -------
+        playlist_history : List[Dict[str, Union[Track, Context, str]]]
+            A list of playlist history object.
+            Each object is a dict with a timestamp, track and context field.
+        """
         data = await self.http.recently_played()
+        f = lambda data: {'context': Context(data.get('context')), 'track': Track(self.__client, data.get('track'))}
+        # List[T] where T: {'track': Track, 'content': Context: 'timestamp': ISO8601}
+        return [{'timestamp': track['timestamp'], **f(track)} for track in data['items']]
 
-        for track in data['items']:
-            track['context'] = Context(track.get('context'))
-            track['track'] = Track('_tracks', data.get('track'))
+    ### Playlist track methods
 
-            raw.append(track)  # PlayHistory(track)
-        return raw
+    async def add_tracks(self, playlist: Union[str, Playlist], *tracks) -> str:
+        """Add one or more tracks to a user’s playlist.
 
-    ### Playlist track omethods
-
-    @ensure_http
-    async def add_tracks(self, playlist, *tracks):
-        '''Add one or more tracks to a user’s playlist.
-
-        **parameters**
-
-        - *playlist* (:class:`Playlist`)
+        Parameters
+        ----------
+        playlist : Union[str, Playlist]
             The playlist to modify
+        tracks : Sequence[Union[str, Track]]
+            Tracks to add to the playlistv 
 
-        - *tracks* (:class:`Track`)
-            Tracks to add to the playlist
-        '''
-
+        Returns
+        -------
+        snapshot_id : str
+            The snapshot id of the playlist.
+        """
         tracks = [str(track) for track in tracks]
+        data = await self.http.add_playlist_tracks(self.id, str(playlist), tracks=','.join(tracks))
+        return data['snapshot_id']
 
-        playlist_id = playlist
-        if not isinstance(playlist_id, str):
-            playlist_id = playlist.id
+    async def replace_tracks(self, playlist, *tracks) -> str:
+        """Replace all the tracks in a playlist, overwriting its existing tracks. 
+        This powerful request can be useful for replacing tracks, re-ordering existing tracks, or clearing the playlist.
 
-        return await self.http.add_playlist_tracks(self.id, playlist_id, tracks=','.join(tracks))
-
-    @ensure_http
-    async def replace_tracks(self, playlist, *tracks):
-        '''Replace all the tracks in a playlist, overwriting its existing tracks. This powerful request can be useful for replacing tracks, re-ordering existing tracks, or clearing the playlist.
-
-        **parameters**
-
-        - *playlist* (:class:`Playlist`)
+        Parameters
+        ----------
+        playlist : Union[str, PLaylist]
             The playlist to modify
-
-        - *tracks* (:class:`Track`)
+        tracks : Sequence[Union[str, Track]]
             Tracks to place in the playlist
-        '''
+        """
         tracks = [str(track) for track in tracks]
+        await self.http.replace_playlist_tracks(self.id, str(playlist), tracks=','.join(tracks))
 
-        playlist_id = playlist
-        if not isinstance(playlist_id, str):
-            playlist_id = playlist.id
-
-        return await self.http.replace_playlist_tracks(self.id, playlist_id, tracks=','.join(tracks))
-
-    @ensure_http
     async def remove_tracks(self, playlist, *tracks):
-        '''Remove one or more tracks from a user’s playlist.
+        """Remove one or more tracks from a user’s playlist.
 
-        **parameters**
-
-        - *playlist* (:class:`Playlist`)
+        Parameters
+        ----------
+        playlist : Union[str, Playlist]
             The playlist to modify
-
-        - *tracks* (:class:`Track`)
+        tracks : Sequence[Union[str, Track]]
             Tracks to remove from the playlist
-        '''
+
+        Returns
+        -------
+        snapshot_id : str
+            The snapshot id of the playlist.
+        """
         tracks = [str(track) for track in tracks]
+        data = await self.http.remove_playlist_tracks(self.id, str(playlist), tracks=','.join(tracks))
+        return data['snapshot_id']
 
-        playlist_id = playlist
-        if not isinstance(playlist_id, str):
-            playlist_id = playlist.id
-
-        return await self.http.remove_playlist_tracks(self.id, playlist_id, tracks=','.join(tracks))
-
-    @ensure_http
     async def reorder_tracks(self, playlist, start, insert_before, length=1, *, snapshot_id=None):
-        '''Reorder a track or a group of tracks in a playlist.
+        """Reorder a track or a group of tracks in a playlist.
 
-        **parameters**
-
-        - *playlist* (:class:`Playlist`)
+        Parameters
+        ----------
+        playlist : Union[str, Playlist]
             The playlist to modify
-
-        - *start* (:class:`int`)
+        start : int
             The position of the first track to be reordered.
-
-        - *insert_before* (:class:`int`)
+        insert_before : int
             The position where the tracks should be inserted.
-
-        - *length* (Optional :class:`int`)
+        length : Optional[int]
             The amount of tracks to be reordered. Defaults to 1 if not set.
-
-        - *snapshot_id* (Optional :class:`str`)
+        snapshot_id : str
             The playlist’s snapshot ID against which you want to make the changes.
-        '''
-        playlist_id = playlist
-        if not isinstance(playlist_id, str):
-            playlist_id = playlist.id
 
-        return await self.http.reorder_playlists_tracks(self.id, playlist_id, start, length, insert_before, snapshot_id=snapshot_id)
+        Returns
+        -------
+        snapshot_id : str
+            The snapshot id of the playlist.
+        """
+        data = await self.http.reorder_playlists_tracks(self.id, str(playlist), start, length, insert_before, snapshot_id=snapshot_id)
+        return data['snapshot_id']
 
     ### Playlist methods
 
     @ensure_http
     async def edit_playlist(self, playlist, *, name=None, public=None, collaborative=None, description=None):
-        '''Change a playlist’s name and public/private, collaborative state and description.
+        """Change a playlist’s name and public/private, collaborative state and description.
 
-        **parameters**
-
-        - *playlist* (:class:`Playlist`)
+        Parameters
+        ----------
+        playlist : Union[str, Playlist]
             The playlist to modify
-
-        - *name* (Optional kwarg :class:`str`)
+        name : Optional[str]
             The new name of the playlist.
-
-        - *public* (Optional kwarg :class:`bool`)
+        public : Optional[bool]
             The public/private status of the playlist.
             `True` for public, `False` for private.
-
-        - *collaborative* (Optional kwarg :class:`bool`)
+        collaborative : Optional[bool]
             If `True`, the playlist will become collaborative and other users will be able to modify the playlist.
-
-        - *description* (Optional kwarg :class:`str`)
+        description : Optional[str]
             The new playlist description
-        '''
-        playlist_id = playlist
-        if not isinstance(playlist_id, str):
-            playlist_id = playlist.id
-
+        """
         data = {}
 
         if name:
@@ -303,28 +316,29 @@ class User:
         if description:
             data['description'] = description
 
-        return await self.http.change_playlist_details(self.id, playlist_id, data)
+        await self.http.change_playlist_details(self.id, str(playlist), data)
 
     @ensure_http
     async def create_playlist(self, name, *, public=True, collaborative=False, description=None):
-        '''Create a playlist for a Spotify user
+        """Create a playlist for a Spotify user.
 
-        **parameters**
-
-        - *name* (Required :class:`str`)
+        Parameters
+        ----------
+        name : str
             The name of the playlist.
-
-        - *public* (Optional kwarg :class:`bool`)
+        public : Optional[bool]
             The public/private status of the playlist.
             `True` for public, `False` for private.
-
-        - *collaborative* (Optional kwarg :class:`bool`)
+        collaborative : Optional[bool]
             If `True`, the playlist will become collaborative and other users will be able to modify the playlist.
-
-        - *description* (Optional kwarg :class:`str`)
+        description : Optional[str]
             The playlist description
-        '''
 
+        Returns
+        -------
+        playlist : Playlist
+            The playlist that was created.
+        """
         data = {
             'name': name,
             'public': public,
@@ -338,16 +352,20 @@ class User:
         return Playlist(self.__client, playlist_data)
 
     async def get_playlists(self, *, limit=20, offset=0):
-        '''get the users playlists from spotify.
+        """get the users playlists from spotify.
 
-        **parameters**
-
-         - *limit* (Optional :class:`int`)
+        Parameters
+        ----------
+         limit : Optional[int]
              The limit on how many playlists to retrieve for this user (default is 20).
-
-         - *offset* (Optional :class:`int`)
+         offset : Optional[int]
              The offset from where the api should start from in the playlists.
-        '''
+
+        Returns
+        -------
+        playlists : List[Playlist]
+            A list of the users playlists.
+        """
         if hasattr(self, 'http'):
             http = self.http
         else:
@@ -356,38 +374,40 @@ class User:
         data = await http.get_playlists(self.id, limit=limit, offset=offset)
         return [Playlist(self.__client, playlist_data) for playlist_data in data['items']]
 
-    ### Other user methods
+    async def top_artists(self, **data) -> List[Artist]:
+        """Get the current user’s top artists based on calculated affinity.
 
-    @ensure_http
-    async def top_artists(self, **data):
-        '''Get the current user’s top artists based on calculated affinity.
-
-        **parameters**
-
-        - *limit* (:class:`int`)
+        Parameters
+        ----------
+        limit : Optional[int]
             The number of entities to return. Default: 20. Minimum: 1. Maximum: 50.
-
-        - *offset* (:class:`int`)
+        offset : Optional[int]
             The index of the first entity to return. Default: 0
-
-        - *time_range* (:class:`str`)
+        time_range : Optional[str]
             Over what time frame the affinities are computed. (long_term, short_term, medium_term)
-        '''
+
+        Returns
+        -------
+        tracks : List[Artist]
+            The top artists for the user.
+        """
         return await self._get_top(Artist, data)
 
-    @ensure_http
-    async def top_tracks(self, **data):
-        '''Get the current user’s top tracks based on calculated affinity.
+    async def top_tracks(self, **data) -> List[Track]:
+        """Get the current user’s top tracks based on calculated affinity.
 
-        **parameters**
-
-        - *limit* (:class:`int`)
+        Parameters
+        ----------
+        limit : Optional[int]
             The number of entities to return. Default: 20. Minimum: 1. Maximum: 50.
-
-        - *offset* (:class:`int`)
+        offset : Optional[int]
             The index of the first entity to return. Default: 0
-
-        - *time_range* (:class:`str`)
+        time_range : Optional[str]
             Over what time frame the affinities are computed. (long_term, short_term, medium_term)
-        '''
+
+        Returns
+        -------
+        tracks : List[Track]
+            The top tracks for the user.
+        """
         return await self._get_top(Track, data)

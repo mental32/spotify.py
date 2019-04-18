@@ -1,69 +1,89 @@
-from spotify import _types
+from typing import Optional, List
 
-Track = _types.track
-Album = _types.album
+from . import SpotifyBase, URIBase, Image
+
+Track: Optional[SpotifyBase] = None
+Album: Optional[SpotifyBase] = None
 
 
-class Artist:
-    __slots__ = ('__client', '__data', 'id', 'name', 'href', 'uri', 'popularity', '_type')
+class Artist(URIBase):
+    """A Spotify Artist.
+
+    Attributes
+    ----------
+    id : str
+        The Spotify ID of the artist.
+    uri : str
+        The URI of the artist.
+    url : str
+        The open.spotify URL.
+    href : str
+        A link to the Web API endpoint providing full details of the artist.
+    name : str
+        The name of the artist.
+    genres : List[str]
+        A list of the genres the artist is associated with.
+        For example: "Prog Rock" , "Post-Grunge". (If not yet classified, the array is empty.)
+    followers : Optional[int]
+        The total number of followers.
+    popularity : int
+        The popularity of the artist.
+        The value will be between 0 and 100, with 100 being the most popular.
+        The artist’s popularity is calculated from the popularity of all the artist’s tracks.
+    images : List[Image]
+        Images of the artist in various sizes, widest first.
+    """
+
+    __slots__ = (
+        '__client', 'id', 'name', 
+        'href', 'uri', 'url', 'genres', 
+        'followers', 'popularity', 'images'
+    )
 
     def __init__(self, client, data):
         self.__client = client
-        self._type = _types[data['type']]
 
+        # Simplified object attributes
         self.id = data.pop('id')
-        self.name = data.pop('name')
-        self.href = data.pop('href')
         self.uri = data.pop('uri')
+        self.url = data.pop('external_urls').get('spotify', None)
+        self.href = data.pop('href')
+        self.name = data.pop('name')
 
-        self.__data = data
+        # Full object attributes
+        self.genres = data.pop('genres', None)
+        self.followers = data.pop('followers', {}).get('total', None)
+        self.popularity = data.pop('popularity', None)
+        self.images = list(Image(**image) for image in data.pop('images', []))
 
     def __repr__(self):
-        return '<spotify.Artist: "%s">' % (self.name)
+        return '<spotify.Artist: "%s">' % self.name
 
-    def __str__(self):
-        return self.uri
+    async def get_albums(self, *, limit: Optional[int] = 20, offset: Optional[int] = 0, include_groups=None, market: Optional[str] = None) -> List[Album]:
+        """Get the albums of a Spotify artist.
 
-    def __eq__(self, other):
-        return type(self) is type(other) and self.uri == other.uri
-
-    def __ne__(self, other):
-        return not self.__eq__(other)
-
-    @property
-    def followers(self):
-        return self.__data['followers']['total'] if 'followers' in self.__data else None
-
-    @property
-    def genres(self):
-        return self.__data.get('genres')
-
-    @property
-    def images(self):
-        return self.__data.get('images')
-
-    async def get_albums(self, *, limit=20, offset=0, include_groups=None, market=None):
-        '''get the artists albums from spotify.
-
-        **parameters**
-
-         - *limit* (Optional :class:`int`)
-             The limit on how many albums to retrieve for this artist (default is 20).
-
-         - *offset* (Optional :class:`int`)
-             The offset from where the api should start from in the albums.
-        '''
+        Parameters
+        ----------
+        limit : Optional[int]
+            The maximum number of items to return. Default: 20. Minimum: 1. Maximum: 50.
+        offset : Optiona[int]
+            The offset of which Spotify should start yielding from.
+        include_groups : INCLUDE_GROUPS_TP
+            INCLUDE_GROUPS
+        market : Optional[str]
+            An ISO 3166-1 alpha-2 country code.
+        """
         data = await self.__client.http.artist_albums(self.id, limit=limit, offset=offset, include_groups=include_groups, market=market)
         return list(Album(self.__client, item) for item in data['items'])
 
-    async def get_all_albums(self, *, market='US'):
-        '''loads all of the artists albums, depending on how many the artist has this may be a long operation.
+    async def get_all_albums(self, *, market='US') -> List[Album]:
+        """loads all of the artists albums, depending on how many the artist has this may be a long operation.
 
-        **parameters**
-
-        - *market* (Optional :class:`str`)
-            An ISO 3166-1 alpha-2 country code. Provide this parameter if you want to apply Track Relinking.
-        '''
+        Parameters
+        ----------
+        market : Optional[str]
+            An ISO 3166-1 alpha-2 country code.
+        """
         albums = []
         offset = 0
         total = await self.total_albums(market=market)
@@ -72,33 +92,33 @@ class Artist:
             data = await self.__client.http.artist_albums(self.id, limit=50, offset=offset, market=market)
 
             offset += 50
-            albums += [Album(self.__client, item) for item in data['items']]
+            albums += list(Album(self.__client, item) for item in data['items'])
 
         return albums
 
     async def total_albums(self, *, market=None):
-        '''get the total amout of tracks in the album.'''
-        kwargs = {'limit': 1, 'offset': 0}
+        """get the total amout of tracks in the album.
 
-        if market:
-            kwargs['market'] = market
-
-        return (await self.__client.http.artist_albums(self.id, **kwargs))['total']
+        Parameters
+        ----------
+        market : Optional[str]
+            An ISO 3166-1 alpha-2 country code.
+        """
+        data = await self.__client.http.artist_albums(self.id, limit=1, offset=0, market=market)
+        return data['total']
 
     async def top_tracks(self, country='US'):
-        '''Get Spotify catalog information about an artist’s top tracks by country.
+        """Get Spotify catalog information about an artist’s top tracks by country.
 
-        **parameters**
-
-        - *country* (:class:`str`)
+        Parameters
+        ----------
+        country : str
             The country to search for, it defaults to 'US'.
-        '''
-        data = (await self.__client.http.artist_top_tracks(self.id, country=country))['tracks']
-
-        return list(Track(self.__client, item) for item in data)
+        """
+        top = await self.__client.http.artist_top_tracks(self.id, country=country)
+        return list(Track(self.__client, item) for item in top['tracks'])
 
     async def related_artists(self):
-        '''Get Spotify catalog information about artists similar to a given artist. Similarity is based on analysis of the Spotify community’s listening history.'''
-        data = (await self.__client.http.artist_related_artists(self.id))['artists']
-
-        return list(Artist(self.__client, item) for item in data)
+        """Get Spotify catalog information about artists similar to a given artist. Similarity is based on analysis of the Spotify community’s listening history."""
+        related = await self.__client.http.artist_related_artists(self.id)
+        return list(Artist(self.__client, item) for item in related['artists'])

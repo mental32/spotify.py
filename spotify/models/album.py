@@ -1,119 +1,125 @@
-from .common import Image
+from typing import Optional, List
 
-from spotify import _types
-
-Artist = _types.artist
-Track = _types.track
+from . import URIBase, Image, Artist, Track
 
 
-class Album:
-    '''Representation of an Album on spotify'''
+class Album(URIBase):  # TODO: AttrDoc Album
+    """A Spotify Album.
 
-    __slots__ = ('__client', '__data', '_type', 'id', 'name', 'href', 'uri', 'artists')
+    Attributes
+    ----------
+    artists : List[Artist]
+        The artists for the album.
+    id : str
+        The ID of the album.
+    name : str
+        The name of the album.
+    href : str
+        The HTTP API URL for the album.
+    uri : str
+        The URI for the album.
+    album_group : TYPE
+        DESCRIPTION
+    album_type : TYPE
+        DESCRIPTION
+    release_date : TYPE
+        DESCRIPTION
+    release_date_precision : TYPE
+        DESCRIPTION
+    genre : TYPE
+        DESCRIPTION
+    label : TYPE
+        DESCRIPTION
+    popularity : TYPE
+        DESCRIPTION
+    copyrights : TYPE
+        DESCRIPTION
+    markets : TYPE
+        DESCRIPTION
+    """
+
+    __slots__ = (
+        '__client',
+        'type', 'group', 'id', 'name',
+        'markets', 'url', 'href', 'uri'
+        'release_date', 'release_date_precision',
+        'images', 'artists', 'restrictions',
+        'genres', 'copyrights', 'label', 'popularity',
+    )
 
     def __init__(self, client, data):
         self.__client = client
-        self._type = _types[data['type']]
 
-        self.id = data.pop('id')
-        self.name = data.pop('name')
-        self.href = data.pop('href')
-        self.uri = data.pop('uri')
-
-        self.__data = data
+        # Simple object attributes.
+        self.type = data.pop('album_type')
+        self.group = data.pop('album_group')
         self.artists = [Artist(client, artist) for artist in data.get('artists', [])]
+        self.markets = data.pop('avaliable_markets', None)
+        self.url = data.pop('external_urls').get('spotify', None)
+        self.id = data.pop('id', None)
+        self.name = data.pop('name', None)
+        self.href = data.pop('href', None)
+        self.uri = data.pop('uri', None)
+        self.release_date = data.pop('release_date', None)
+        self.release_date_precision = data.pop('release_date_precision', None)
+        self.images = list(Image(**image) for image in data.pop('images', []))
+        self.restrictions = data.pop('restrictions', None)
+
+        # Full object attributes
+        self.genres = data.pop('genres', None)
+        self.copyrights = data.pop('copyrights', None)
+        self.label = data.pop('label', None)
+        self.popularity = data.pop('popularity', None)
+        self.total_tracks = data.pop('total_tracks', None)
 
     def __repr__(self):
         return '<spotify.Album: "%s">' % (self.name or self.id or self.uri)
 
-    def __str__(self):
-        return self.uri
+    async def get_tracks(self, *, limit: Optional[int] = 20, offset: Optional[int] = 0) -> List[Track]:
+        """get the albums tracks from spotify.
 
-    def __eq__(self, other):
-        return type(self) is type(other) and self.uri == other.uri
-
-    def __ne__(self, other):
-        return not self.__eq__(other)
-
-    @property
-    def album_group(self):
-        return self.__data.get('album_group')
-
-    @property
-    def album_type(self):
-        return self.__data.get('album_type')
-
-    @property
-    def release_date(self):
-        return self.__data.get('release_date')
-
-    @property
-    def release_date_precision(self):
-        return self.__data.get('release_date_precision')
-
-    @property
-    def genre(self):
-        return self.__data.get('genres')
-
-    @property
-    def label(self):
-        return self.__data.get('label')
-
-    @property
-    def popularity(self):
-        return self.__data.get('popularity')
-
-    @property
-    def copyrights(self):
-        return self.__data.get('copyrights')
-
-    @property
-    def markets(self):
-        return self.__data.get('avaliable_markets')
-
-    @property
-    def images(self):
-        return [Image(**image) for image in self.__data.get('images')]
-
-    async def total_tracks(self, *, market=None):
-        '''get the total amout of tracks in the album.'''
-        kwargs = {'limit': 1, 'offset': 0}
-
-        if market:
-            kwargs['market'] = market
-
-        return (await self.__client.http.album_tracks(self.id, **kwargs))['total']
-
-    async def get_tracks(self, *, limit=20, offset=0):
-        '''get the albums tracks from spotify.
-
-        **parameters**
-
-         - *limit* (Optional :class:`int`)
-             The limit on how many tracks to retrieve for this album (default is 20).
-
-         - *offset* (Optional :class:`int`)
-             The offset from where the api should start from in the tracks.
-        '''
+        Parameters
+        ----------
+        limit : Optional[int]
+            The limit on how many tracks to retrieve for this album (default is 20).
+        offset : Optional[int]
+            The offset from where the api should start from in the tracks.
+        
+        Returns
+        -------
+        tracks : List[Track]
+            The tracks of the artist.
+        """
         data = await self.__client.http.album_tracks(self.id, limit=limit, offset=offset)
-        return [Track(self.__client, item) for item in data['items']]
+        return list(Track(self.__client, item) for item in data['items'])
 
-    async def get_all_tracks(self, *, market='US'):
-        '''loads all of the albums tracks, depending on how many the album has this may be a long operation.
+    async def get_all_tracks(self, *, market: Optional[str] = 'US') -> List[Track]:
+        """loads all of the albums tracks, depending on how many the album has this may be a long operation.
 
-        **parameters**
-
-        - *market* (Optional :class:`str`)
+        Parameters
+        ----------
+        market : Optional[str]
             An ISO 3166-1 alpha-2 country code. Provide this parameter if you want to apply Track Relinking.
-        '''
+        
+        Returns
+        -------
+        tracks : List[Track]
+            The tracks of the artist.
+        """
         tracks = []
         offset = 0
-        total = await self.total_tracks(market=market)
+        total = self.total_tracks or None
 
-        while len(tracks) < total:
+        while True:
             data = await self.__client.http.album_tracks(self.id, limit=50, offset=offset, market=market)
 
+            if total is None:
+                total = data['total']
+
             offset += 50
-            tracks += [Track(self.__client, item) for item in data['items']]
+            tracks += list(Track(self.__client, item) for item in data['items'])
+
+            if len(tracks) >= total:
+                break
 
         return tracks
