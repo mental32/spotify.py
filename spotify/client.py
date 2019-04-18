@@ -1,35 +1,54 @@
 import asyncio
 
 from .http import HTTPClient
+from .utils import to_id
+from . import (
+    OAuth2,
+    Artist,
+    Album,
+    Track,
+    User,
+    Playlist,
+    Library,
+    PlaylistTrack
+)
 
-from spotify import _types, utils
-from spotify.utils import OAuth2
 
-Artist = _types['artist']
-Album = _types['album']
-Track = _types['track']
-User = _types['user']
-Playlist = _types['playlist']
-Library = _types['library']
-PlaylistTrack = _types['playlist_track']
+_TYPES = {
+    'artist': Artist,
+    'album': Album,
+    'playlist': Playlist,
+    'track': Track
+}
+
+_SEARCH_TYPES = {'track', 'playlist', 'artist', 'album'}
+_SEARCH_TYPE_ERR = 'Bad queary type! got "%s" expected any of: track, playlist, artist, album'
 
 
 class Client:
-    '''Represents an interface to Spotify.
+    """Represents an interface to Spotify.
 
     This class is used to interact with the Spotify API
 
-    **Parameters**
-
-    - *client_id* (:class:`str`)
+    Parameters
+    ----------
+    client_id : str
         The client id provided by spotify for the app.
-
-    - *client_secret* (:class:`str`)
+    client_secret : str
         The client secret for the app.
-
-    - *loop* (`optional`:`event loop`)
+    loop : asyncio.AbstractEventLoop
         The event loop the client should run on, if no loop is specified `asyncio.get_event_loop()` is called and used instead.
-    '''
+
+    Attributes
+    ----------
+    client_id : str
+        The applications client_id, also aliased as `id`
+    http : HTTPClient
+        The HTTPClient that is being used.
+    loop : asyncio.AbstractEventLoop
+        The event loop the client is running on.
+    """
+
     _default_http_client = HTTPClient
 
     def __init__(self, client_id, client_secret, *, loop=None):
@@ -47,142 +66,183 @@ class Client:
     def id(self):
         return self.http.client_id
 
-    async def close(self):
-        '''Close the underlying HTTP session to spotify'''
-        await self.http.close()
+    def oauth2_url(self, redirect_uri: str, scope: Optional[str] = None, state: Optional[str] = None) -> str:
+        """Generate an outh2 url for user authentication.
 
-    ### External model contstructors
-
-    def oauth2_url(self, redirect_uri, scope=None, state=None):
-        '''Generate an outh2 url for user authentication
-
-        **parameters**
-
-        - *redirect_uri* (:class:`str`)
+        Parameters
+        ----------
+        redirect_uri : str
             Where spotify should redirect the user to after authentication.
-
-        - *scope* (:class:`str`)
+        scope : Optional[str]
             Space seperated spotify scopes for different levels of access.
-
-        - *state* (:class:`str`)
+        state : Optional[str]
             Using a state value can increase your assurance that an incoming connection is the result of an authentication request.
-        '''
+
+        Returns
+        -------
+        url : str
+            The OAuth2 url.
+        """
         return OAuth2.url_(self.http.client_id, redirect_uri, scope=scope, state=state)
 
-    async def user_from_token(self, token):
-        '''Create a user session from a token
+    async def close(self):
+        """Close the underlying HTTP session to Spotify."""
+        await self.http.close()
+
+    async def user_from_token(self, token: str) -> User:
+        """Create a user session from a token.
 
         This code is equivelent to `User.from_token(client, token)`
 
-        **parameters**
+        Parameters
+        ----------
+        token : str
+            The token to attatch the user session to.
 
-        - *token* (:class:`str`)
-            The token to attatch the user session to
-        '''
+        Returns
+        -------
+        user : User
+            The user from the ID
+        """
         return await User.from_token(self, token)
 
-    ### Get single objects ###
+    async def get_album(self, spotify_id: str, *, market: str = 'US') -> Album:
+        """Retrive an album with a spotify ID.
 
-    async def get_album(self, spotify_id, *, market='US'):
-        '''Retrive an album with a spotify ID
+        Parameters
+        ----------
+        spotify_id : str
+            The ID to search for.
+        market : Optional[str]
+            An ISO 3166-1 alpha-2 country code
 
-        **parameters**
-
-        - spotify_id (:class:`str`) - the ID to look for
-        - market (Optional :class:`str`) - An ISO 3166-1 alpha-2 country code
-        '''
-        data = await self.http.album(utils.uri_to_id(spotify_id), market=market)
+        Returns
+        -------
+        album : Album
+            The album from the ID
+        """
+        data = await self.http.album(to_id(spotify_id), market=market)
         return Album(self, data)
 
-    async def get_artist(self, spotify_id):
-        '''Retrive an artist with a spotify ID
+    async def get_artist(self, spotify_id: str) -> Artist:
+        """Retrive an artist with a spotify ID.
 
-        **parameters**
+        Parameters
+        ----------
+        spotify_id : str
+            The ID to search for.
 
-        - spotify_id (:class:`str`) - the ID to look for
-        '''
-        data = await self.http.artist(utils.uri_to_id(spotify_id))
+        Returns
+        -------
+        artist : Artist
+            The artist from the ID
+        """
+        data = await self.http.artist(to_id(spotify_id))
         return Artist(self, data)
 
-    async def get_track(self, spotify_id):
-        '''Retrive an track with a spotify ID
+    async def get_track(self, spotify_id: str) -> Track:
+        """Retrive an track with a spotify ID.
 
-        **parameters**
+        Parameters
+        ----------
+        spotify_id : str
+            The ID to search for.
 
-        - spotify_id (:class:`str`) - the ID to look for
-        '''
-        data = await self.http.track(utils.uri_to_id(spotify_id))
+        Returns
+        -------
+        track : Track
+            The track from the ID
+        """
+        data = await self.http.track(to_id(spotify_id))
         return Track(self, data)
 
-    async def get_user(self, spotify_id):
-        '''Retrive an user with a spotify ID
+    async def get_user(self, spotify_id: str) -> User:
+        """Retrive an user with a spotify ID.
 
-        **parameters**
+        Parameters
+        ----------
+        spotify_id : str
+            The ID to search for.
 
-        - spotify_id (:class:`str`) - the ID to look for
-        '''
-        data = await self.http.user(utils.uri_to_id(spotify_id))
+        Returns
+        -------
+        user : User
+            The user from the ID
+        """
+        data = await self.http.user(to_id(spotify_id))
         return User(self, data)
 
-    ### Get multiple objects ###
+    # Get multiple objects
 
-    async def get_albums(self, *, ids, market='US'):
-        '''Retrive multiple albums with a list of spotify IDs
+    async def get_albums(self, *ids: List[str], market: str = 'US') -> List[Album]:
+        """Retrive multiple albums with a list of spotify IDs.
 
-        **parameters**
+        Parameters
+        ----------
+        ids : List[str]
+            the ID to look for
+        market : Optional[str]
+            An ISO 3166-1 alpha-2 country code
 
-        - ids (:class:`str`) - the ID to look for
-        - market (Optional :class:`str`) - An ISO 3166-1 alpha-2 country code
-        '''
-        data = await self.http.albums(','.join(utils.uri_to_id(_id) for _id in ids), market=market)
-        return [Album(self, album) for album in data['albums']]
+        Returns
+        -------
+        albums : List[Album]
+            The albums from the IDs
+        """
+        data = await self.http.albums(','.join(to_id(_id) for _id in ids), market=market)
+        return list(Album(self, album) for album in data['albums'])
 
-    async def get_artists(self, *, ids):
-        '''Retrive multiple artists with a list of spotify IDs
+    async def get_artists(self, *ids: List[str]) -> List[Artist]:
+        """Retrive multiple artists with a list of spotify IDs.
 
-        **parameters**
+        Parameters
+        ----------
+        ids : List[str]
+            the IDs to look for
 
-        - ids (:class:`str`) - the ID to look for
-        '''
-        data = await self.http.artists(','.join(utils.uri_to_id(_id) for _id in ids))
-        return [Album(self, artist) for artist in data['artists']]
+        Returns
+        -------
+        artists : List[Artist]
+            The artists from the IDs
+        """
+        data = await self.http.artists(','.join(to_id(_id) for _id in ids))
+        return list(Artist(self, artist) for artist in data['artists'])
 
-    async def search(self, q, *, types=['track', 'playlist', 'artist', 'album'], limit=20, offset=0, market=None):
-        '''Access the spotify search functionality
+    async def search(self, q: str, *, types: Optional[Iterable[str]] = ['track', 'playlist', 'artist', 'album'], limit: Optional[int] = 20, offset: Optional[int] = 0, market: Optional[str] = None) -> Dict[str, List[Union[Track, Playlist, Artist, Album]]]:
+        """Access the spotify search functionality.
 
-        **parameters**
-
-        - *q* (:class:`str`) - the search query
-
-        - *types* (Optional :class:`iterable`)
+        Parameters
+        ----------
+        q : str
+            the search query
+        types : Optional[Iterable[str]]
             A sequence of search types (can be any of `track`, `playlist`, `artist` or `album`) to refine the search request.
             A `ValueError` may be raised if a search type is found that is not valid.
-
-        - *limit* (Optional :class:`int`)
+        limit : Optional[int]
             The limit of search results to return when searching.
             Maximum limit is 50, any larger may raise a :class:`HTTPException`
-
-        - *offset* (Optional :class:`int`)
+        offset : Optional[int]
             The offset from where the api should start from in the search results.
-
-        - *market* (Optional :class:`str`)
+        market : Optional[str]
             An ISO 3166-1 alpha-2 country code. Provide this parameter if you want to apply Track Relinking.
-        '''
-        fmt = 'Bad queary type! got %s expected any: track, playlist, artist, album'
-
+        """
         if not hasattr(types, '__iter__'):
             raise TypeError('types must be an iterable.')
 
         elif not isinstance(types, list):
-            types = [item for item in types]
+            types = list(item for item in types)
 
-        for qt in types:
-            if qt not in ['track', 'playlist', 'artist', 'album']:
-                raise ValueError(fmt % qt)
+        if not set(types).issubset(_SEARCH_TYPES):
+            raise ValueError(_SEARCH_TYPE_ERR % set(types).difference(_SEARCH_TYPES).pop())
 
-        types = ','.join(qt.strip() for qt in types)
-        kwargs = {'q': q.replace(' ', '%20').replace(':', '%3'), 'queary_type': types, 'market': market, 'limit': limit, 'offset': offset}
+        kwargs = {
+            'q': q.replace(' ', '+'),
+            'queary_type': ','.join(tp.strip() for tp in types),
+            'market': market,
+            'limit': limit,
+            'offset': offset
+        }
 
         data = await self.http.search(**kwargs)
 
-        return {key: [_types[obj['type']](self, obj) for obj in value['items']] for key, value in data.items()}
+        return {key: [_TYPES[obj['type']](self, obj) for obj in value['items']] for key, value in data.items()}
