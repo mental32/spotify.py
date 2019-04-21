@@ -87,6 +87,7 @@ class Device:
 
         self.is_active = data.get('is_active')
         self.is_restricted = data.get('is_restricted')
+        self.is_private_session = data.get('is_private_session')
 
     def __eq__(self, other):
         return type(self) is type(other) and self.id == other.id
