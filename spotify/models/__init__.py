@@ -13,7 +13,7 @@ from . import typing
 
 from .common import Device, Context, Image
 from .artist import Artist  # DEAD: Album Track
-from .track import Track, PlaylistTrack  # DEAD: Album
+from .track import Track, PlaylistTrack  # DEAD: Album User
 from .player import Player
 from .album import Album
 from .library import Library
@@ -26,6 +26,7 @@ with _clean_namespace(locals(), 'track', 'artist', 'playlist'):
     setattr(artist, 'Album', Album)
     setattr(artist, 'Track', Track)
     setattr(playlist, 'User', User)
+    setattr(track, 'User', User)
     setattr(track, 'Album', Album)
 
 __all__ = ('User', 'Track', 'PlaylistTrack', 'Artist', 'Album', 'Playlist', 'PartialTracks', 'Library', 'Player', 'Device', 'Context', 'Image')

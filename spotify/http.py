@@ -11,6 +11,26 @@ from .errors import HTTPException, Forbidden, NotFound
 
 
 class Route:
+    """Used for constructing URLs for API endpoints.
+
+    Parameters
+    ----------
+    method : str
+        The HTTP/REST method used.
+    path : str
+        A path to be formatted.
+    kwargs : Any
+        The arguments to used to format the path.
+
+    Attributes
+    ----------
+    path : str
+        The path template.
+    method : str
+        The HTTP method used.
+    url : str
+        The formatted path.
+    """
     BASE = 'https://api.spotify.com/v1'
 
     def __init__(self, method, path, **kwargs):
@@ -24,20 +44,17 @@ class Route:
 
 
 class HTTPClient:
-    '''Represents an HTTP client sending HTTP requests to the Spotify API.
+    """Represents an HTTP client sending HTTP requests to the Spotify API.
 
-    **Parameters**
-
-    - *client_id* (:class:`str`)
+    Parameters
+    ----------
+    client_id : str
         The client id provided by spotify for the app.
-
-    - *client_secret* (:class:`str`)
+    client_secret : str
         The client secret for the app.
-
-    - *loop* (`optional`:`event loop`)
+    loop : Optional[event loop]
         The event loop the client should run on, if no loop is specified `asyncio.get_event_loop()` is called and used instead.
-    '''
-
+    """
     RETRY_AMOUNT = 10
 
     def __init__(self, client_id, client_secret, loop=None):
@@ -66,7 +83,15 @@ class HTTPClient:
             return json.loads(await resp.text(encoding='utf-8'))
 
     async def request(self, route, **kwargs):
-        '''Make a request to the spotify API with the current bearer credentials.'''
+        """Make a request to the spotify API with the current bearer credentials.
+
+        Parameters
+        ----------
+        route : Union[tuple[str, str], Route]
+            A tuple of the method and url or a :class:`Route` object.
+        kwargs : Any
+            keyword arguments to pass into :class:`aiohttp.ClientSession.request`
+        """
         if isinstance(route, tuple):
             method, url = route
         else:
@@ -117,10 +142,24 @@ class HTTPClient:
         raise HTTPException(r, data)
 
     async def close(self):
-        '''close the HTTP session'''
+        """Close the underlying HTTP session."""
         await self._session.close()
 
     def album(self, spotify_id, market='US'):
+        """Get a spotify album by its ID.
+
+        Parameters
+        ----------
+        spotify_id : str
+            The spotify_id to search by.
+        market : Optional[str]
+            An ISO 3166-1 alpha-2 country code.
+
+        Returns
+        -------
+        album : Dict
+            The album object.
+        """
         route = Route('GET', '/albums/{spotify_id}', spotify_id=spotify_id)
         payload = {}
 
@@ -130,6 +169,19 @@ class HTTPClient:
         return self.request(route, params=payload)
 
     def album_tracks(self, spotify_id, limit=20, offset=0, market='US'):
+        """Get an albums tracks by an ID.
+
+        Parameters
+        ----------
+        spotify_id : str
+            The spotify_id to search by.
+        limit : Optional[int]
+            The maximum number of items to return. Default: 20. Minimum: 1. Maximum: 50.
+        offset : Optiona[int]
+            The offset of which Spotify should start yielding from.
+        market : Optional[str]
+            An ISO 3166-1 alpha-2 country code.
+        """
         route = Route('GET', '/albums/{spotify_id}/tracks', spotify_id=spotify_id)
         payload = {'limit': limit, 'offset': offset}
 
@@ -139,6 +191,15 @@ class HTTPClient:
         return self.request(route, params=payload)
 
     def albums(self, spotify_ids, market='US'):
+        """Get a spotify album by its ID.
+
+        Parameters
+        ----------
+        spotify_ids : List[str]
+            The spotify_ids to search by.
+        market : Optional[str]
+            An ISO 3166-1 alpha-2 country code.
+        """
         route = Route('GET', '/albums/')
         payload = {'ids': spotify_ids}
 
@@ -148,10 +209,32 @@ class HTTPClient:
         return self.request(route, params=payload)
 
     def artist(self, spotify_id):
+        """Get a spotify artist by their ID.
+
+        Parameters
+        ----------
+        spotify_id : str
+            The spotify_id to search by.
+        """
         route = Route('GET', '/artists/{spotify_id}', spotify_id=spotify_id)
         return self.request(route)
 
     def artist_albums(self, spotify_id, include_groups=None, limit=20, offset=0, market='US'):
+        """Get an artists tracks by their ID.
+
+        Parameters
+        ----------
+        spotify_id : str
+            The spotify_id to search by.
+        include_groups : INCLUDE_GROUPS_TP
+            INCLUDE_GROUPS
+        limit : Optional[int]
+            The maximum number of items to return. Default: 20. Minimum: 1. Maximum: 50.
+        offset : Optiona[int]
+            The offset of which Spotify should start yielding from.
+        market : Optional[str]
+            An ISO 3166-1 alpha-2 country code.
+        """
         route = Route('GET', '/artists/{spotify_id}/albums', spotify_id=spotify_id)
         payload = {'limit': limit, 'offset': offset}
 
@@ -164,20 +247,54 @@ class HTTPClient:
         return self.request(route, params=payload)
 
     def artist_top_tracks(self, spotify_id, country):
+        """Get an artists top tracks per country with their ID.
+
+        Parameters
+        ----------
+        spotify_id : str
+            The spotify_id to search by.
+        country : COUNTRY_TP
+            COUNTRY
+        """
         route = Route('GET', '/artists/{spotify_id}/top-tracks', spotify_id=spotify_id)
         payload = {'country': country}
         return self.request(route, params=payload)
 
     def artist_related_artists(self, spotify_id):
+        """Get related artists for an artist by their ID.
+
+        Parameters
+        ----------
+        spotify_id : str
+            The spotify_id to search by.
+        """
         route = Route('GET', '/artists/{spotify_id}/related-artists', spotify_id=spotify_id)
         return self.request(route)
 
     def artists(self, spotify_ids):
+        """Get a spotify artists by their IDs.
+
+        Parameters
+        ----------
+        spotify_id : List[str]
+            The spotify_ids to search with.
+        """
         route = Route('GET', '/artists')
         payload = {'ids': spotify_ids}
         return self.request(route, params=payload)
 
     def category(self, category_id, country=None, locale=None):
+        """Get a single category used to tag items in Spotify.
+
+        Parameters
+        ----------
+        category_id : str
+            The Spotify category ID for the category.
+        country : COUNTRY_TP
+            COUNTRY
+        locale : LOCALE_TP
+            LOCALE
+        """
         route = Route('GET', '/browse/categories/{category_id}', category_id=category_id)
         payload = {}
 
@@ -190,6 +307,19 @@ class HTTPClient:
         return self.request(route, params=payload)
 
     def category_playlists(self, category_id, limit=20, offset=0, country=None):
+        """Get a list of Spotify playlists tagged with a particular category.
+
+        Parameters
+        ----------
+        category_id : str
+            The Spotify category ID for the category.
+        limit : Optional[int]
+            The maximum number of items to return. Default: 20. Minimum: 1. Maximum: 50.
+        offset : Optional[int]
+            The index of the first item to return. Default: 0
+        country : COUNTRY_TP
+            COUNTRY
+        """
         route = Route('GET', '/browse/categories/{category_id}/playlists', category_id=category_id)
         payload = {'limit': limit, 'offset': offset}
 
@@ -199,6 +329,19 @@ class HTTPClient:
         return self.request(route, params=payload)
 
     def categories(self, limit=20, offset=0, country=None, locale=None):
+        """Get a list of categories used to tag items in Spotify.
+
+        Parameters
+        ----------
+        limit : Optional[int]
+            The maximum number of items to return. Default: 20. Minimum: 1. Maximum: 50.
+        offset : Optional[int]
+            The index of the first item to return. Default: 0
+        country : COUNTRY_TP
+            COUNTRY
+        locale : LOCALE_TP
+            LOCALE
+        """
         route = Route('GET', '/browse/categories')
         payload = {'limit': limit, 'offset': offset}
 
@@ -211,6 +354,21 @@ class HTTPClient:
         return self.request(route, params=payload)
 
     def featured_playlists(self, locale=None, country=None, timestamp=None, limit=20, offset=0):
+        """Get a list of Spotify featured playlists.
+
+        Parameters
+        ----------
+        locale : LOCALE_TP
+            LOCALE
+        country : COUNTRY_TP
+            COUNTRY
+        timestamp : TIMESTAMP_TP
+            TIMESTAMP
+        limit : Optional[int]
+            The maximum number of items to return. Default: 20. Minimum: 1. Maximum: 50.
+        offset : Optional[int]
+            The index of the first item to return. Default: 0
+        """
         route = Route('GET', '/browse/featured-playlists')
         payload = {'limit': limit, 'offset': offset}
 
@@ -226,6 +384,17 @@ class HTTPClient:
         return self.request(route, params=payload)
 
     def new_releases(self, *, country=None, limit=20, offset=0):
+        """Get a list of new album releases featured in Spotify.
+
+        Parameters
+        ----------
+        limit : Optional[int]
+            The maximum number of items to return. Default: 20. Minimum: 1. Maximum: 50.
+        offset : Optional[int]
+            The index of the first item to return. Default: 0
+        country : COUNTRY_TP
+            COUNTRY
+        """
         route = Route('GET', '/browse/new-releases')
         payload = {'limit': limit, 'offset': offset}
 
@@ -235,6 +404,27 @@ class HTTPClient:
         return self.request(route, params=payload)
 
     def recommendations(self, seed_artists, seed_genres, seed_tracks, *, limit=20, market=None, **filters):
+        """Get Recommendations Based on Seeds.
+
+        Parameters
+        ----------
+        seed_artists : str
+            A comma separated list of Spotify IDs for seed artists. Up to 5 seed values may be provided.
+        seed_genres : str
+            A comma separated list of any genres in the set of available genre seeds. Up to 5 seed values may be provided.
+        seed_tracks : str
+            A comma separated list of Spotify IDs for a seed track. Up to 5 seed values may be provided.
+        limit : Optional[int]
+            The maximum number of items to return. Default: 20. Minimum: 1. Maximum: 50.
+        market : Optional[str]
+            An ISO 3166-1 alpha-2 country code.
+        max_* : Optional[Keyword arguments]
+            For each tunable track attribute, a hard ceiling on the selected track attribute’s value can be provided.
+        min_* : Optional[Keyword arguments]
+            For each tunable track attribute, a hard floor on the selected track attribute’s value can be provided.
+        target_* : Optional[Keyword arguments]
+            For each of the tunable track attributes (below) a target value may be provided.
+        """
         route = Route('GET', '/recommendations')
         payload = {'seed_artists': seed_artists, 'seed_genres': seed_genres, 'seed_tracks': seed_tracks, 'limit': limit}
 
@@ -247,6 +437,17 @@ class HTTPClient:
         return self.request(route, param=payload)
 
     def following_artists_or_users(self, ids, *, type='artist'):
+        """Check to see if the current user is following one or more artists or other Spotify users.
+
+        Parameters
+        ----------
+        ids : List[str]
+            A comma-separated list of the artist or the user Spotify IDs to check.
+            A maximum of 50 IDs can be sent in one request.
+        type : Optional[str]
+            The ID type: either "artist" or "user".
+            Default: "artist"
+        """
         route = Route('GET', '/me/following/contains')
         payload = {'ids': ids, 'type': type}
 
@@ -259,6 +460,17 @@ class HTTPClient:
         return self.request(route, params=payload)
 
     def follow_artist_or_user(self, ids, *, type='artist'):
+        """Add the current user as a follower of one or more artists or other Spotify users.
+
+        Parameters
+        ----------
+        ids : List[str]
+            A comma-separated list of the artist or the user Spotify IDs to check.
+            A maximum of 50 IDs can be sent in one request.
+        type : Optional[str]
+            The ID type: either "artist" or "user".
+            Default: "artist"
+        """
         route = Route('PUT', '/me/following')
         payload = {'ids': ids, 'type': type}
 

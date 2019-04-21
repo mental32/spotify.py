@@ -4,6 +4,7 @@ from typing import Optional
 from . import SpotifyBase, URIBase, Image, Artist
 
 Album: Optional[SpotifyBase] = None
+User: Optional[SpotifyBase] = None
 
 
 class Track(URIBase):
@@ -26,13 +27,14 @@ class Track(URIBase):
         `True` if it does.
         `False` if it does not (or unknown)
     disc_number : int
-        DISC
+        The disc number (usually 1 unless the album consists of more than one disc).
     track_number : int
-        TRACK
+        The number of the track.
+        If an album has several discs, the track number is the number on the specified disc.
     url : str
         The open.spotify URL for this Track
     is_local : bool
-        LOCAL
+        Whether or not the track is from a local file.
     popularity : int
         POPULARITY
     preview_url : str
@@ -42,7 +44,6 @@ class Track(URIBase):
     markets : List[str]
         The available markets for the Track.
     """
-
     __slots__ = (
         '__client', 'artists', 'artist', 'album',
         'id', 'name', 'href', 'uri', 'duration',
@@ -94,22 +95,21 @@ class PlaylistTrack(Track):
 
     Attributes
     ----------
-    added_by : ADDED_BY
-        ADDED_BY
+    added_by : str
+        The Spotify user who added the track.
     is_local : bool
-        IS_LOCAL
+        Whether this track is a local file or not.
     added_at : datetime.datetime
         The datetime of when the track was added to the playlist.
     """
-
     __slots__ = ('added_at', 'added_by', 'is_local')
 
     def __init__(self, client, data):
         super().__init__(client, data['track'])
 
-        self.added_by = data['added_by']
-        self.is_local = data['is_local']
+        self.added_by = User(client, data['added_by'])
         self.added_at = datetime.datetime.strptime(data['added_at'], '%Y-%m-%dT%H:%M:%SZ')
+        self.is_local = data['is_local']
 
     def __repr__(self):
         return '<spotify.PlaylistTrack: "%s">' % self.name

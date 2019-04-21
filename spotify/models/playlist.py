@@ -4,7 +4,12 @@ from . import SpotifyBase, URIBase, Track, PlaylistTrack, Image
 
 
 class PartialTracks(SpotifyBase):
-    """  # TODO: Add PartialTracks documentation.
+    """A partial track object which contains information about the tracks but not the tracks itself.
+
+    Attributes
+    ----------
+    total : int
+        The total amount of tracks/
     """
     __slots__ = ('total', '__func', '__iter', '__client')
 
@@ -32,7 +37,13 @@ class PartialTracks(SpotifyBase):
             return PlaylistTrack(self.__client, track)
 
     async def build(self):
-        """get the track object for each link in the partial tracks data"""
+        """get the track object for each link in the partial tracks data
+
+        Returns
+        -------
+        tracks : List[Track]
+            The tracks
+        """
         data = await self.__func()
         return list(PlaylistTrack(self.__client, track) for track in data['items'])
 

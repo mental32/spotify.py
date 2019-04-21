@@ -6,8 +6,13 @@ from .album import Album
 
 
 class Library(SpotifyBase):
-    """A Spotify Users Library."""
+    """A Spotify Users Library.
 
+    Attributes
+    ----------
+    user : Spotify.User
+        The user which this library object belongs to.
+    """
     def __init__(self, client, user):
         self.user = user
         self.__client = client

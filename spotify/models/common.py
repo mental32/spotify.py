@@ -26,7 +26,18 @@ class Image:
 
 
 class Context:
-    """  # TODO: Add Context documenataion.
+    """A Spotify Context.
+
+    Attributes
+    ----------
+    type : str
+        The object type, e.g. “artist”, “playlist”, “album”.
+    href : str
+        A link to the Web API endpoint providing full details of the track.
+    external_urls : str
+        External URLs for this context.
+    uri : str
+        The Spotify URI for the context.
     """
     __slots__ = ('external_urls', 'type', 'href', 'uri')
 
@@ -45,7 +56,25 @@ class Context:
 
 
 class Device:
-    """  # TODO: Add Device documentation.
+    """A Spotify Users device.
+
+    Attributes
+    ----------
+    id : str
+        The device ID
+    name : int
+        The name of the device.
+    type : str
+        A Device type, such as “Computer”, “Smartphone” or “Speaker”.
+    volume : int
+        The current volume in percent. This may be null.
+    is_active : bool
+        if this device is the currently active device.
+    is_restricted : bool
+        Whether controlling this device is restricted.
+        At present if this is “true” then no Web API commands will be accepted by this device.
+    is_private_session : bool
+        If this device is currently in a private session.
     """
     __slots__ = ('id', 'name', 'type', 'volume', 'is_active', 'is_restricted')
 

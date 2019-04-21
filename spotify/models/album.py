@@ -18,24 +18,25 @@ class Album(URIBase):  # TODO: AttrDoc Album
         The HTTP API URL for the album.
     uri : str
         The URI for the album.
-    album_group : TYPE
-        DESCRIPTION
-    album_type : TYPE
-        DESCRIPTION
-    release_date : TYPE
-        DESCRIPTION
-    release_date_precision : TYPE
-        DESCRIPTION
-    genre : TYPE
-        DESCRIPTION
-    label : TYPE
-        DESCRIPTION
-    popularity : TYPE
-        DESCRIPTION
-    copyrights : TYPE
-        DESCRIPTION
-    markets : TYPE
-        DESCRIPTION
+    album_group : str
+        ossible values are “album”, “single”, “compilation”, “appears_on”. 
+        Compare to album_type this field represents relationship between the artist and the album.
+    album_type : str
+        The type of the album: one of "album" , "single" , or "compilation".
+    release_date : str
+        The date the album was first released.
+    release_date_precision : str
+        The precision with which release_date value is known: year, month or day.
+    genres : List[str]
+        A list of the genres used to classify the album.
+    label : str
+        The label for the album.
+    popularity : int
+        The popularity of the album. The value will be between 0 and 100, with 100 being the most popular.
+    copyrights : List[Dict]
+        The copyright statements of the album.
+    markets : List[str]
+        The markets in which the album is available: ISO 3166-1 alpha-2 country codes. 
     """
 
     __slots__ = (

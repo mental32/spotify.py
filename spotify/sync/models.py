@@ -9,6 +9,7 @@ _canary = object()
 
 
 class SyncMeta(type):
+    """Metaclass used for overloading coroutine functions on models."""
     def __new__(cls, name, bases, dct):
         klass = super().__new__(cls, name, bases, dct)
 
