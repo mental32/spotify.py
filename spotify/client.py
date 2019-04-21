@@ -26,9 +26,9 @@ _SEARCH_TYPE_ERR = 'Bad queary type! got "%s" expected any of: track, playlist, 
 
 
 class Client:
-    """Represents an interface to Spotify.
+    """Represents a Client app on Spotify.
 
-    This class is used to interact with the Spotify API
+    This class is used to interact with the Spotify API.
 
     Parameters
     ----------
@@ -48,7 +48,6 @@ class Client:
     loop : asyncio.AbstractEventLoop
         The event loop the client is running on.
     """
-
     _default_http_client = HTTPClient
 
     def __init__(self, client_id, client_secret, *, loop=None):

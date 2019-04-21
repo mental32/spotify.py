@@ -10,7 +10,6 @@ class Image:
     url : str
         The URL of the image.
     """
-
     __slots__ = ('height', 'width', 'url')
 
     def __init__(self, *, height: str, width: str, url: str):

@@ -3,7 +3,7 @@ from typing import Optional, List
 from . import URIBase, Image, Artist, Track
 
 
-class Album(URIBase):  # TODO: AttrDoc Album
+class Album(URIBase):
     """A Spotify Album.
 
     Attributes
@@ -38,7 +38,6 @@ class Album(URIBase):  # TODO: AttrDoc Album
     markets : List[str]
         The markets in which the album is available: ISO 3166-1 alpha-2 country codes. 
     """
-
     __slots__ = (
         '__client',
         'type', 'group', 'id', 'name',
