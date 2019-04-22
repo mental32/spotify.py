@@ -43,9 +43,13 @@ class Album(URIBase):
         self.__client = client
 
         # Simple object attributes.
-        self.type = data.pop('album_type')
-        self.group = data.pop('album_group')
-        self.artists = [Artist(client, artist) for artist in data.get('artists', [])]
+        self.type = data.pop('album_type', None)
+        self.group = data.pop('album_group', None)
+        self.artists = [Artist(client, artist) for artist in data.pop('artists', [])]
+
+        if self.artists:
+            self.artist = self.artists[0]
+
         self.markets = data.pop('avaliable_markets', None)
         self.url = data.pop('external_urls').get('spotify', None)
         self.id = data.pop('id', None)
