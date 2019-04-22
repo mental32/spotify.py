@@ -2,6 +2,7 @@ import spotify
 
 class SpotifyBase:
     """The base class all Spotify models should derive from."""
+    __slots__ = ()
 
     def __new__(cls, client, *args, **kwargs):
         if not isinstance(client, spotify.Client):
