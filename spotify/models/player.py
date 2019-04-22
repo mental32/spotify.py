@@ -63,6 +63,12 @@ class Player(SpotifyBase):
     def __repr__(self):
         return '<spotify.Player: "%s">' % repr(self._user)
 
+    # Properties
+
+    @property
+    def user(self):
+        return self.__user
+
     # Public methods
 
     async def pause(self, *, device: Optional[SomeDevice] = None):
@@ -74,7 +80,7 @@ class Player(SpotifyBase):
             The Device object or id of the device this command is targeting.
             If not supplied, the user’s currently active device is the target.
         """
-        return await self._user.http.pause_playback(device_id=str(device))
+        await self._user.http.pause_playback(device_id=str(device))
 
     async def resume(self, *, device: Optional[SomeDevice] = None):
         """Resume playback on the user's account.
@@ -85,7 +91,7 @@ class Player(SpotifyBase):
             The Device object or id of the device this command is targeting.
             If not supplied, the user’s currently active device is the target.
         """
-        return await self._user.http.play_playback(None, device_id=str(device))
+        await self._user.http.play_playback(None, device_id=str(device))
 
     async def seek(self, pos, *, device: Optional[SomeDevice] = None):
         """Seeks to the given position in the user’s currently playing track.
@@ -100,7 +106,7 @@ class Player(SpotifyBase):
             The Device object or id of the device this command is targeting.
             If not supplied, the user’s currently active device is the target.
         """
-        return await self._user.http.seek_playback(pos, device_id=str(device))
+        await self._user.http.seek_playback(pos, device_id=str(device))
 
     async def set_repeat(self, state, *, device: Optional[SomeDevice] = None):
         """Set the repeat mode for the user’s playback.
@@ -113,7 +119,7 @@ class Player(SpotifyBase):
             The Device object or id of the device this command is targeting.
             If not supplied, the user’s currently active device is the target.
         """
-        return await self._user.http.repeat_playback(state, device_id=str(device))
+        await self._user.http.repeat_playback(state, device_id=str(device))
 
     async def set_volume(self, volume: int, *, device: Optional[SomeDevice] = None):
         """Set the volume for the user’s current playback device.
@@ -126,7 +132,7 @@ class Player(SpotifyBase):
             The Device object or id of the device this command is targeting.
             If not supplied, the user’s currently active device is the target.
         """
-        return await self._user.http.set_playback_volume(volume, device_id=str(device))
+        await self._user.http.set_playback_volume(volume, device_id=str(device))
 
     async def next(self, *, device: Optional[SomeDevice] = None):
         """Skips to next track in the user’s queue.
@@ -137,7 +143,7 @@ class Player(SpotifyBase):
             The Device object or id of the device this command is targeting.
             If not supplied, the user’s currently active device is the target.
         """
-        return await self._user.http.skip_next(device_id=str(device))
+        await self._user.http.skip_next(device_id=str(device))
 
     async def previous(self, *, device: Optional[SomeDevice] = None):
         """Skips to previous track in the user’s queue.
