@@ -44,13 +44,6 @@ class Track(URIBase):
     markets : List[str]
         The available markets for the Track.
     """
-    __slots__ = (
-        '__client', 'artists', 'artist', 'album',
-        'id', 'name', 'href', 'uri', 'duration',
-        'explicit', 'disc_number', 'track_number',
-        'url', 'popularity', 'is_local',
-        'preview_url', 'markets'
-    )
 
     def __init__(self, client, data):
         self.__client = client

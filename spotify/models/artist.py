@@ -33,11 +33,6 @@ class Artist(URIBase):
     images : List[Image]
         Images of the artist in various sizes, widest first.
     """
-    __slots__ = (
-        '__client', 'id', 'name', 
-        'href', 'uri', 'url', 'genres', 
-        'followers', 'popularity', 'images'
-    )
 
     def __init__(self, client, data):
         self.__client = client

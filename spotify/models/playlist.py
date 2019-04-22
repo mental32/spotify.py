@@ -55,7 +55,6 @@ class Playlist(URIBase):  # TODO: __data is removed but not done on Playlist.
     ----------
 
     """
-    __slots__ = ('__client', '_type', 'owner', 'total_tracks', 'id', 'name', 'href', 'uri')
 
     def __init__(self, client, data):
         self.__client = client

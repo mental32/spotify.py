@@ -37,12 +37,6 @@ class Player(SpotifyBase):
     actions : List[str]
         A list of disallowed actions.
     """
-    __slots__ = (
-        '__client', '__user',
-        'repeat_state', 'timestamp', 'progress_ms', 
-        'shuffle_state', 'is_playing', 'item', 
-        'context', 'device'
-    )
 
     def __init__(self, client, user, data):
         self.__client = client

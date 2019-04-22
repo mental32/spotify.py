@@ -49,13 +49,6 @@ class User(URIBase):
         The user’s Spotify subscription level: “premium”, “free”, etc. 
         (The subscription level “open” can be considered the same as “free”.)
     """
-    __slots__ = (
-        '__client', 'http', 'library', 
-        '_player', 'id', 'href', 'uri',
-        'url', 'display_name', 'email',
-        'followers', 'images', 'product',
-        'country', 'birthdate', '_refresh_task'
-    )
 
     def __init__(self, client, data, **kwargs):
         self.__client = client
