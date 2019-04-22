@@ -1,3 +1,4 @@
+import functools
 from typing import Optional, Dict, Union, List, Tuple
 
 from ..utils import assert_hasattr
@@ -16,7 +17,9 @@ Playlist: Optional[SpotifyBase] = None
 
 REFRESH_TOKEN_URL = 'https://accounts.spotify.com/api/token?grant_type=refresh_token&refresh_token={refresh_token}'
 
-ensure_http = assert_hasattr('http', '{0!r} has no HTTP presence to perform API requests')
+def ensure_http(func):
+    func.__ensure_http__ = True
+    return func
 
 
 class User(URIBase):
@@ -49,7 +52,6 @@ class User(URIBase):
         The user’s Spotify subscription level: “premium”, “free”, etc. 
         (The subscription level “open” can be considered the same as “free”.)
     """
-
     def __init__(self, client, data, **kwargs):
         self.__client = client
 
@@ -79,6 +81,17 @@ class User(URIBase):
 
     def __repr__(self):
         return '<spotify.User: "%s">' % (self.display_name or self.id)
+
+    def __getattr__(self, key, value):
+        value = object.__getattr__(self, key, value)
+
+        if hasattr(value, '__ensure_http__') and not hasattr(self, 'http'):
+            @functoosl.wraps(value)
+            def _raise(*args, **kwargs):
+                raise AttributeError('User has not HTTP presence to perform API requests.')
+            return _raise
+        else:
+            return value
 
     async def _get_top(self, klass, data) -> List[Union[Track, Artist]]:
         _str = {Artist: 'artists', Track: 'tracks'}[klass]
