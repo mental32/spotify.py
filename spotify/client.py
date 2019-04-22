@@ -1,4 +1,5 @@
 import asyncio
+from typing import Optional, List, Iterable, Dict, Union
 
 from .http import HTTPClient
 from .utils import to_id
@@ -12,7 +13,6 @@ from . import (
     Library,
     PlaylistTrack
 )
-
 
 _TYPES = {
     'artist': Artist,
@@ -224,6 +224,11 @@ class Client:
             The offset from where the api should start from in the search results.
         market : Optional[str]
             An ISO 3166-1 alpha-2 country code. Provide this parameter if you want to apply Track Relinking.
+
+        Returns
+        -------
+        results : Dict[str, List[Union[Track, Playlist, Artist, Album]]]
+            The results of the search.
         """
         if not hasattr(types, '__iter__'):
             raise TypeError('types must be an iterable.')
