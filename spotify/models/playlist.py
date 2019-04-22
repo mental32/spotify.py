@@ -1,3 +1,4 @@
+from typing import List
 from functools import partial
 
 from . import SpotifyBase, URIBase, Track, PlaylistTrack, Image
@@ -9,7 +10,7 @@ class PartialTracks(SpotifyBase):
     Attributes
     ----------
     total : int
-        The total amount of tracks/
+        The total amount of tracks.
     """
     __slots__ = ('total', '__func', '__iter', '__client')
 
@@ -48,57 +49,78 @@ class PartialTracks(SpotifyBase):
         return list(PlaylistTrack(self.__client, track) for track in data['items'])
 
 
-class Playlist(URIBase):  # TODO: __data is removed but not done on Playlist.
+class Playlist(URIBase):
     """A Spotify Playlist.
 
     Attributes
     ----------
-
+    collaborative : bool
+        Returns true if context is not search and the owner allows other users to modify the playlist. Otherwise returns false.
+    description : str
+        The playlist description. Only returned for modified, verified playlists, otherwise null.
+    url : str
+        The open.spotify URL.
+    followers : int
+        The total amount of followers
+    href : str
+        A link to the Web API endpoint providing full details of the playlist.
+    id : str
+        The Spotify ID for the playlist.
+    images : List[Image]
+        Images for the playlist.
+        The array may be empty or contain up to three images.
+        The images are returned by size in descending order.
+        If returned, the source URL for the image ( url ) is temporary and will expire in less than a day.
+    name : str
+        The name of the playlist.
+    owner : spotify.User
+        The user who owns the playlist
+    public : bool
+        The playlist’s public/private status: 
+            true the playlist is public, 
+            false the playlist is private, 
+            null the playlist status is not relevant.
+    snapshot_id : str
+        The version identifier for the current playlist.
+    tracks : Option[List[PlaylistTrack]]
+        list of playlist track objects.
     """
 
     def __init__(self, client, data):
         self.__client = client
 
-        self.owner = User(client, data=data.get('owner'))
-        self._tracks = PartialTracks(client, data.get('tracks'))
-        self.total_tracks = self._tracks.data['total']
-
-        self.id = data.pop('id')
-        self.name = data.pop('name')
+        self.collaborative = data.pop('collaborative')
+        self.description = data.pop('description')
+        self.url = data.pop('external_urls').get('spotify', None)
+        self.followers = data.pop('followers', {}).get('total', None)
         self.href = data.pop('href')
+        self.id = data.pop('id')
+        self.images = list(Image(**image) for image in data.pop('images', []))
+        self.name = data.pop('name')
+        self.owner = User(client, data=data.pop('owner'))
         self.uri = data.pop('uri')
 
-        self.__data = data
+        if 'next' in data['tracks']:  # Paging object.
+            pass  # TODO: Support paging objects.
+        else:
+            self._tracks = tracks = PartialTracks(client, data.pop('tracks'))
+            self.total_tracks = _tracks.total
 
     def __repr__(self):
         return '<spotify.Playlist: "%s">' % self.name
 
-    @property
-    def public(self):
-        return self.__data.get('public')
-
-    @property
-    def collaborative(self):
-        return self.__data.get('collaborative')
-
-    @property
-    def description(self):
-        return self.__data.get('description')
-
-    @property
-    def images(self):
-        return [Image(**image) for image in self.__data.get('images')]
-
-    @property
-    def tracks(self):
-        return self._tracks
-
-    async def get_tracks(self):
+    async def get_all_tracks(self) -> List[PlaylistTrack]:
         """Get all playlist tracks from the playlist.
+
+        Returns
+        -------
+        tracks : List[PlaylistTrack]
+            The playlists tracks.
         """
         if isinstance(self._tracks, PartialTracks):
             return await self._tracks.build()
 
+        _tracks = []
         offset = 0
         while len(self.tracks) < self.total_tracks:
             data = await self.__client.http.get_playlist_tracks(self.owner.id, self.id, limit=50, offset=offset)
