@@ -57,8 +57,7 @@ class Client(_Client, metaclass=SyncMeta):
 def _install(_types):
     for name, obj in _types.items():
         class Mock(obj, metaclass=SyncMeta):
-            if hasattr(obj, '__slots__'):
-                __slots__ = obj.__slots__ + ('__client_thread__',)
+            __slots__ = ('__client_thread__',)
 
         Mock.__name__ = obj.__name__
         Mock.__qualname__ = obj.__qualname__
