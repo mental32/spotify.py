@@ -28,6 +28,7 @@ copyright = '%s, %s' % (datetime.datetime.today().year, author)
 # The full version, including alpha/beta/rc tags
 release = spotify.__version__
 
+master_doc = 'index'
 
 # -- General configuration ---------------------------------------------------
 
