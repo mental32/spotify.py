@@ -19,7 +19,18 @@ def clean(l: dict, *names):
 
 
 def to_id(string: str) -> str:
-    """Get a spotify ID from a URI or open.spotify URL."""
+    """Get a spotify ID from a URI or open.spotify URL.
+
+    Paramters
+    ---------
+    string : str
+        The string to operate on.
+
+    Returns
+    -------
+    id : str
+        The Spotify ID from the string.
+    """
     string = string.strip()
 
     match = _URI_RE.match(string)
@@ -76,7 +87,6 @@ class OAuth2:
     url : str
         The URL for OAuth2
     """
-
     _BASE = 'https://accounts.spotify.com/authorize/?response_type=code&{parameters}'
 
     def __init__(self, client_id, redirect_uri, *, scope=None, state=None, secure=True):
@@ -94,7 +104,7 @@ class OAuth2:
 
     @classmethod
     def from_client(cls, client, *args, **kwargs):
-        """Construct a OAuth2 object from a  `spotify.Client`."""
+        """Construct a OAuth2 object from a `spotify.Client`."""
         return cls(client.http.client_id, *args, **kwargs)
 
     @staticmethod

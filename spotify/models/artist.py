@@ -62,6 +62,11 @@ class Artist(URIBase):
             INCLUDE_GROUPS
         market : Optional[str]
             An ISO 3166-1 alpha-2 country code.
+
+        Returns
+        -------
+        albums : List[Album]
+            The albums of the artist.
         """
         from .album import Album
 
@@ -75,6 +80,11 @@ class Artist(URIBase):
         ----------
         market : Optional[str]
             An ISO 3166-1 alpha-2 country code.
+
+        Returns
+        -------
+        albums : List[Album]
+            The albums of the artist.
         """
         from .album import Album
 
@@ -97,6 +107,11 @@ class Artist(URIBase):
         ----------
         market : Optional[str]
             An ISO 3166-1 alpha-2 country code.
+
+        Returns
+        -------
+        total : int
+            The total amount of albums.
         """
         data = await self.__client.http.artist_albums(self.id, limit=1, offset=0, market=market)
         return data['total']
@@ -108,6 +123,11 @@ class Artist(URIBase):
         ----------
         country : str
             The country to search for, it defaults to 'US'.
+
+        Returns
+        -------
+        tracks : List[Track]
+            The artists top tracks.
         """
         from .track import Track
 
@@ -115,6 +135,14 @@ class Artist(URIBase):
         return list(Track(self.__client, item) for item in top['tracks'])
 
     async def related_artists(self):
-        """Get Spotify catalog information about artists similar to a given artist. Similarity is based on analysis of the Spotify community’s listening history."""
+        """Get Spotify catalog information about artists similar to a given artist.
+
+        Similarity is based on analysis of the Spotify community’s listening history.
+
+        Returns
+        -------
+        artists : List[Artits]
+            The artists deemed similar.
+        """
         related = await self.__client.http.artist_related_artists(self.id)
         return list(Artist(self.__client, item) for item in related['artists'])
