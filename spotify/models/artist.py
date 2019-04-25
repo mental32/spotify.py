@@ -100,7 +100,7 @@ class Artist(URIBase):
 
         return albums
 
-    async def total_albums(self, *, market=None):
+    async def total_albums(self, *, market: str = None) -> int:
         """get the total amout of tracks in the album.
 
         Parameters
@@ -116,7 +116,7 @@ class Artist(URIBase):
         data = await self.__client.http.artist_albums(self.id, limit=1, offset=0, market=market)
         return data['total']
 
-    async def top_tracks(self, country='US'):
+    async def top_tracks(self, country: str = 'US') -> List[Track]:
         """Get Spotify catalog information about an artist’s top tracks by country.
 
         Parameters
@@ -134,7 +134,7 @@ class Artist(URIBase):
         top = await self.__client.http.artist_top_tracks(self.id, country=country)
         return list(Track(self.__client, item) for item in top['tracks'])
 
-    async def related_artists(self):
+    async def related_artists(self) -> List[Artist]:
         """Get Spotify catalog information about artists similar to a given artist.
 
         Similarity is based on analysis of the Spotify community’s listening history.
