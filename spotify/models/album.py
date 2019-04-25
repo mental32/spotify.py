@@ -38,7 +38,6 @@ class Album(URIBase):
     markets : List[str]
         The markets in which the album is available: ISO 3166-1 alpha-2 country codes. 
     """
-
     def __init__(self, client, data):
         self.__client = client
 

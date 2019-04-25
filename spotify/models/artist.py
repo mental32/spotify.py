@@ -2,9 +2,6 @@ from typing import Optional, List
 
 from . import SpotifyBase, URIBase, Image
 
-Track: Optional[SpotifyBase] = None
-Album: Optional[SpotifyBase] = None
-
 
 class Artist(URIBase):
     """A Spotify Artist.
@@ -33,7 +30,6 @@ class Artist(URIBase):
     images : List[Image]
         Images of the artist in various sizes, widest first.
     """
-
     def __init__(self, client, data):
         self.__client = client
 
@@ -67,6 +63,8 @@ class Artist(URIBase):
         market : Optional[str]
             An ISO 3166-1 alpha-2 country code.
         """
+        from .album import Album
+
         data = await self.__client.http.artist_albums(self.id, limit=limit, offset=offset, include_groups=include_groups, market=market)
         return list(Album(self.__client, item) for item in data['items'])
 
@@ -78,6 +76,8 @@ class Artist(URIBase):
         market : Optional[str]
             An ISO 3166-1 alpha-2 country code.
         """
+        from .album import Album
+
         albums = []
         offset = 0
         total = await self.total_albums(market=market)
@@ -109,6 +109,8 @@ class Artist(URIBase):
         country : str
             The country to search for, it defaults to 'US'.
         """
+        from .track import Track
+
         top = await self.__client.http.artist_top_tracks(self.id, country=country)
         return list(Track(self.__client, item) for item in top['tracks'])
 

@@ -73,7 +73,7 @@ class Playlist(URIBase):
         If returned, the source URL for the image ( url ) is temporary and will expire in less than a day.
     name : str
         The name of the playlist.
-    owner : spotify.User
+    owner : User
         The user who owns the playlist
     public : bool
         The playlist’s public/private status: 
@@ -87,6 +87,8 @@ class Playlist(URIBase):
     """
 
     def __init__(self, client, data):
+        from .user import User
+
         self.__client = client
 
         self.collaborative = data.pop('collaborative')

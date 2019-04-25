@@ -3,9 +3,6 @@ from typing import Optional
 
 from . import SpotifyBase, URIBase, Image, Artist
 
-Album: Optional[SpotifyBase] = None
-User: Optional[SpotifyBase] = None
-
 
 class Track(URIBase):
     """A Spotify Track object.
@@ -46,6 +43,8 @@ class Track(URIBase):
     """
 
     def __init__(self, client, data):
+        from .album import Album
+
         self.__client = client
 
         self.artists = artists = list(Artist(client, artist) for artist in data.pop('artists', [None]))
@@ -98,6 +97,8 @@ class PlaylistTrack(Track):
     __slots__ = ('added_at', 'added_by', 'is_local')
 
     def __init__(self, client, data):
+        from .user import User
+
         super().__init__(client, data['track'])
 
         self.added_by = User(client, data['added_by'])
