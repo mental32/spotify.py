@@ -236,8 +236,10 @@ class Client:
         elif not isinstance(types, list):
             types = list(item for item in types)
 
-        if not set(types).issubset(_SEARCH_TYPES):
-            raise ValueError(_SEARCH_TYPE_ERR % set(types).difference(_SEARCH_TYPES).pop())
+        types_ = set(types)
+
+        if not types_.issubset(_SEARCH_TYPES):
+            raise ValueError(_SEARCH_TYPE_ERR % types_.difference(_SEARCH_TYPES).pop())
 
         kwargs = {
             'q': q.replace(' ', '+'),
