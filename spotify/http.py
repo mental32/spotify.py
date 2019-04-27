@@ -680,11 +680,10 @@ class HTTPClient:
         route = Route('PUT', '/me/player/play')
         payload = {}
 
-        if isinstance(context_uri, (list, tuple)):
-            payload['uris'] = context_uri
-
+        if isinstance(context_uri, str):
+            payload['context_uri'] = {'context_uri': context_uri}
         elif context_uri is not None:
-            payload['context_uri'] = context_uri
+            payload['uris'] = {'uris': list(*context_uri)}
 
         if offset:
             payload['offset'] = offset
