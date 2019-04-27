@@ -7,7 +7,11 @@ from urllib.parse import quote
 
 import aiohttp
 
-from .errors import HTTPException, Forbidden, NotFound
+from .errors import HTTPException, Forbidden, NotFound, SpotifyException
+
+__all__ = ('HTTPClient', 'HTTPUserClient', 'Route')
+
+_GET_BEARER_ERR = '%s was `None` when getting a bearer token.'
 
 
 class Route:
@@ -54,6 +58,16 @@ class HTTPClient:
         The client secret for the app.
     loop : Optional[event loop]
         The event loop the client should run on, if no loop is specified `asyncio.get_event_loop()` is called and used instead.
+
+
+    Attributes
+    ----------
+    loop : AbstractEventLoop
+        The loop the client is running with.
+    client_id : str
+        The client id of the app.
+    client_secret : str
+        The client secret.
     """
     RETRY_AMOUNT = 10
 
@@ -67,16 +81,19 @@ class HTTPClient:
         self.bearer_info = None
 
     async def get_bearer_info(self):
-        '''gets the application bearer token from client_id and client_secret'''
-        if self.client_id is None or self.client_secret is None:
-            raise KeyError('client_id or client_secret is None, while attempting to perform a http request.')
+        """Get the application bearer token from client_id and client_secret."""
+        if self.client_id is None:
+            raise SpotifyException(_GET_BEARER_ERR % 'client_id')
+
+        elif self.client_secret is None:
+            raise SpotifyException(_GET_BEARER_ERR % 'client_secret')
 
         token = b64encode(':'.join((self.client_id, self.client_secret)).encode())
 
         kwargs = {
             'url': 'https://accounts.spotify.com/api/token',
             'data': {'grant_type': 'client_credentials'},
-            'headers': {'Authorization': 'Basic %s' % token.decode()}
+            'headers': {'Authorization': 'Basic ' + token.decode()}
         }
 
         async with self._session.post(**kwargs) as resp:
@@ -99,9 +116,16 @@ class HTTPClient:
             url = route.url
 
         if self.bearer_info is None:
-            self.bearer_info = await self.get_bearer_info()
+            self.bearer_info = bearer_info = await self.get_bearer_info()
+            access_token = bearer_info['access_token']
+        else:
+            access_token = self.bearer_info['access_token']
 
-        headers = {'Authorization': 'Bearer ' + self.bearer_info['access_token'], 'Content-Type': kwargs.get('content_type', 'application/json')}
+        headers = {
+            'Authorization': 'Bearer ' + access_token,
+            'Content-Type': kwargs.get('content_type', 'application/json'),
+            **kwargs.pop('headers', {})
+        }
 
         for _ in range(self.RETRY_AMOUNT):
             r = await self._session.request(method, url, headers=headers, **kwargs)
@@ -117,14 +141,13 @@ class HTTPClient:
                     return data
 
                 if status == 401:
-                    self.bearer_info = await self.get_bearer_info()
-                    headers['Authorization'] = 'Bearer ' + self.bearer_info['access_token']
+                    self.bearer_info = bearer_info = await self.get_bearer_info()
+                    headers['Authorization'] = 'Bearer ' + bearer_info['access_token']
                     continue
 
                 if status == 429:
                     # we're being rate limited.
                     amount = r.headers.get('Retry-After')
-                    print('Rate limited:', amount)
                     await asyncio.sleep(int(amount), loop=self.loop)
                     continue
 
@@ -138,8 +161,8 @@ class HTTPClient:
                     raise NotFound(r, data)
             finally:
                 await r.release()
-
-        raise HTTPException(r, data)
+        else:
+            raise HTTPException(r, data)
 
     async def close(self):
         """Close the underlying HTTP session."""
