@@ -12,7 +12,7 @@ The library also supports **syncronous** usage with `spotify.sync`
 
 ```python
 import spotify.sync as spotify  # Nothing requires async/await now!
-``
+```
 
 ## Simple example
 
