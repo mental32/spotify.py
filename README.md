@@ -1,12 +1,18 @@
 ![Version info](https://img.shields.io/pypi/v/spotify.svg)
 [![GitHub stars](https://img.shields.io/github/stars/mental32/spotify.py.svg)](https://github.com/mental32/spotify.py/stargazers)
+
 # spotify.py
 
 An API library for the spotify client and the Spotify Web API written in Python.
 
-> spotify.py is in beta, there may be bugs.
+Spotify.py is an entirely asyncronous library, everything down to the HTTP client is asyncio friendly.
 
-spotify.py is 100% asyncronous meaning everything down to the HTTP library is designed to work with asyncio.<br>The library offers coverage over every endpoint in the Spotify web API.
+
+The library also supports **syncronous** usage with `spotify.sync`
+
+```python
+import spotify.sync as spotify  # Nothing requires async/await now!
+``
 
 ## Simple example
 
