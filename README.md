@@ -1,3 +1,6 @@
+![logo](logo.png)
+
+
 ![Version info](https://img.shields.io/pypi/v/spotify.svg)
 [![GitHub stars](https://img.shields.io/github/stars/mental32/spotify.py.svg)](https://github.com/mental32/spotify.py/stargazers)
 
