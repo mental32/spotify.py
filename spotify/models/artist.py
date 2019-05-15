@@ -49,7 +49,7 @@ class Artist(URIBase):
     def __repr__(self):
         return '<spotify.Artist: "%s">' % self.name
 
-    async def get_albums(self, *, limit: Optional[int] = 20, offset: Optional[int] = 0, include_groups=None, market: Optional[str] = None) -> List[Album]:
+    async def get_albums(self, *, limit: Optional[int] = 20, offset: Optional[int] = 0, include_groups=None, market: Optional[str] = None) -> List['Album']:
         """Get the albums of a Spotify artist.
 
         Parameters
@@ -73,7 +73,7 @@ class Artist(URIBase):
         data = await self.__client.http.artist_albums(self.id, limit=limit, offset=offset, include_groups=include_groups, market=market)
         return list(Album(self.__client, item) for item in data['items'])
 
-    async def get_all_albums(self, *, market='US') -> List[Album]:
+    async def get_all_albums(self, *, market='US') -> List['Album']:
         """loads all of the artists albums, depending on how many the artist has this may be a long operation.
 
         Parameters
@@ -116,7 +116,7 @@ class Artist(URIBase):
         data = await self.__client.http.artist_albums(self.id, limit=1, offset=0, market=market)
         return data['total']
 
-    async def top_tracks(self, country: str = 'US') -> List[Track]:
+    async def top_tracks(self, country: str = 'US') -> List['Track']:
         """Get Spotify catalog information about an artist’s top tracks by country.
 
         Parameters
@@ -134,7 +134,7 @@ class Artist(URIBase):
         top = await self.__client.http.artist_top_tracks(self.id, country=country)
         return list(Track(self.__client, item) for item in top['tracks'])
 
-    async def related_artists(self) -> List[Artist]:
+    async def related_artists(self) -> List['Artist']:
         """Get Spotify catalog information about artists similar to a given artist.
 
         Similarity is based on analysis of the Spotify community’s listening history.
