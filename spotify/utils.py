@@ -89,7 +89,7 @@ class OAuth2:
     """
     _BASE = 'https://accounts.spotify.com/authorize/?response_type=code&{parameters}'
 
-    def __init__(self, client_id, redirect_uri, *, scope=None, state=None, secure=True):
+    def __init__(self, client_id: str, redirect_uri: str, *, scope: str = None, state: str = None):
         self.client_id = client_id
         self.redirect_uri = redirect_uri
 
