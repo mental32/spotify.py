@@ -10,8 +10,6 @@ from . import (
     Track,
     User,
     Playlist,
-    Library,
-    PlaylistTrack
 )
 
 _TYPES = {

@@ -5,8 +5,6 @@ from .. import SpotifyBase
 from . import Client as _Client
 from .thread import SyncExecution
 
-_canary = object()
-
 
 class SyncMeta(type):
     """Metaclass used for overloading coroutine functions on models."""
