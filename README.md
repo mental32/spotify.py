@@ -9,16 +9,14 @@
 
 An API library for the spotify client and the Spotify Web API written in Python.
 
-Spotify.py is an entirely asyncronous library, everything down to the HTTP client is asyncio friendly.
-
-
+Spotify.py is an, primarily, asyncronous library (everything down to the HTTP client is asyncio friendly). 
 The library also supports **syncronous** usage with `spotify.sync`
 
 ```python
 import spotify.sync as spotify  # Nothing requires async/await now!
 ```
 
-## Simple example
+## example
 
 - Top tracks (drake)
 
@@ -42,13 +40,9 @@ To install the library simply clone it and run setup.py
 
 or use pypi
 
-- `pip3 install spotify` (latest stable release)
-- `pip3 install -U git+https://github.com/mental32/spotify.py` (bleeding edge)
+- `pip3 install spotify` (latest stable)
+- `pip3 install -U git+https://github.com/mental32/spotify.py` (nightly)
 
 ## Resources
 
 For resources look at the [examples](https://github.com/mental32/spotify.py/tree/master/examples) or ask in the [discord](https://discord.gg/k43FSFF)
-
-## Contributing
-To contribute you must:
-- fork and open a PR with changes.
