@@ -8,6 +8,6 @@ install:
 test:
 	$(PYTHON) -m unittest discover -s test
 
-pypi: test
+pypi:
 	$(PYTHON) setup.py sdist
 	twine upload dist/*
