@@ -11,7 +11,7 @@ __all__ = tuple(name for name in locals() if name[0] != '_')
 __title__ = 'spotify'
 __author__ = 'mental'
 __license__ = 'MIT'
-__version__ = '0.3.0'
+__version__ = '0.4.0'
 
 _locals = locals()
 
