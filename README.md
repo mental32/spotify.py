@@ -10,6 +10,9 @@
 An API library for the spotify client and the Spotify Web API written in Python.
 
 Spotify.py is an, primarily, asyncronous library (everything down to the HTTP client is asyncio friendly). 
+
+#### Sync' support
+
 The library also supports **syncronous** usage with `spotify.sync`
 
 ```python
@@ -18,18 +21,30 @@ import spotify.sync as spotify  # Nothing requires async/await now!
 
 ## example
 
-- Top tracks (drake)
+ - Sorting a playlist by popularity
 
 ```py
 import spotify
 
-client = spotify.Client('someid', 'sometoken')
+playlist_uri =   # Playlist uri here
+client_id =      # App client id here
+secret =         # App secret here
+token =          # User token here
 
-async def example():
-    drake = await client.get_artist('3TVXtAsR1Inumwj472S9r4')
+client = spotify.Client(client_id, secret)
 
-    for track in await drake.top_tracks():
-        print(repr(track))
+async def main():
+    user = await spotify.User.from_token(client, token)
+
+    playlist = next(filter((lambda playlist: playlist.uri == playlist_uri), await user.get_playlists()))
+    tracks = await playlist.get_all_tracks()
+
+    sorted_tracks = sorted(tracks, reverse=True, key=(lambda track: track.popularity))
+
+    await user.replace_tracks(playlist, sorted_tracks)
+
+if __name__ == '__main__':
+    client.loop.run_until_complete(main())
 ```
 
 ## Installing
