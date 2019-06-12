@@ -225,7 +225,7 @@ class User(URIBase):
             The snapshot id of the playlist.
         """
         tracks = [str(track) for track in tracks]
-        data = await self.http.add_playlist_tracks(self.id, str(playlist), tracks=','.join(tracks))
+        data = await self.http.add_playlist_tracks(self.id, playlist.id, tracks=','.join(tracks))
         return data['snapshot_id']
 
     async def replace_tracks(self, playlist, *tracks) -> str:
@@ -241,7 +241,7 @@ class User(URIBase):
             Tracks to place in the playlist
         """
         tracks = [str(track) for track in tracks]
-        await self.http.replace_playlist_tracks(self.id, str(playlist), tracks=','.join(tracks))
+        await self.http.replace_playlist_tracks(self.id, playlist.id, tracks=','.join(tracks))
 
     async def remove_tracks(self, playlist, *tracks):
         """Remove one or more tracks from a user’s playlist.
@@ -259,7 +259,7 @@ class User(URIBase):
             The snapshot id of the playlist.
         """
         tracks = [str(track) for track in tracks]
-        data = await self.http.remove_playlist_tracks(self.id, str(playlist), tracks=','.join(tracks))
+        data = await self.http.remove_playlist_tracks(self.id, playlist.id, tracks=','.join(tracks))
         return data['snapshot_id']
 
     async def reorder_tracks(self, playlist, start, insert_before, length=1, *, snapshot_id=None):
@@ -283,7 +283,7 @@ class User(URIBase):
         snapshot_id : str
             The snapshot id of the playlist.
         """
-        data = await self.http.reorder_playlists_tracks(self.id, str(playlist), start, length, insert_before, snapshot_id=snapshot_id)
+        data = await self.http.reorder_playlists_tracks(self.id, playlist.id, start, length, insert_before, snapshot_id=snapshot_id)
         return data['snapshot_id']
 
     ### Playlist methods
@@ -320,7 +320,7 @@ class User(URIBase):
         if description:
             data['description'] = description
 
-        await self.http.change_playlist_details(self.id, str(playlist), data)
+        await self.http.change_playlist_details(self.id, playlist.id, data)
 
     @ensure_http
     async def create_playlist(self, name, *, public=True, collaborative=False, description=None):
