@@ -2,11 +2,9 @@ import asyncio
 import functools
 from typing import Optional, Dict, Union, List, Tuple
 
-from ..utils import assert_hasattr
-from ..http import HTTPUserClient, Route
-from ..errors import SpotifyException
+from ..http import HTTPUserClient
 from . import (
-    SpotifyBase, URIBase,
+    URIBase,
     Image, Device, Context,
     Player,
     Playlist,

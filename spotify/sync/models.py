@@ -1,7 +1,7 @@
 import inspect
 import functools
 
-from .. import SpotifyBase
+from .. import SpotifyBase  # noqa
 from . import Client as _Client
 from .thread import SyncExecution
 

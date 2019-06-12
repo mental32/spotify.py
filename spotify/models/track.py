@@ -1,7 +1,6 @@
 import datetime
-from typing import Optional
 
-from . import SpotifyBase, URIBase, Image, Artist
+from . import URIBase, Image, Artist
 
 
 class Track(URIBase):

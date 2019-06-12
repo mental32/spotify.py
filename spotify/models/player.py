@@ -1,8 +1,7 @@
-from typing import Union, Optional, Sequence
+from typing import Union, Optional
 
-from .. import HTTPException
-from . import SpotifyBase, URIBase, Context, Device, Track
-from .typing import SomeURI, SomeURIs
+from . import SpotifyBase, Context, Device, Track
+from .typing import SomeURIs
 
 Offset = Union[int, str, Track]
 SomeDevice = Union[Device, str]
@@ -24,7 +23,7 @@ class Player(SpotifyBase):
     timestamp : int
         Unix Millisecond Timestamp when data was fetched.
     progress_ms : int
-        Progress into the currently playing track. 
+        Progress into the currently playing track.
         Can be None (e.g. If private session is enabled this will be None).
     is_playing : bool
         If something is currently playing.
@@ -175,8 +174,8 @@ class Player(SpotifyBase):
             A sequence of Spotify Tracks or Track URIs to play.
         offset : Optional[:obj:`Offset`]
             Indicates from where in the context playback should start.
-            Only available when `context` corresponds to an album or playlist object, 
-            or when the `uris` parameter is used. when an integer offset is zero based and can’t be negative. 
+            Only available when `context` corresponds to an album or playlist object,
+            or when the `uris` parameter is used. when an integer offset is zero based and can’t be negative.
         device : Optional[:obj:`SomeDevice`]
             The Device object or id of the device this command is targeting.
             If not supplied, the user’s currently active device is the target.

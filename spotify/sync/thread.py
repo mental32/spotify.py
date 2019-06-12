@@ -1,9 +1,7 @@
 import asyncio
-import sys
 import threading
 import time
 import queue
-from contextlib import contextmanager, suppress
 from typing import Any, Coroutine
 
 
@@ -42,7 +40,7 @@ class SyncExecution(threading.Thread):
         self.__loop.create_task(poll())
         self.__loop.run_forever()
 
-    # Public API    
+    # Public API
 
     def run_coro(self, coro: Coroutine) -> Any:
         ident = threading.get_ident()

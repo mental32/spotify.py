@@ -19,7 +19,7 @@ class Album(URIBase):
     uri : str
         The URI for the album.
     album_group : str
-        ossible values are “album”, “single”, “compilation”, “appears_on”. 
+        ossible values are “album”, “single”, “compilation”, “appears_on”.
         Compare to album_type this field represents relationship between the artist and the album.
     album_type : str
         The type of the album: one of "album" , "single" , or "compilation".
@@ -36,7 +36,7 @@ class Album(URIBase):
     copyrights : List[Dict]
         The copyright statements of the album.
     markets : List[str]
-        The markets in which the album is available: ISO 3166-1 alpha-2 country codes. 
+        The markets in which the album is available: ISO 3166-1 alpha-2 country codes.
     """
     def __init__(self, client, data):
         self.__client = client
@@ -79,7 +79,7 @@ class Album(URIBase):
             The limit on how many tracks to retrieve for this album (default is 20).
         offset : Optional[int]
             The offset from where the api should start from in the tracks.
-        
+
         Returns
         -------
         tracks : List[Track]
@@ -95,7 +95,7 @@ class Album(URIBase):
         ----------
         market : Optional[str]
             An ISO 3166-1 alpha-2 country code. Provide this parameter if you want to apply Track Relinking.
-        
+
         Returns
         -------
         tracks : List[Track]

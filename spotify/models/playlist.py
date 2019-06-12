@@ -1,7 +1,7 @@
 from typing import List
 from functools import partial
 
-from . import SpotifyBase, URIBase, Track, PlaylistTrack, Image
+from . import SpotifyBase, URIBase, PlaylistTrack, Image
 
 
 class PartialTracks(SpotifyBase):

@@ -1,6 +1,6 @@
 from typing import Optional, List
 
-from . import SpotifyBase, URIBase, Image
+from . import URIBase, Image
 
 
 class Artist(URIBase):

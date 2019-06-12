@@ -1,5 +1,6 @@
 import spotify
 
+
 class SpotifyBase:
     """The base class all Spotify models should derive from."""
     __slots__ = ()
