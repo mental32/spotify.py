@@ -81,7 +81,10 @@ class User(URIBase):
         return '<spotify.User: "%s">' % (self.display_name or self.id)
 
     def __getattr__(self, key, value):
-        value = object.__getattr__(self, key, value)
+        try:
+            value = object.__getattr__(self, key, value)
+        except AttributeError as err:
+            raise AttributeError from err
 
         if hasattr(value, '__ensure_http__') and not hasattr(self, 'http'):
             @functools.wraps(value)
