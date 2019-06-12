@@ -75,7 +75,7 @@ class Device:
     is_private_session : bool
         If this device is currently in a private session.
     """
-    __slots__ = ('id', 'name', 'type', 'volume', 'is_active', 'is_restricted')
+    __slots__ = ('id', 'name', 'type', 'volume', 'is_active', 'is_restricted', 'is_private_session')
 
     def __init__(self, data):
         self.id = data.get('id')
