@@ -1,3 +1,4 @@
+import asyncio
 import functools
 from typing import Optional, Dict, Union, List, Tuple
 
@@ -8,14 +9,14 @@ from . import (
     SpotifyBase, URIBase,
     Image, Device, Context,
     Player,
+    Playlist,
     Track,
     Artist,
     Library
 )
 
-Playlist: Optional[SpotifyBase] = None
-
 REFRESH_TOKEN_URL = 'https://accounts.spotify.com/api/token?grant_type=refresh_token&refresh_token={refresh_token}'
+
 
 def ensure_http(func):
     func.__ensure_http__ = True
@@ -36,7 +37,7 @@ class User(URIBase):
     href : str
         A link to the Web API endpoint for this user.
     display_name : str
-        The name displayed on the user’s profile. 
+        The name displayed on the user’s profile.
         `None` if not available.
     followers : int
         The total number of followers.
@@ -55,10 +56,8 @@ class User(URIBase):
     def __init__(self, client, data, **kwargs):
         self.__client = client
 
-        token = kwargs.pop('token', None)
-
         try:
-            self.http = http = kwargs.pop('http')
+            self.http = kwargs.pop('http')
         except KeyError:
             pass
         else:
@@ -71,7 +70,7 @@ class User(URIBase):
         self.display_name = data.pop('display_name', None)
         self.href = data.pop('href')
         self.followers = data.pop('followers', {}).get('total', None)
-        self.images = list(Image(**image) for image in data.pop('images'))
+        self.images = list(Image(**image) for image in data.pop('images', []))
 
         # Private user object attributes
         self.email = data.pop('email', None)
@@ -86,7 +85,7 @@ class User(URIBase):
         value = object.__getattr__(self, key, value)
 
         if hasattr(value, '__ensure_http__') and not hasattr(self, 'http'):
-            @functoosl.wraps(value)
+            @functools.wraps(value)
             def _raise(*args, **kwargs):
                 raise AttributeError('User has not HTTP presence to perform API requests.')
             return _raise
@@ -100,7 +99,6 @@ class User(URIBase):
         resp = await self.http.top_artists_or_tracks(_str, **data)
 
         return [klass(self.__client, item) for item in resp['items']]
-
 
     async def _refreshing_token(self, expires, token):
         while True:
@@ -123,7 +121,7 @@ class User(URIBase):
             'code': code
         }
 
-        raw = await client.http.request(route, content_type='application/x-www-form-urlencoded')
+        raw = await client.http.request(route, content_type='application/x-www-form-urlencoded', params=payload)
 
         token = raw['access_token']
 
@@ -139,11 +137,13 @@ class User(URIBase):
         http = HTTPUserClient(token)
         data = await http.current_user()
 
+        self = cls(client, data=data, http=http, token=token)
+
         if refresh is not None:
             expires_in, refresh_token, = refresh
             self._refresh_task = self.client.loop.create_task(self._refreshing_token(expires_in, refresh_token))
 
-        return cls(client, data=data, http=http, token=token)
+        return self
 
     ### Attributes
 
@@ -219,7 +219,7 @@ class User(URIBase):
         playlist : Union[str, Playlist]
             The playlist to modify
         tracks : Sequence[Union[str, Track]]
-            Tracks to add to the playlistv 
+            Tracks to add to the playlist
 
         Returns
         -------
@@ -231,7 +231,8 @@ class User(URIBase):
         return data['snapshot_id']
 
     async def replace_tracks(self, playlist, *tracks) -> str:
-        """Replace all the tracks in a playlist, overwriting its existing tracks. 
+        """Replace all the tracks in a playlist, overwriting its existing tracks.
+
         This powerful request can be useful for replacing tracks, re-ordering existing tracks, or clearing the playlist.
 
         Parameters
@@ -353,8 +354,8 @@ class User(URIBase):
         if description:
             data['description'] = description
 
-        playlist_data = await self.http.create_playlist(self.id, data)
-        return Playlist(self.__client, playlist_data)
+        playlist_data = await self.http.create_playlist(self.id, data=data)
+        return Playlist(self.__client, playlist_data, http=self.http)
 
     async def get_playlists(self, *, limit=20, offset=0):
         """get the users playlists from spotify.
@@ -377,7 +378,7 @@ class User(URIBase):
             http = self.__client.http
 
         data = await http.get_playlists(self.id, limit=limit, offset=offset)
-        return [Playlist(self.__client, playlist_data) for playlist_data in data['items']]
+        return [Playlist(self.__client, playlist_data, http=http) for playlist_data in data['items']]
 
     async def top_artists(self, **data) -> List[Artist]:
         """Get the current user’s top artists based on calculated affinity.

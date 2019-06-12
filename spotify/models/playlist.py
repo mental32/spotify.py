@@ -16,7 +16,6 @@ class PartialTracks(SpotifyBase):
 
     def __init__(self, client, data):
         self.total = data['total']
-        self.__client = client
         self.__func = partial(client.http.request, ('GET', data['href']))
         self.__iter = None
 
@@ -42,7 +41,7 @@ class PartialTracks(SpotifyBase):
 
         Returns
         -------
-        tracks : List[Track]
+        tracks : List[PlaylistTrack]
             The tracks
         """
         data = await self.__func()
@@ -76,23 +75,23 @@ class Playlist(URIBase):
     owner : User
         The user who owns the playlist
     public : bool
-        The playlist’s public/private status: 
-            true the playlist is public, 
-            false the playlist is private, 
+        The playlist’s public/private status:
+            true the playlist is public,
+            false the playlist is private,
             null the playlist status is not relevant.
     snapshot_id : str
         The version identifier for the current playlist.
     tracks : Option[List[PlaylistTrack]]
         list of playlist track objects.
     """
-
-    def __init__(self, client, data):
+    def __init__(self, client, data, *, http=None):
         from .user import User
 
         self.__client = client
+        self.__http = http or client.http
 
         self.collaborative = data.pop('collaborative')
-        self.description = data.pop('description')
+        self.description = data.pop('description', None)
         self.url = data.pop('external_urls').get('spotify', None)
         self.followers = data.pop('followers', {}).get('total', None)
         self.href = data.pop('href')
@@ -106,10 +105,10 @@ class Playlist(URIBase):
             pass  # TODO: Support paging objects.
         else:
             self._tracks = tracks = PartialTracks(client, data.pop('tracks'))
-            self.total_tracks = _tracks.total
+            self.total_tracks = tracks.total
 
     def __repr__(self):
-        return '<spotify.Playlist: "%s">' % self.name
+        return '<spotify.Playlist: "%s">' % (getattr(self, 'name', None) or self.id)
 
     async def get_all_tracks(self) -> List[PlaylistTrack]:
         """Get all playlist tracks from the playlist.
@@ -119,16 +118,13 @@ class Playlist(URIBase):
         tracks : List[PlaylistTrack]
             The playlists tracks.
         """
-        if isinstance(self._tracks, PartialTracks):
-            return await self._tracks.build()
-
         _tracks = []
         offset = 0
-        while len(self.tracks) < self.total_tracks:
-            data = await self.__client.http.get_playlist_tracks(self.owner.id, self.id, limit=50, offset=offset)
+        while len(_tracks) < self.total_tracks:
+            data = await self.__http.get_playlist_tracks(self.owner.id, self.id, limit=50, offset=offset)
 
             _tracks += [PlaylistTrack(self.__client, item) for item in data['items']]
             offset += 50
 
-        self.total_tracks = len(self._tracks)
-        return list(self._tracks)
+        self.total_tracks = len(_tracks)
+        return list(_tracks)

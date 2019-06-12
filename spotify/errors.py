@@ -15,9 +15,9 @@ class HTTPException(SpotifyException):
         error = message.get('error')
 
         if isinstance(error, dict):
-            self.text = error.get('message')
+            self.text = error.get('message', '')
         else:
-            self.text = message.get('error_description')
+            self.text = message.get('error_description', '')
 
         fmt = '{0.reason} (status code: {0.status})'
         if self.text.strip():

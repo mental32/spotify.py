@@ -183,7 +183,7 @@ class Player(SpotifyBase):
         """
         if len(uris) > 1:
             # Regular uris paramter
-            context_uri = list(str(uri) for uri in uris)
+            context_uri = (str(uri) for uri in uris)
         else:
             # Treat it as a context URI
             context_uri = str(uris[0])
