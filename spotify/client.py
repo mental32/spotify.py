@@ -3,24 +3,14 @@ from typing import Optional, List, Iterable, Dict, Union
 
 from .http import HTTPClient
 from .utils import to_id
-from . import (
-    OAuth2,
-    Artist,
-    Album,
-    Track,
-    User,
-    Playlist,
-)
+from . import OAuth2, Artist, Album, Track, User, Playlist
 
-_TYPES = {
-    'artist': Artist,
-    'album': Album,
-    'playlist': Playlist,
-    'track': Track
-}
+_TYPES = {'artist': Artist, 'album': Album, 'playlist': Playlist, 'track': Track}
 
 _SEARCH_TYPES = {'track', 'playlist', 'artist', 'album'}
-_SEARCH_TYPE_ERR = 'Bad queary type! got "%s" expected any of: track, playlist, artist, album'
+_SEARCH_TYPE_ERR = (
+    'Bad queary type! got "%s" expected any of: track, playlist, artist, album'
+)
 
 
 class Client:
@@ -46,6 +36,7 @@ class Client:
     loop : asyncio.AbstractEventLoop
         The event loop the client is running on.
     """
+
     _default_http_client = HTTPClient
 
     def __init__(self, client_id, client_secret, *, loop=None):
@@ -63,7 +54,12 @@ class Client:
     def id(self):
         return self.http.client_id
 
-    def oauth2_url(self, redirect_uri: str, scope: Optional[str] = None, state: Optional[str] = None) -> str:
+    def oauth2_url(
+        self,
+        redirect_uri: str,
+        scope: Optional[str] = None,
+        state: Optional[str] = None,
+    ) -> str:
         """Generate an outh2 url for user authentication.
 
         Parameters
@@ -186,7 +182,9 @@ class Client:
         albums : List[Album]
             The albums from the IDs
         """
-        data = await self.http.albums(','.join(to_id(_id) for _id in ids), market=market)
+        data = await self.http.albums(
+            ','.join(to_id(_id) for _id in ids), market=market
+        )
         return list(Album(self, album) for album in data['albums'])
 
     async def get_artists(self, *ids: List[str]) -> List[Artist]:
@@ -205,7 +203,15 @@ class Client:
         data = await self.http.artists(','.join(to_id(_id) for _id in ids))
         return list(Artist(self, artist) for artist in data['artists'])
 
-    async def search(self, q: str, *, types: Optional[Iterable[str]] = ['track', 'playlist', 'artist', 'album'], limit: Optional[int] = 20, offset: Optional[int] = 0, market: Optional[str] = None) -> Dict[str, List[Union[Track, Playlist, Artist, Album]]]:
+    async def search(
+        self,
+        q: str,
+        *,
+        types: Optional[Iterable[str]] = ['track', 'playlist', 'artist', 'album'],
+        limit: Optional[int] = 20,
+        offset: Optional[int] = 0,
+        market: Optional[str] = None
+    ) -> Dict[str, List[Union[Track, Playlist, Artist, Album]]]:
         """Access the spotify search functionality.
 
         Parameters
@@ -244,9 +250,12 @@ class Client:
             'queary_type': ','.join(tp.strip() for tp in types),
             'market': market,
             'limit': limit,
-            'offset': offset
+            'offset': offset,
         }
 
         data = await self.http.search(**kwargs)
 
-        return {key: [_TYPES[obj['type']](self, obj) for obj in value['items']] for key, value in data.items()}
+        return {
+            key: [_TYPES[obj['type']](self, obj) for obj in value['items']]
+            for key, value in data.items()
+        }

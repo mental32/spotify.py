@@ -10,6 +10,7 @@ class Image:
     url : str
         The URL of the image.
     """
+
     __slots__ = ('height', 'width', 'url')
 
     def __init__(self, *, height: str, width: str, url: str):
@@ -18,7 +19,11 @@ class Image:
         self.url = url
 
     def __repr__(self):
-        return '<spotify.Image: "%s" (width: %s, height: %s)>' % (self.url, self.width, self.height)
+        return '<spotify.Image: "%s" (width: %s, height: %s)>' % (
+            self.url,
+            self.width,
+            self.height,
+        )
 
     def __eq__(self, other):
         return type(self) is type(other) and self.url == other.url
@@ -38,6 +43,7 @@ class Context:
     uri : str
         The Spotify URI for the context.
     """
+
     __slots__ = ('external_urls', 'type', 'href', 'uri')
 
     def __init__(self, data):
@@ -75,7 +81,16 @@ class Device:
     is_private_session : bool
         If this device is currently in a private session.
     """
-    __slots__ = ('id', 'name', 'type', 'volume', 'is_active', 'is_restricted', 'is_private_session')
+
+    __slots__ = (
+        'id',
+        'name',
+        'type',
+        'volume',
+        'is_active',
+        'is_restricted',
+        'is_private_session',
+    )
 
     def __init__(self, data):
         self.id = data.get('id')

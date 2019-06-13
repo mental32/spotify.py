@@ -13,6 +13,7 @@ class Library(SpotifyBase):
     user : Spotify.User
         The user which this library object belongs to.
     """
+
     def __init__(self, client, user):
         self.user = user
         self.__client = client

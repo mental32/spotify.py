@@ -11,11 +11,14 @@ class SpotifyBase:
     client and, if as such, construct and return the appropriate 
     syncronous model.
     """
+
     __slots__ = []
 
     def __new__(cls, client, *args, **kwargs):
         if not isinstance(client, spotify.Client):
-            raise TypeError(f'{cls!r}: expected client argument to be an instance of spotify.Client. instead got {type(client)}')
+            raise TypeError(
+                f'{cls!r}: expected client argument to be an instance of spotify.Client. instead got {type(client)}'
+            )
 
         elif hasattr(client, '__client_thread__'):
             cls = getattr(spotify.sync.models, cls.__name__)
@@ -44,7 +47,9 @@ class SpotifyBase:
             impossible its a failsafe, this will be raised.
         """
         if not hasattr(self, 'href'):
-            raise TypeError('Spotify object has no `href` attribute, therefore cannot be retrived')
+            raise TypeError(
+                'Spotify object has no `href` attribute, therefore cannot be retrived'
+            )
 
         elif hasattr(self, 'http'):
             return await self.http.request(('GET', self.href))
@@ -76,6 +81,7 @@ class URIBase(SpotifyBase):
      - Two objects are equal if **They are strictly the same type and have the same uri**
      - Casting to a string will return the uri of the object.
     """
+
     def __eq__(self, other):
         return type(self) is type(other) and self.uri == other.uri
 

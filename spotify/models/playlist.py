@@ -12,6 +12,7 @@ class PartialTracks(SpotifyBase):
     total : int
         The total amount of tracks.
     """
+
     __slots__ = ('total', '__func', '__iter', '__client')
 
     def __init__(self, client, data):
@@ -84,6 +85,7 @@ class Playlist(URIBase):
     tracks : Option[List[PlaylistTrack]]
         list of playlist track objects.
     """
+
     def __init__(self, client, data, *, http=None):
         from .user import User
 
@@ -121,7 +123,9 @@ class Playlist(URIBase):
         _tracks = []
         offset = 0
         while len(_tracks) < self.total_tracks:
-            data = await self.__http.get_playlist_tracks(self.owner.id, self.id, limit=50, offset=offset)
+            data = await self.__http.get_playlist_tracks(
+                self.owner.id, self.id, limit=50, offset=offset
+            )
 
             _tracks += [PlaylistTrack(self.__client, item) for item in data['items']]
             offset += 50

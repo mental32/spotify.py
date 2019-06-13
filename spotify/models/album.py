@@ -38,6 +38,7 @@ class Album(URIBase):
     markets : List[str]
         The markets in which the album is available: ISO 3166-1 alpha-2 country codes.
     """
+
     def __init__(self, client, data):
         self.__client = client
 
@@ -70,7 +71,9 @@ class Album(URIBase):
     def __repr__(self):
         return '<spotify.Album: "%s">' % (self.name or self.id or self.uri)
 
-    async def get_tracks(self, *, limit: Optional[int] = 20, offset: Optional[int] = 0) -> List[Track]:
+    async def get_tracks(
+        self, *, limit: Optional[int] = 20, offset: Optional[int] = 0
+    ) -> List[Track]:
         """get the albums tracks from spotify.
 
         Parameters
@@ -85,7 +88,9 @@ class Album(URIBase):
         tracks : List[Track]
             The tracks of the artist.
         """
-        data = await self.__client.http.album_tracks(self.id, limit=limit, offset=offset)
+        data = await self.__client.http.album_tracks(
+            self.id, limit=limit, offset=offset
+        )
         return list(Track(self.__client, item) for item in data['items'])
 
     async def get_all_tracks(self, *, market: Optional[str] = 'US') -> List[Track]:
@@ -106,7 +111,9 @@ class Album(URIBase):
         total = self.total_tracks or None
 
         while True:
-            data = await self.__client.http.album_tracks(self.id, limit=50, offset=offset, market=market)
+            data = await self.__client.http.album_tracks(
+                self.id, limit=50, offset=offset, market=market
+            )
 
             if total is None:
                 total = data['total']

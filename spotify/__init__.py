@@ -18,6 +18,10 @@ __license__ = 'MIT'
 _locals = locals()
 
 with _clean_namespace(locals(), '_locals', '_clean_namespace'):
-    _types = dict((name, _locals[name]) for name, obj in _locals.items() if isinstance(obj, type) and issubclass(obj, SpotifyBase))
+    _types = dict(
+        (name, _locals[name])
+        for name, obj in _locals.items()
+        if isinstance(obj, type) and issubclass(obj, SpotifyBase)
+    )
     _types['HTTPClient'] = HTTPClient
     _types['HTTPUserClient'] = HTTPUserClient

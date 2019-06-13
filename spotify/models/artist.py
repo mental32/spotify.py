@@ -30,6 +30,7 @@ class Artist(URIBase):
     images : List[Image]
         Images of the artist in various sizes, widest first.
     """
+
     def __init__(self, client, data):
         self.__client = client
 
@@ -49,7 +50,14 @@ class Artist(URIBase):
     def __repr__(self):
         return '<spotify.Artist: "%s">' % self.name
 
-    async def get_albums(self, *, limit: Optional[int] = 20, offset: Optional[int] = 0, include_groups=None, market: Optional[str] = None) -> List['Album']:
+    async def get_albums(
+        self,
+        *,
+        limit: Optional[int] = 20,
+        offset: Optional[int] = 0,
+        include_groups=None,
+        market: Optional[str] = None
+    ) -> List['Album']:
         """Get the albums of a Spotify artist.
 
         Parameters
@@ -70,7 +78,13 @@ class Artist(URIBase):
         """
         from .album import Album
 
-        data = await self.__client.http.artist_albums(self.id, limit=limit, offset=offset, include_groups=include_groups, market=market)
+        data = await self.__client.http.artist_albums(
+            self.id,
+            limit=limit,
+            offset=offset,
+            include_groups=include_groups,
+            market=market,
+        )
         return list(Album(self.__client, item) for item in data['items'])
 
     async def get_all_albums(self, *, market='US') -> List['Album']:
@@ -93,7 +107,9 @@ class Artist(URIBase):
         total = await self.total_albums(market=market)
 
         while len(albums) < total:
-            data = await self.__client.http.artist_albums(self.id, limit=50, offset=offset, market=market)
+            data = await self.__client.http.artist_albums(
+                self.id, limit=50, offset=offset, market=market
+            )
 
             offset += 50
             albums += list(Album(self.__client, item) for item in data['items'])
@@ -113,7 +129,9 @@ class Artist(URIBase):
         total : int
             The total amount of albums.
         """
-        data = await self.__client.http.artist_albums(self.id, limit=1, offset=0, market=market)
+        data = await self.__client.http.artist_albums(
+            self.id, limit=1, offset=0, market=market
+        )
         return data['total']
 
     async def top_tracks(self, country: str = 'US') -> List['Track']:

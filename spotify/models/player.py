@@ -158,7 +158,12 @@ class Player(SpotifyBase):
         """
         return await self.user.http.skip_previous(device_id=str(device))
 
-    async def play(self, *uris: SomeURIs, offset: Optional[Offset] = 0, device: Optional[SomeDevice] = None):
+    async def play(
+        self,
+        *uris: SomeURIs,
+        offset: Optional[Offset] = 0,
+        device: Optional[SomeDevice] = None
+    ):
         """Start a new context or resume current playback on the user’s active device.
 
         The method treats a single argument as a Spotify context, such as a Artist, Album and playlist objects/URI.
@@ -189,13 +194,19 @@ class Player(SpotifyBase):
 
         if device is not None:
             if not isinstance(device, (Device, str)):
-                raise TypeError('Expected `device` to either be a spotify.Device or a string. got {type(0)!r}'.format(device))
+                raise TypeError(
+                    'Expected `device` to either be a spotify.Device or a string. got {type(0)!r}'.format(
+                        device
+                    )
+                )
             else:
                 device = str(device)
 
         await self.user.http.play_playback(context_uri, offset=offset, device_id=device)
 
-    async def shuffle(self, state: Optional[bool] = None, *, device: Optional[SomeDevice] = None):
+    async def shuffle(
+        self, state: Optional[bool] = None, *, device: Optional[SomeDevice] = None
+    ):
         """shuffle on or off for user’s playback.
 
         Parameters

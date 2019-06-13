@@ -46,7 +46,9 @@ class Track(URIBase):
 
         self.__client = client
 
-        self.artists = artists = list(Artist(client, artist) for artist in data.pop('artists', [None]))
+        self.artists = artists = list(
+            Artist(client, artist) for artist in data.pop('artists', [None])
+        )
         self.artist = artists[0]
 
         album = data.pop('album', None)
@@ -93,6 +95,7 @@ class PlaylistTrack(Track):
     added_at : datetime.datetime
         The datetime of when the track was added to the playlist.
     """
+
     __slots__ = ('added_at', 'added_by', 'is_local')
 
     def __init__(self, client, data):
@@ -101,7 +104,9 @@ class PlaylistTrack(Track):
         super().__init__(client, data['track'])
 
         self.added_by = User(client, data['added_by'])
-        self.added_at = datetime.datetime.strptime(data['added_at'], '%Y-%m-%dT%H:%M:%SZ')
+        self.added_at = datetime.datetime.strptime(
+            data['added_at'], '%Y-%m-%dT%H:%M:%SZ'
+        )
         self.is_local = data['is_local']
 
     def __repr__(self):

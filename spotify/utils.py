@@ -46,8 +46,11 @@ def to_id(string: str) -> str:
         return match.group(1)
 
 
-def assert_hasattr(attr: str, msg: str, tp: BaseException = SpotifyException) -> Callable:
+def assert_hasattr(
+    attr: str, msg: str, tp: BaseException = SpotifyException
+) -> Callable:
     """decorator to assert an object has an attribute when run."""
+
     def decorator(func: Callable) -> Callable:
         @functools.wraps(func)
         def decorated(self, *args, **kwargs):
@@ -56,11 +59,13 @@ def assert_hasattr(attr: str, msg: str, tp: BaseException = SpotifyException) ->
             return func(self, *args, **kwargs)
 
         if inspect.iscoroutinefunction(func):
+
             @functools.wraps(func)
             async def decorated(*args, **kwargs):
                 return await decorated(*args, **kwargs)
 
         return decorated
+
     return decorator
 
 
@@ -87,9 +92,12 @@ class OAuth2:
     url : str
         The URL for OAuth2
     """
+
     _BASE = 'https://accounts.spotify.com/authorize/?response_type=code&{parameters}'
 
-    def __init__(self, client_id: str, redirect_uri: str, *, scope: str = None, state: str = None):
+    def __init__(
+        self, client_id: str, redirect_uri: str, *, scope: str = None, state: str = None
+    ):
         self.client_id = client_id
         self.redirect_uri = redirect_uri
 
@@ -97,7 +105,9 @@ class OAuth2:
         self.scope = scope
 
     def __repr__(self):
-        return '<spotfy.OAuth2: client_id={0!r}, scope={1!r}>'.format(self.client_id, self.scope)
+        return '<spotfy.OAuth2: client_id={0!r}, scope={1!r}>'.format(
+            self.client_id, self.scope
+        )
 
     def __str__(self):
         return self.url
@@ -108,12 +118,11 @@ class OAuth2:
         return cls(client.http.client_id, *args, **kwargs)
 
     @staticmethod
-    def url_(client_id: str, redirect_uri: str, *, scope: str = None, state: str = None) -> str:
+    def url_(
+        client_id: str, redirect_uri: str, *, scope: str = None, state: str = None
+    ) -> str:
         """Construct a OAuth2 URL instead of an OAuth2 object."""
-        attrs = {
-            'client_id': client_id,
-            'redirect_uri': quote(redirect_uri)
-        }
+        attrs = {'client_id': client_id, 'redirect_uri': quote(redirect_uri)}
 
         if scope is not None:
             attrs['scope'] = quote(scope)
@@ -133,10 +142,7 @@ class OAuth2:
     @property
     def attrs(self):
         """Attributes used when constructing url parameters."""
-        data = {
-            'client_id': self.client_id,
-            'redirect_uri': quote(self.redirect_uri),
-        }
+        data = {'client_id': self.client_id, 'redirect_uri': quote(self.redirect_uri)}
 
         if self.scope is not None:
             data['scope'] = quote(self.scope)
