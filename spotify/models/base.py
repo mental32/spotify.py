@@ -2,8 +2,16 @@ import spotify
 
 
 class SpotifyBase:
-    """The base class all Spotify models should derive from."""
-    __slots__ = ()
+    """The base class all Spotify models **must** derive from.
+
+    This base class is used to transparently construct spotify
+    models based on the :class:`spotify,Client` type.
+
+    Currently it is used to detect whether a Client is a syncronous
+    client and, if as such, construct and return the appropriate 
+    syncronous model.
+    """
+    __slots__ = []
 
     def __new__(cls, client, *args, **kwargs):
         if not isinstance(client, spotify.Client):
@@ -15,7 +23,26 @@ class SpotifyBase:
         return object.__new__(cls)
 
     async def from_href(self):
-        """Get the full object from spotify with a `href` attribute."""
+        """Get the full object from spotify with a `href` attribute.
+
+        .. note ::
+
+            This can be used to get an updated model of the object.
+
+        Returns
+        -------
+        model : SpotifyBase
+            An instance of whatever the class was before.
+
+        Raises
+        ------
+        TypeError
+            This is raised if the model has no `href` attribute.
+
+            Additionally if the model has no `http` attribute and
+            the model has no way to access its client, while theoretically
+            impossible its a failsafe, this will be raised.
+        """
         if not hasattr(self, 'href'):
             raise TypeError('Spotify object has no `href` attribute, therefore cannot be retrived')
 
@@ -38,8 +65,17 @@ class SpotifyBase:
 
 
 class URIBase(SpotifyBase):
-    """Base class used for inheriting magic methods for models who have URIs."""
+    """Base class used for inheriting magic methods for models who have URIs.
 
+    This class inherits from :class:`SpotifyBase` and is used to reduce boilerplate
+    in spotify models by supplying a `__eq__`, `__ne__`, and `__str__` double underscore
+    methods.
+
+    The objects that inherit from :class:`URIBase` support equality and string casting.
+
+     - Two objects are equal if **They are strictly the same type and have the same uri**
+     - Casting to a string will return the uri of the object.
+    """
     def __eq__(self, other):
         return type(self) is type(other) and self.uri == other.uri
 
