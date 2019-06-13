@@ -1,6 +1,6 @@
 from .utils import OAuth2, clean as _clean_namespace
 
-__version__ = '0.4.6'  # noqa
+__version__ = '0.4.7'  # noqa
 
 from .errors import *
 from .models import *
