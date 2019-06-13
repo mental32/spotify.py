@@ -36,8 +36,8 @@ class PartialTracks(SpotifyBase):
         else:
             return PlaylistTrack(self.__client, track)
 
-    async def build(self):
-        """get the track object for each link in the partial tracks data
+    async def build(self) -> List[PlaylistTrack]:
+        """get the track object for each link in the partial tracks data.
 
         Returns
         -------

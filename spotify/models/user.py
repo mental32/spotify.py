@@ -207,9 +207,14 @@ class User(URIBase):
             Each object is a dict with a timestamp, track and context field.
         """
         data = await self.http.recently_played()
-        f = lambda data: {'context': Context(data.get('context')), 'track': Track(self.__client, data.get('track'))}
+        client = self.__client
+
         # List[T] where T: {'track': Track, 'content': Context: 'timestamp': ISO8601}
-        return [{'timestamp': track['timestamp'], **f(track)} for track in data['items']]
+        return [{
+            'timestamp': track['timestamp'], 
+            'context': Context(track.get('context')), 
+            'track': Track(client, track.get('track'))} 
+            for track in data['items']]
 
     ### Playlist track methods
 
