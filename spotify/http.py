@@ -682,8 +682,12 @@ class HTTPClient:
 
         if isinstance(context_uri, str):
             payload['context_uri'] = {'context_uri': context_uri}
+
         elif context_uri is not None:
             payload['uris'] = {'uris': list(*context_uri)}
+
+        else:
+            raise TypeError('`context_uri` must be a string or an iterable object, got %s' % type(context_uri))
 
         if offset:
             payload['offset'] = offset
@@ -711,8 +715,8 @@ class HTTPClient:
 
         return self.request(route, data=json.dumps(payload))
 
-    def add_playlist_tracks(self, user_id, playlist_id, tracks, *, position=None):
-        route = Route('POST', '/users/{user_id}/playlists/{playlist_id}/tracks', user_id=user_id, playlist_id=playlist_id)
+    def add_playlist_tracks(self, playlist_id, tracks, *, position=None):
+        route = Route('POST', '/playlists/{playlist_id}/tracks', playlist_id=playlist_id)
         payload = {'uris': tracks}
 
         if position:
@@ -720,8 +724,8 @@ class HTTPClient:
 
         return self.request(route, params=payload)
 
-    def change_playlist_details(self, user_id, playlist_id, *, data):
-        route = Route('PUT', '/users/{user_id}/playlists/{playlist_id}/tracks', user_id=user_id, playlist_id=playlist_id)
+    def change_playlist_details(self, playlist_id, *, data):
+        route = Route('PUT', '/playlists/{playlist_id}', playlist_id=playlist_id)
         return self.request(route, data=json.dumps(data))
 
     def create_playlist(self, user_id, *, data):
@@ -736,12 +740,12 @@ class HTTPClient:
         route = Route('GET', '/users/{user_id}/playlists', user_id=user_id)
         return self.request(route, params={'limit': limit, 'offset': offset})
 
-    def get_playlist_cover_image(self, user_id, playlist_id):
-        route = Route('GET', '/users/{user_id}/playlists/{playlist_id}/images', user_id=user_id, playlist_id=playlist_id)
+    def get_playlist_cover_image(self, playlist_id):
+        route = Route('GET', '/playlists/{playlist_id}/images', playlist_id=playlist_id)
         return self.request(route)
 
-    def get_playlist(self, user_id, playlist_id, *, fields=None, market=None):
-        route = Route('GET', '/users/{user_id}/playlists/{playlist_id}', user_id=user_id, playlist_id=playlist_id)
+    def get_playlist(self, playlist_id, *, fields=None, market=None):
+        route = Route('GET', '/playlists/{playlist_id}', playlist_id=playlist_id)
         payload = {}
 
         if fields:
@@ -752,8 +756,8 @@ class HTTPClient:
 
         return self.request(route, params=payload)
 
-    def get_playlist_tracks(self, user_id, playlist_id, *, fields=None, market=None, limit=20, offset=0):
-        route = Route('GET', '/users/{user_id}/playlists/{playlist_id}/tracks', user_id=user_id, playlist_id=playlist_id)
+    def get_playlist_tracks(self, playlist_id, *, fields=None, market=None, limit=20, offset=0):
+        route = Route('GET', '/playlists/{playlist_id}/tracks', playlist_id=playlist_id)
         payload = {'limit': limit, 'offset': offset}
 
         if fields:
@@ -764,8 +768,8 @@ class HTTPClient:
 
         return self.request(route, params=payload)
 
-    def remove_playlist_tracks(self, user_id, playlist_id, tracks, *, position=None, snapshot_id=None):
-        route = Route('DELETE ', '/users/{user_id}/playlists/{playlist_id}/tracks', user_id=user_id, playlist_id=playlist_id)
+    def remove_playlist_tracks(self, playlist_id, tracks, *, position=None, snapshot_id=None):
+        route = Route('DELETE ', '/playlists/{playlist_id}/tracks', playlist_id=playlist_id)
         payload = {'uris': tracks}
 
         if position:
@@ -776,8 +780,8 @@ class HTTPClient:
 
         return self.request(route, params=payload)
 
-    def reorder_playlists_tracks(self, user_id, playlist_id, range_start, range_length, insert_before, *, snapshot_id=None):
-        route = Route('PUT', '/users/{user_id}/playlists/{playlist_id}/tracks', user_id=user_id, playlist_id=playlist_id)
+    def reorder_playlists_tracks(self, playlist_id, range_start, range_length, insert_before, *, snapshot_id=None):
+        route = Route('PUT', '/playlists/{playlist_id}/tracks', playlist_id=playlist_id)
         payload = {'range_start': range_start, 'range_length': range_length, 'insert_before': insert_before}
 
         if snapshot_id:
@@ -785,14 +789,14 @@ class HTTPClient:
 
         return self.request(route, data=payload)
 
-    def replace_playlist_tracks(self, user_id, playlist_id, tracks):
-        route = Route('PUT', '/users/{user_id}/playlists/{playlist_id}/tracks', user_id=user_id, playlist_id=playlist_id)
+    def replace_playlist_tracks(self, playlist_id, tracks):
+        route = Route('PUT', '/playlists/{playlist_id}/tracks', playlist_id=playlist_id)
         payload = {'uris': tracks}
 
         return self.request(route, params=payload)
 
-    def upload_playlist_cover_image(self, user_id, playlist_id, file):
-        route = Route('PUT', '/users/{user_id}/playlists/{playlist_id}/images', user_id=user_id, playlist_id=playlist_id)
+    def upload_playlist_cover_image(self, playlist_id, file):
+        route = Route('PUT', '/playlists/{playlist_id}/images', playlist_id=playlist_id)
         return self.request(route, data=b64encode(file.read()), content_type='image/jpeg')
 
     def track_audio_analysis(self, track_id):
@@ -834,7 +838,7 @@ class HTTPClient:
 
 
 class HTTPUserClient(HTTPClient):
-    '''HTTPClient for access to user endpoints.'''
+    """HTTPClient for access to user endpoints."""
     def __init__(self, token, loop=None):
         self.loop = loop or asyncio.get_event_loop()
         self._session = aiohttp.ClientSession(loop=self.loop)
