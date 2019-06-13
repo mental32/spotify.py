@@ -1,12 +1,11 @@
 from .utils import OAuth2, clean as _clean_namespace
 
+__version__ = '0.4.6'  # noqa
+
 from .errors import *
 from .models import *
 from .client import Client
 from .models import SpotifyBase
-
-__version__ = '0.4.5'  # noqa
-
 from .http import HTTPClient, HTTPUserClient
 
 __all__ = tuple(name for name in locals() if name[0] != '_')
