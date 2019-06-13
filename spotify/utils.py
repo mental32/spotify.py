@@ -108,7 +108,7 @@ class OAuth2:
         return cls(client.http.client_id, *args, **kwargs)
 
     @staticmethod
-    def url_(client_id: str, redirect_uri: str, *, scope: str = None, state: str = None, secure: bool = True) -> str:
+    def url_(client_id: str, redirect_uri: str, *, scope: str = None, state: str = None) -> str:
         """Construct a OAuth2 URL instead of an OAuth2 object."""
         attrs = {
             'client_id': client_id,
