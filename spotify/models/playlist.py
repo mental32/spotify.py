@@ -124,7 +124,7 @@ class Playlist(URIBase):
         offset = 0
         while len(_tracks) < self.total_tracks:
             data = await self.__http.get_playlist_tracks(
-                self.owner.id, self.id, limit=50, offset=offset
+                self.id, limit=50, offset=offset
             )
 
             _tracks += [PlaylistTrack(self.__client, item) for item in data['items']]
