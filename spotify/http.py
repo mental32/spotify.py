@@ -1,4 +1,5 @@
 import asyncio
+import sys
 import json
 import random
 import string
@@ -7,11 +8,14 @@ from urllib.parse import quote
 
 import aiohttp
 
+from . import __version__
 from .errors import HTTPException, Forbidden, NotFound, SpotifyException
 
 __all__ = ('HTTPClient', 'HTTPUserClient', 'Route')
 
 _GET_BEARER_ERR = '%s was `None` when getting a bearer token.'
+_PYTHON_VERSION = '.'join(sys.version_info[:3])
+_AIOHTTP_VERSION = aiohttp.__version__
 
 
 class Route:
@@ -70,6 +74,7 @@ class HTTPClient:
         The client secret.
     """
     RETRY_AMOUNT = 10
+    DEFAULT_USER_AGENT = user_agent = f'Application (https://github.com/mental32/spotify.py {__version__}) Python/{_PYTHON_VERSION} aiohttp/{_AIOHTTP_VERSION}'
 
     def __init__(self, client_id, client_secret, loop=None):
         self.loop = loop or asyncio.get_event_loop()
@@ -124,6 +129,7 @@ class HTTPClient:
         headers = {
             'Authorization': 'Bearer ' + access_token,
             'Content-Type': kwargs.get('content_type', 'application/json'),
+            'User-Agent': self.user_agent
             **kwargs.pop('headers', {})
         }
 

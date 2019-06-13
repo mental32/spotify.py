@@ -4,6 +4,9 @@ from .errors import *
 from .models import *
 from .client import Client
 from .models import SpotifyBase
+
+__version__ = '0.4.2'  # noqa
+
 from .http import HTTPClient, HTTPUserClient
 
 __all__ = tuple(name for name in locals() if name[0] != '_')
@@ -11,7 +14,6 @@ __all__ = tuple(name for name in locals() if name[0] != '_')
 __title__ = 'spotify'
 __author__ = 'mental'
 __license__ = 'MIT'
-__version__ = '0.4.2'
 
 _locals = locals()
 
