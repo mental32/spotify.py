@@ -129,7 +129,7 @@ class HTTPClient:
         headers = {
             'Authorization': 'Bearer ' + access_token,
             'Content-Type': kwargs.get('content_type', 'application/json'),
-            'User-Agent': self.user_agent
+            'User-Agent': self.user_agent,
             **kwargs.pop('headers', {})
         }
 
