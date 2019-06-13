@@ -5,7 +5,7 @@ from .models import *
 from .client import Client
 from .models import SpotifyBase
 
-__version__ = '0.4.2'  # noqa
+__version__ = '0.4.3'  # noqa
 
 from .http import HTTPClient, HTTPUserClient
 
