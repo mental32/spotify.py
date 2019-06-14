@@ -60,7 +60,7 @@ class Player(SpotifyBase):
             self.item = Track(client, item)
 
     def __repr__(self):
-        return '<spotify.Player: "%s">' % repr(self.user)
+        return f"<spotify.Player: {self.user!r}>"
 
     # Properties
 

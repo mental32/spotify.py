@@ -69,7 +69,7 @@ class Album(URIBase):
         self.total_tracks = data.pop("total_tracks", None)
 
     def __repr__(self):
-        return '<spotify.Album: "%s">' % (self.name or self.id or self.uri)
+        return f"<spotify.Album: {(self.name or self.id or self.uri)!r}>"
 
     async def get_tracks(
         self, *, limit: Optional[int] = 20, offset: Optional[int] = 0

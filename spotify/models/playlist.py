@@ -22,7 +22,7 @@ class PartialTracks(SpotifyBase):
         self.__iter = None
 
     def __repr__(self):
-        return '<spotify.PartialTracks: total="%s">' % self.total
+        return f"<spotify.PartialTracks: total={self.total!r}>"
 
     def __aiter__(self):
         return self

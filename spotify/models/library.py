@@ -19,7 +19,7 @@ class Library(SpotifyBase):
         self.__client = client
 
     def __repr__(self):
-        return "<spotify.Library: %s>" % (repr(self.user))
+        return f"<spotify.Library: {self.user!r}>"
 
     def __eq__(self, other):
         return type(self) is type(other) and self.user == other.user

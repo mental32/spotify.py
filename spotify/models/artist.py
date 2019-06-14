@@ -48,7 +48,7 @@ class Artist(URIBase):
         self.images = list(Image(**image) for image in data.pop("images", []))
 
     def __repr__(self):
-        return '<spotify.Artist: "%s">' % self.name
+        return f"<spotify.Artist: {self.name!r}>"
 
     async def get_albums(
         self,
