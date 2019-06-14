@@ -163,18 +163,24 @@ class User(URIBase):
     ### Contextual methods
 
     @ensure_http
-    async def currently_playing(self) -> Tuple[Context, Track]:
+    async def currently_playing(self) -> Dict[str, Union[Track, Context, str]]:
         """Get the users currently playing track.
 
         Returns
         -------
-        context, track : Tuple[Context, Track]
+        context, track : Dict[str, Union[Track, Context, str]]
             A tuple of the context and track.
         """
         data = await self.http.currently_playing()
 
-        if data.get("item"):
-            data["Context"] = Context(data.get("context"))
+        if 'item' in data:
+            context = data.pop('context', None)
+
+            if context is not None:
+                data['context'] = Context(context)
+            else:
+                data['context'] = None
+
             data["item"] = Track(self.__client, data.get("item"))
 
         return data
