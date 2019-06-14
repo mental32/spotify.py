@@ -85,7 +85,9 @@ class Client:
     async def user_from_token(self, token: str) -> User:
         """Create a user session from a token.
 
-        This code is equivelent to `User.from_token(client, token)`
+        .. note::
+
+            This code is equivelent to `User.from_token(client, token)`
 
         Parameters
         ----------
@@ -94,7 +96,7 @@ class Client:
 
         Returns
         -------
-        user : User
+        user : :class:`spotify.User`
             The user from the ID
         """
         return await User.from_token(self, token)
@@ -111,7 +113,7 @@ class Client:
 
         Returns
         -------
-        album : Album
+        album : :class:`spotify.Album`
             The album from the ID
         """
         data = await self.http.album(to_id(spotify_id), market=market)

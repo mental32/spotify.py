@@ -6,59 +6,64 @@ Client
 .. autoclass:: spotify.Client
    :members: 
 
+HTTPClient
+----------
+.. autoclass:: spotify.HTTPClient
+    :members:
+
 Models
 ======
 
 Album
 -----
 .. autoclass:: spotify.Album
-	:members:
+    :members:
 
 Artist
 ------
 .. autoclass:: spotify.Artist
-	:members:
+    :members:
 
 User
 ----
 .. autoclass:: spotify.User
-	:members:
+    :members:
 
 Playlist
 --------
 .. autoclass:: spotify.Playlist
-	:members:
+    :members:
 
 
 Player
 ------
 .. autoclass:: spotify.Player
-	:members:
+    :members:
 
 Library
 -------
 .. autoclass:: spotify.Library
-	:members:
+    :members:
 
 PlaylistTrack
 -------------
 .. autoclass:: spotify.PlaylistTrack
-	:members:
+    :members:
 
 Device
 ------
 .. autoclass:: spotify.Device
-	:members:
+    :members:
 
 Context
 -------
 .. autoclass:: spotify.Context
-	:members:
+    :members:
 
 Image
 -----
 .. autoclass:: spotify.Image
-	:members:
+    :members:
 
 Exceptions
 ==========
@@ -66,19 +71,19 @@ Exceptions
 SpotifyException
 ----------------
 .. autoclass:: spotify.SpotifyException
-	:members:
+    :members:
 
 HTTPException
 -------------
 .. autoclass:: spotify.HTTPException
-	:members:
+    :members:
 
 Forbidden
 ---------
 .. autoclass:: spotify.Forbidden
-	:members:
+    :members:
 
 NotFound
 --------
 .. autoclass:: spotify.NotFound
-	:members:
+    :members:
