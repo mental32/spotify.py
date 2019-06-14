@@ -1,7 +1,8 @@
-from typing import List
 from functools import partial
+from itertools import islice
+from typing import List, Optional, Union
 
-from . import SpotifyBase, URIBase, PlaylistTrack, Image
+from . import SpotifyBase, URIBase, Track, PlaylistTrack, Image
 
 
 class PartialTracks(SpotifyBase):
@@ -112,6 +113,28 @@ class Playlist(URIBase):
     def __repr__(self):
         return '<spotify.Playlist: "%s">' % (getattr(self, "name", None) or self.id)
 
+    # Track retrieval
+
+    async def get_tracks(
+        self, *, limit: Optional[int] = 20, offset: Optional[int] = 0
+    ) -> List[PlaylistTrack]:
+        """Get a fraction of a playlists tracks.
+
+        Parameters
+        ----------
+        limit : Optional[int]
+            The limit on how many tracks to retrieve for this playlist (default is 20).
+        offset : Optional[int]
+            The offset from where the api should start from in the tracks.
+
+        Returns
+        -------
+        tracks : List[PlaylistTrack]
+            The tracks of the playlist.
+        """
+        data = self.__http.get_playlist_tracks(self.id, limit=limit, offset=offset)
+        return list(PlaylistTrack(self.__client, item) for item in data["items"])
+
     async def get_all_tracks(self) -> List[PlaylistTrack]:
         """Get all playlist tracks from the playlist.
 
@@ -132,3 +155,137 @@ class Playlist(URIBase):
 
         self.total_tracks = len(_tracks)
         return list(_tracks)
+
+    # Playlist structure modification
+
+    async def add_tracks(self, *tracks) -> str:
+        """Add one or more tracks to a user’s playlist.
+
+        Parameters
+        ----------
+        tracks : Sequence[Union[str, Track]]
+            Tracks to add to the playlist
+
+        Returns
+        -------
+        snapshot_id : str
+            The snapshot id of the playlist.
+        """
+        data = await self.__http.add_playlist_tracks(
+            self.id, tracks=(str(track) for track in tracks)
+        )
+        return data["snapshot_id"]
+
+    async def replace_tracks(self, *tracks) -> str:
+        """Replace all the tracks in a playlist, overwriting its existing tracks.
+
+        This powerful request can be useful for replacing tracks, re-ordering existing tracks, or clearing the playlist.
+
+        Parameters
+        ----------
+        tracks : Sequence[Union[str, Track]]
+            Tracks to place in the playlist
+        """
+        if not isinstance(tracks, (list, tuple)):
+            tracks = list(*tracks)
+
+        if len(tracks) <= 100:
+            head = tracks
+        else:
+            head.tracks = tracks[:100], tracks[100:]
+
+        await self.__http.replace_playlist_tracks(
+            self.id, tracks=(str(track) for track in head)
+        )
+
+        while tracks:
+            head.tracks = tracks[:100], tracks[100:]
+            await self.extend_tracks(head)
+
+    async def remove_tracks(self, *tracks):
+        """Remove one or more tracks from a user’s playlist.
+
+        Parameters
+        ----------
+        tracks : Sequence[Union[str, Track]]
+            Tracks to remove from the playlist
+
+        Returns
+        -------
+        snapshot_id : str
+            The snapshot id of the playlist.
+        """
+        data = await self.__http.remove_playlist_tracks(
+            self.id, tracks=(str(track) for track in tracks)
+        )
+        return data["snapshot_id"]
+
+    async def reorder_tracks(
+        self,
+        start: int,
+        insert_before: int,
+        length: int = 1,
+        *,
+        snapshot_id: Optional[str] = None,
+    ) -> str:
+        """Reorder a track or a group of tracks in a playlist.
+
+        Parameters
+        ----------
+        start : int
+            The position of the first track to be reordered.
+        insert_before : int
+            The position where the tracks should be inserted.
+        length : Optional[int]
+            The amount of tracks to be reordered. Defaults to 1 if not set.
+        snapshot_id : str
+            The playlist’s snapshot ID against which you want to make the changes.
+
+        Returns
+        -------
+        snapshot_id : str
+            The snapshot id of the playlist.
+        """
+        data = await self.__http.reorder_playlists_tracks(
+            self.id, start, length, insert_before, snapshot_id=snapshot_id
+        )
+        return data["snapshot_id"]
+
+    async def extend_tracks(
+        self, tracks: Union['Playlist', PartialTracks, List[Union[Track, str]]]
+    ):
+        """Extend a playlists tracks with that of another playlist, PartialTracks or a list of Track/Track URIs.
+
+        Parameters
+        ----------
+        tracks : Union[Playlist, PartialTracks, List[Union[Track, str]]]
+            Tracks to add to the playlist, acceptable values are:
+             - A :class:`spotify.Playlist` object
+             - A :class:`spotify.models.PartialTracks` object
+             - A :class:`list` of :class:`spotify.Track` objects or Track URIs
+
+        Returns
+        -------
+        snapshot_id : str
+            The snapshot id of the playlist.
+        """
+        if isinstance(tracks, Playlist):
+            tracks = await tracks.get_all_tracks()
+
+        elif isinstance(tracks, PartialTracks):
+            tracks = await tracks.build()
+
+        elif not isinstance(tracks, (list, tuple)):
+            raise TypeError(
+                f"`tracks` was an invalid type, expected any of: Playlist, PartialTracks, List[Union[Track, str]], instead got {type(tracks)}"
+            )
+
+        tracks = (str(track) for track in tracks)
+
+        while True:
+            head = list(islice(tracks, 0, 100))
+
+            if not head:
+                break
+
+            data = await self.__http.add_playlist_tracks(self.id, tracks=head)
