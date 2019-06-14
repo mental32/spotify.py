@@ -35,17 +35,17 @@ class Artist(URIBase):
         self.__client = client
 
         # Simplified object attributes
-        self.id = data.pop('id')
-        self.uri = data.pop('uri')
-        self.url = data.pop('external_urls').get('spotify', None)
-        self.href = data.pop('href')
-        self.name = data.pop('name')
+        self.id = data.pop("id")
+        self.uri = data.pop("uri")
+        self.url = data.pop("external_urls").get("spotify", None)
+        self.href = data.pop("href")
+        self.name = data.pop("name")
 
         # Full object attributes
-        self.genres = data.pop('genres', None)
-        self.followers = data.pop('followers', {}).get('total', None)
-        self.popularity = data.pop('popularity', None)
-        self.images = list(Image(**image) for image in data.pop('images', []))
+        self.genres = data.pop("genres", None)
+        self.followers = data.pop("followers", {}).get("total", None)
+        self.popularity = data.pop("popularity", None)
+        self.images = list(Image(**image) for image in data.pop("images", []))
 
     def __repr__(self):
         return '<spotify.Artist: "%s">' % self.name
@@ -57,7 +57,7 @@ class Artist(URIBase):
         offset: Optional[int] = 0,
         include_groups=None,
         market: Optional[str] = None
-    ) -> List['Album']:
+    ) -> List["Album"]:
         """Get the albums of a Spotify artist.
 
         Parameters
@@ -85,9 +85,9 @@ class Artist(URIBase):
             include_groups=include_groups,
             market=market,
         )
-        return list(Album(self.__client, item) for item in data['items'])
+        return list(Album(self.__client, item) for item in data["items"])
 
-    async def get_all_albums(self, *, market='US') -> List['Album']:
+    async def get_all_albums(self, *, market="US") -> List["Album"]:
         """loads all of the artists albums, depending on how many the artist has this may be a long operation.
 
         Parameters
@@ -112,7 +112,7 @@ class Artist(URIBase):
             )
 
             offset += 50
-            albums += list(Album(self.__client, item) for item in data['items'])
+            albums += list(Album(self.__client, item) for item in data["items"])
 
         return albums
 
@@ -132,9 +132,9 @@ class Artist(URIBase):
         data = await self.__client.http.artist_albums(
             self.id, limit=1, offset=0, market=market
         )
-        return data['total']
+        return data["total"]
 
-    async def top_tracks(self, country: str = 'US') -> List['Track']:
+    async def top_tracks(self, country: str = "US") -> List["Track"]:
         """Get Spotify catalog information about an artist’s top tracks by country.
 
         Parameters
@@ -150,9 +150,9 @@ class Artist(URIBase):
         from .track import Track
 
         top = await self.__client.http.artist_top_tracks(self.id, country=country)
-        return list(Track(self.__client, item) for item in top['tracks'])
+        return list(Track(self.__client, item) for item in top["tracks"])
 
-    async def related_artists(self) -> List['Artist']:
+    async def related_artists(self) -> List["Artist"]:
         """Get Spotify catalog information about artists similar to a given artist.
 
         Similarity is based on analysis of the Spotify community’s listening history.
@@ -163,4 +163,4 @@ class Artist(URIBase):
             The artists deemed similar.
         """
         related = await self.__client.http.artist_related_artists(self.id)
-        return list(Artist(self.__client, item) for item in related['artists'])
+        return list(Artist(self.__client, item) for item in related["artists"])

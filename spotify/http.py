@@ -11,10 +11,10 @@ import aiohttp
 from . import __version__
 from .errors import HTTPException, Forbidden, NotFound, SpotifyException
 
-__all__ = ('HTTPClient', 'HTTPUserClient', 'Route')
+__all__ = ("HTTPClient", "HTTPUserClient", "Route")
 
-_GET_BEARER_ERR = '%s was `None` when getting a bearer token.'
-_PYTHON_VERSION = '.'.join(str(_) for _ in sys.version_info[:3])
+_GET_BEARER_ERR = "%s was `None` when getting a bearer token."
+_PYTHON_VERSION = ".".join(str(_) for _ in sys.version_info[:3])
 _AIOHTTP_VERSION = aiohttp.__version__
 
 
@@ -39,15 +39,19 @@ class Route:
     url : str
         The formatted path.
     """
-    BASE = 'https://api.spotify.com/v1'
+
+    BASE = "https://api.spotify.com/v1"
 
     def __init__(self, method, path, **kwargs):
         self.path = path
         self.method = method
-        self.url = (self.BASE + self.path)
+        self.url = self.BASE + self.path
 
         if kwargs:
-            parameters = {key: (quote(v) if isinstance(v, str) else v) for key, v in kwargs.items()}
+            parameters = {
+                key: (quote(v) if isinstance(v, str) else v)
+                for key, v in kwargs.items()
+            }
             self.url = self.url.format(**parameters)
 
 

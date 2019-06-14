@@ -17,10 +17,10 @@ class SpotifyBase:
     def __new__(cls, client, *args, **kwargs):
         if not isinstance(client, spotify.Client):
             raise TypeError(
-                f'{cls!r}: expected client argument to be an instance of spotify.Client. instead got {type(client)}'
+                f"{cls!r}: expected client argument to be an instance of spotify.Client. instead got {type(client)}"
             )
 
-        elif hasattr(client, '__client_thread__'):
+        elif hasattr(client, "__client_thread__"):
             cls = getattr(spotify.sync.models, cls.__name__)
 
         return object.__new__(cls)
@@ -46,25 +46,25 @@ class SpotifyBase:
             the model has no way to access its client, while theoretically
             impossible its a failsafe, this will be raised.
         """
-        if not hasattr(self, 'href'):
+        if not hasattr(self, "href"):
             raise TypeError(
-                'Spotify object has no `href` attribute, therefore cannot be retrived'
+                "Spotify object has no `href` attribute, therefore cannot be retrived"
             )
 
-        elif hasattr(self, 'http'):
-            return await self.http.request(('GET', self.href))
+        elif hasattr(self, "http"):
+            return await self.http.request(("GET", self.href))
 
         else:
             cls = type(self)
 
         try:
-            client = getattr(self, '_{0}__client'.format(cls.__name__))
+            client = getattr(self, "_{0}__client".format(cls.__name__))
         except AttributeError:
-            raise TypeError('Spotify object has no way to access a HTTPClient.')
+            raise TypeError("Spotify object has no way to access a HTTPClient.")
         else:
             http = client.http
 
-        data = await http.request(('GET', self.href))
+        data = await http.request(("GET", self.href))
 
         return cls(client, data)
 

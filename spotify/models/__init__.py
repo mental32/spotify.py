@@ -12,16 +12,16 @@ from .playlist import Playlist, PartialTracks
 from .user import User
 
 __all__ = (
-    'User',
-    'Track',
-    'PlaylistTrack',
-    'Artist',
-    'Album',
-    'Playlist',
-    'PartialTracks',
-    'Library',
-    'Player',
-    'Device',
-    'Context',
-    'Image',
+    "User",
+    "Track",
+    "PlaylistTrack",
+    "Artist",
+    "Album",
+    "Playlist",
+    "PartialTracks",
+    "Library",
+    "Player",
+    "Device",
+    "Context",
+    "Image",
 )

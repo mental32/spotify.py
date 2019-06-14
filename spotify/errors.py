@@ -1,4 +1,4 @@
-__all__ = ('SpotifyException', 'HTTPException', 'Forbidden', 'NotFound')
+__all__ = ("SpotifyException", "HTTPException", "Forbidden", "NotFound")
 
 
 class SpotifyException(Exception):
@@ -11,16 +11,16 @@ class HTTPException(SpotifyException):
     def __init__(self, response, message):
         self.response = response
         self.status = response.status
-        error = message.get('error')
+        error = message.get("error")
 
         if isinstance(error, dict):
-            self.text = error.get('message', '')
+            self.text = error.get("message", "")
         else:
-            self.text = message.get('error_description', '')
+            self.text = message.get("error_description", "")
 
-        fmt = '{0.reason} (status code: {0.status})'
+        fmt = "{0.reason} (status code: {0.status})"
         if self.text.strip():
-            fmt += ': {1}'
+            fmt += ": {1}"
 
         super().__init__(fmt.format(self.response, self.text))
 

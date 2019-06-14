@@ -19,7 +19,7 @@ class Library(SpotifyBase):
         self.__client = client
 
     def __repr__(self):
-        return '<spotify.Library: %s>' % (repr(self.user))
+        return "<spotify.Library: %s>" % (repr(self.user))
 
     def __eq__(self, other):
         return type(self) is type(other) and self.user == other.user
@@ -61,7 +61,7 @@ class Library(SpotifyBase):
         """
         data = await self.user.http.saved_tracks(limit=limit, offset=offset)
 
-        return [Track(self.__client, item['track']) for item in data['items']]
+        return [Track(self.__client, item["track"]) for item in data["items"]]
 
     async def get_albums(self, *, limit=20, offset=0) -> List[Album]:
         """Get a list of the albums saved in the current Spotify user’s ‘Your Music’ library.
@@ -75,7 +75,7 @@ class Library(SpotifyBase):
         """
         data = await self.user.http.saved_albums(limit=limit, offset=offset)
 
-        return [Album(self.__client, item['album']) for item in data['items']]
+        return [Album(self.__client, item["album"]) for item in data["items"]]
 
     async def remove_albums(self, *albums):
         """Remove one or more albums from the current user’s ‘Your Music’ library.
@@ -86,7 +86,7 @@ class Library(SpotifyBase):
             A sequence of artist objects or spotify IDs
         """
         _albums = [(obj if isinstance(obj, str) else obj.id) for obj in albums]
-        await self.user.http.delete_saved_albums(','.join(_albums))
+        await self.user.http.delete_saved_albums(",".join(_albums))
 
     async def remove_tracks(self, *tracks):
         """Remove one or more tracks from the current user’s ‘Your Music’ library.
@@ -97,7 +97,7 @@ class Library(SpotifyBase):
             A sequence of track objects or spotify IDs
         """
         _tracks = [(obj if isinstance(obj, str) else obj.id) for obj in tracks]
-        await self.user.http.delete_saved_tracks(','.join(_tracks))
+        await self.user.http.delete_saved_tracks(",".join(_tracks))
 
     async def save_albums(self, *albums):
         """Save one or more albums to the current user’s ‘Your Music’ library.
@@ -108,7 +108,7 @@ class Library(SpotifyBase):
             A sequence of artist objects or spotify IDs
         """
         _albums = [(obj if isinstance(obj, str) else obj.id) for obj in albums]
-        await self.user.http.save_albums(','.join(_albums))
+        await self.user.http.save_albums(",".join(_albums))
 
     async def save_tracks(self, *tracks):
         """Save one or more tracks to the current user’s ‘Your Music’ library.
@@ -119,4 +119,4 @@ class Library(SpotifyBase):
             A sequence of track objects or spotify IDs
         """
         _tracks = [(obj if isinstance(obj, str) else obj.id) for obj in tracks]
-        await self.user.http.save_tracks(','.join(_tracks))
+        await self.user.http.save_tracks(",".join(_tracks))

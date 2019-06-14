@@ -43,30 +43,30 @@ class Album(URIBase):
         self.__client = client
 
         # Simple object attributes.
-        self.type = data.pop('album_type', None)
-        self.group = data.pop('album_group', None)
-        self.artists = [Artist(client, artist) for artist in data.pop('artists', [])]
+        self.type = data.pop("album_type", None)
+        self.group = data.pop("album_group", None)
+        self.artists = [Artist(client, artist) for artist in data.pop("artists", [])]
 
         if self.artists:
             self.artist = self.artists[0]
 
-        self.markets = data.pop('avaliable_markets', None)
-        self.url = data.pop('external_urls').get('spotify', None)
-        self.id = data.pop('id', None)
-        self.name = data.pop('name', None)
-        self.href = data.pop('href', None)
-        self.uri = data.pop('uri', None)
-        self.release_date = data.pop('release_date', None)
-        self.release_date_precision = data.pop('release_date_precision', None)
-        self.images = list(Image(**image) for image in data.pop('images', []))
-        self.restrictions = data.pop('restrictions', None)
+        self.markets = data.pop("avaliable_markets", None)
+        self.url = data.pop("external_urls").get("spotify", None)
+        self.id = data.pop("id", None)
+        self.name = data.pop("name", None)
+        self.href = data.pop("href", None)
+        self.uri = data.pop("uri", None)
+        self.release_date = data.pop("release_date", None)
+        self.release_date_precision = data.pop("release_date_precision", None)
+        self.images = list(Image(**image) for image in data.pop("images", []))
+        self.restrictions = data.pop("restrictions", None)
 
         # Full object attributes
-        self.genres = data.pop('genres', None)
-        self.copyrights = data.pop('copyrights', None)
-        self.label = data.pop('label', None)
-        self.popularity = data.pop('popularity', None)
-        self.total_tracks = data.pop('total_tracks', None)
+        self.genres = data.pop("genres", None)
+        self.copyrights = data.pop("copyrights", None)
+        self.label = data.pop("label", None)
+        self.popularity = data.pop("popularity", None)
+        self.total_tracks = data.pop("total_tracks", None)
 
     def __repr__(self):
         return '<spotify.Album: "%s">' % (self.name or self.id or self.uri)
@@ -91,9 +91,9 @@ class Album(URIBase):
         data = await self.__client.http.album_tracks(
             self.id, limit=limit, offset=offset
         )
-        return list(Track(self.__client, item) for item in data['items'])
+        return list(Track(self.__client, item) for item in data["items"])
 
-    async def get_all_tracks(self, *, market: Optional[str] = 'US') -> List[Track]:
+    async def get_all_tracks(self, *, market: Optional[str] = "US") -> List[Track]:
         """loads all of the albums tracks, depending on how many the album has this may be a long operation.
 
         Parameters
@@ -116,10 +116,10 @@ class Album(URIBase):
             )
 
             if total is None:
-                total = data['total']
+                total = data["total"]
 
             offset += 50
-            tracks += list(Track(self.__client, item) for item in data['items'])
+            tracks += list(Track(self.__client, item) for item in data["items"])
 
             if len(tracks) >= total:
                 break

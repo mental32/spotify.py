@@ -13,11 +13,11 @@ class PartialTracks(SpotifyBase):
         The total amount of tracks.
     """
 
-    __slots__ = ('total', '__func', '__iter', '__client')
+    __slots__ = ("total", "__func", "__iter", "__client")
 
     def __init__(self, client, data):
-        self.total = data['total']
-        self.__func = partial(client.http.request, ('GET', data['href']))
+        self.total = data["total"]
+        self.__func = partial(client.http.request, ("GET", data["href"]))
         self.__iter = None
 
     def __repr__(self):
@@ -28,7 +28,7 @@ class PartialTracks(SpotifyBase):
 
     async def __anext__(self):
         if self.__iter is None:
-            self.__iter = iter((await self.__func())['items'])
+            self.__iter = iter((await self.__func())["items"])
 
         try:
             track = next(self.__iter)
@@ -46,7 +46,7 @@ class PartialTracks(SpotifyBase):
             The tracks
         """
         data = await self.__func()
-        return list(PlaylistTrack(self.__client, track) for track in data['items'])
+        return list(PlaylistTrack(self.__client, track) for track in data["items"])
 
 
 class Playlist(URIBase):
@@ -92,25 +92,25 @@ class Playlist(URIBase):
         self.__client = client
         self.__http = http or client.http
 
-        self.collaborative = data.pop('collaborative')
-        self.description = data.pop('description', None)
-        self.url = data.pop('external_urls').get('spotify', None)
-        self.followers = data.pop('followers', {}).get('total', None)
-        self.href = data.pop('href')
-        self.id = data.pop('id')
-        self.images = list(Image(**image) for image in data.pop('images', []))
-        self.name = data.pop('name')
-        self.owner = User(client, data=data.pop('owner'))
-        self.uri = data.pop('uri')
+        self.collaborative = data.pop("collaborative")
+        self.description = data.pop("description", None)
+        self.url = data.pop("external_urls").get("spotify", None)
+        self.followers = data.pop("followers", {}).get("total", None)
+        self.href = data.pop("href")
+        self.id = data.pop("id")
+        self.images = list(Image(**image) for image in data.pop("images", []))
+        self.name = data.pop("name")
+        self.owner = User(client, data=data.pop("owner"))
+        self.uri = data.pop("uri")
 
-        if 'next' in data['tracks']:  # Paging object.
+        if "next" in data["tracks"]:  # Paging object.
             pass  # TODO: Support paging objects.
         else:
-            self._tracks = tracks = PartialTracks(client, data.pop('tracks'))
+            self._tracks = tracks = PartialTracks(client, data.pop("tracks"))
             self.total_tracks = tracks.total
 
     def __repr__(self):
-        return '<spotify.Playlist: "%s">' % (getattr(self, 'name', None) or self.id)
+        return '<spotify.Playlist: "%s">' % (getattr(self, "name", None) or self.id)
 
     async def get_all_tracks(self) -> List[PlaylistTrack]:
         """Get all playlist tracks from the playlist.
@@ -127,7 +127,7 @@ class Playlist(URIBase):
                 self.id, limit=50, offset=offset
             )
 
-            _tracks += [PlaylistTrack(self.__client, item) for item in data['items']]
+            _tracks += [PlaylistTrack(self.__client, item) for item in data["items"]]
             offset += 50
 
         self.total_tracks = len(_tracks)

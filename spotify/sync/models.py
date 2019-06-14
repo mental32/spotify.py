@@ -15,20 +15,20 @@ class SyncMeta(type):
         base = bases[0]
         base_name = base.__name__
 
-        if base_name in ('HTTPClient', 'HTTPUserClient'):
+        if base_name in ("HTTPClient", "HTTPUserClient"):
 
             def __init__(self, *args, **kwargs):
                 super(type(self), self).__init__(*args, **kwargs)
-                self.__client_thread__ = kwargs['loop']._thread
+                self.__client_thread__ = kwargs["loop"]._thread
 
-        elif base_name != 'Client':
+        elif base_name != "Client":
 
             def __init__(self, client, *args, **kwargs):
                 super(type(self), self).__init__(client, *args, **kwargs)
                 self.__client_thread__ = client.__client_thread__
 
         try:
-            setattr(klass, '__init__', __init__)
+            setattr(klass, "__init__", __init__)
         except NameError:
             pass
 
@@ -54,7 +54,7 @@ class Client(_Client, metaclass=SyncMeta):
         thread = SyncExecution()
         thread.start()
 
-        kwargs['loop'] = thread._loop
+        kwargs["loop"] = thread._loop
 
         super().__init__(*args, **kwargs)
         self.__thread = self.__client_thread__ = thread
@@ -64,7 +64,7 @@ def _install(_types):
     for name, obj in _types.items():
 
         class Mock(obj, metaclass=SyncMeta):
-            __slots__ = ('__client_thread__',)
+            __slots__ = ("__client_thread__",)
 
         Mock.__name__ = obj.__name__
         Mock.__qualname__ = obj.__qualname__
