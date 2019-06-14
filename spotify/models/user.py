@@ -247,7 +247,7 @@ class User(URIBase):
             The snapshot id of the playlist.
         """
         data = await self.http.add_playlist_tracks(
-            to_id(str(playlist)), tracks=",".join(str(track) for track in tracks)
+            to_id(str(playlist)), tracks=(str(track) for track in tracks)
         )
         return data["snapshot_id"]
 
@@ -354,7 +354,7 @@ class User(URIBase):
         if description:
             data["description"] = description
 
-        await self.http.change_playlist_details(self.id, to_id(str(playlist)), data)
+        await self.http.change_playlist_details(self.id, to_id(str(playlist)), **data)
 
     @ensure_http
     async def create_playlist(
@@ -384,7 +384,7 @@ class User(URIBase):
         if description:
             data["description"] = description
 
-        playlist_data = await self.http.create_playlist(self.id, data=data)
+        playlist_data = await self.http.create_playlist(self.id, **data)
         return Playlist(self.__client, playlist_data, http=self.http)
 
     async def get_playlists(self, *, limit=20, offset=0):

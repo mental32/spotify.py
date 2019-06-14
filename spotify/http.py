@@ -48,7 +48,7 @@ class Route:
 
         if kwargs:
             self.url = self.url.format(
-                {
+                **{
                     key: (quote(value) if isinstance(value, str) else value)
                     for key, value in kwargs.items()
                 }
@@ -100,7 +100,12 @@ class HTTPClient:
 
         self.bearer_info = None
 
-    async def get_bearer_info(self):
+    async def get_bearer_info(
+        self,
+        client_id: Optional[str] = None,
+        client_secret: Optional[str] = None,
+        session: Optional[aiohttp.ClientSession] = None,
+    ):
         """Get the application bearer token from client_id and client_secret.
 
         Raises
@@ -109,13 +114,16 @@ class HTTPClient:
             This will be raised when either `client_id` or
             `client_secret` is `None`
         """
-        if self.client_id is None:
+        client_id = client_id or self.client_id
+        client_secret = client_secret or self.client_secret
+
+        if client_id is None:
             raise SpotifyException(_GET_BEARER_ERR % "client_id")
 
-        elif self.client_secret is None:
+        elif client_secret is None:
             raise SpotifyException(_GET_BEARER_ERR % "client_secret")
 
-        token = b64encode(":".join((self.client_id, self.client_secret)).encode())
+        token = b64encode(":".join((client_id, client_secret)).encode())
 
         kwargs = {
             "url": "https://accounts.spotify.com/api/token",
@@ -123,7 +131,9 @@ class HTTPClient:
             "headers": {"Authorization": f"Basic {token.decode()}"},
         }
 
-        async with self._session.post(**kwargs) as resp:
+        session = session or self._session
+
+        async with session.post(**kwargs) as resp:
             return json.loads(await resp.text(encoding="utf-8"))
 
     async def request(self, route, **kwargs):
@@ -160,8 +170,6 @@ class HTTPClient:
             kwargs["data"] = json.dumps(
                 kwargs.pop("json"), separators=(",", ":"), ensure_ascii=True
             )
-
-            print(kwargs)
 
         for _ in range(self.RETRY_AMOUNT):
             r = await self._session.request(method, url, headers=headers, **kwargs)
