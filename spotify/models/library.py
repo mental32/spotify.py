@@ -10,7 +10,7 @@ class Library(SpotifyBase):
 
     Attributes
     ----------
-    user : Spotify.User
+    user : :class:`Spotify.User`
         The user which this library object belongs to.
     """
 

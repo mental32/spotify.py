@@ -1,3 +1,5 @@
+"""Source implementation for a spotify User"""
+
 import asyncio
 import functools
 from typing import Optional, Dict, Union, List, Tuple
@@ -19,28 +21,28 @@ class User(URIBase):
 
     Attributes
     ----------
-    id : str
+    id : :class:`str`
         The Spotify user ID for the user.
-    uri : str
+    uri : :class:`str`
         The Spotify URI for the user.
-    url : str
+    url : :class:`str`
         The open.spotify URL.
-    href : str
+    href : :class:`str`
         A link to the Web API endpoint for this user.
-    display_name : str
+    display_name : :class:`str`
         The name displayed on the user’s profile.
         `None` if not available.
-    followers : int
+    followers : :class:`int`
         The total number of followers.
-    images : List[Image]
+    images : List[:class:`Image`]
         The user’s profile image.
-    email : str
+    email : :class:`str`
         The user’s email address, as entered by the user when creating their account.
-    country : str
+    country : :class:`str`
         The country of the user, as set in the user’s account profile. An ISO 3166-1 alpha-2 country code.
-    birthdate : str
+    birthdate : :class:`str`
         The user’s date-of-birth.
-    product : str
+    product : :class:`str`
         The user’s Spotify subscription level: “premium”, “free”, etc. 
         (The subscription level “open” can be considered the same as “free”.)
     """
@@ -217,7 +219,7 @@ class User(URIBase):
 
         Returns
         -------
-        playlist_history : List[Dict[str, Union[Track, Context, str]]]
+        playlist_history : List[Dict[:class:`str`, Union[Track, Context, :class:`str`]]]
             A list of playlist history object.
             Each object is a dict with a timestamp, track and context field.
         """
@@ -242,14 +244,14 @@ class User(URIBase):
 
         Parameters
         ----------
-        playlist : Union[str, Playlist]
+        playlist : Union[:class:`str`, Playlist]
             The playlist to modify
-        tracks : Sequence[Union[str, Track]]
+        tracks : Sequence[Union[:class:`str`, Track]]
             Tracks to add to the playlist
 
         Returns
         -------
-        snapshot_id : str
+        snapshot_id : :class:`str`
             The snapshot id of the playlist.
         """
         data = await self.http.add_playlist_tracks(
@@ -265,9 +267,9 @@ class User(URIBase):
 
         Parameters
         ----------
-        playlist : Union[str, PLaylist]
+        playlist : Union[:class:`str`, PLaylist]
             The playlist to modify
-        tracks : Sequence[Union[str, Track]]
+        tracks : Sequence[Union[:class:`str`, Track]]
             Tracks to place in the playlist
         """
         await self.http.replace_playlist_tracks(
@@ -280,14 +282,14 @@ class User(URIBase):
 
         Parameters
         ----------
-        playlist : Union[str, Playlist]
+        playlist : Union[:class:`str`, Playlist]
             The playlist to modify
-        tracks : Sequence[Union[str, Track]]
+        tracks : Sequence[Union[:class:`str`, Track]]
             Tracks to remove from the playlist
 
         Returns
         -------
-        snapshot_id : str
+        snapshot_id : :class:`str`
             The snapshot id of the playlist.
         """
         data = await self.http.remove_playlist_tracks(
@@ -303,7 +305,7 @@ class User(URIBase):
 
         Parameters
         ----------
-        playlist : Union[str, Playlist]
+        playlist : Union[:class:`str`, Playlist]
             The playlist to modify
         start : int
             The position of the first track to be reordered.
@@ -311,12 +313,12 @@ class User(URIBase):
             The position where the tracks should be inserted.
         length : Optional[int]
             The amount of tracks to be reordered. Defaults to 1 if not set.
-        snapshot_id : str
+        snapshot_id : :class:`str`
             The playlist’s snapshot ID against which you want to make the changes.
 
         Returns
         -------
-        snapshot_id : str
+        snapshot_id : :class:`str`
             The snapshot id of the playlist.
         """
         data = await self.http.reorder_playlists_tracks(
@@ -334,16 +336,16 @@ class User(URIBase):
 
         Parameters
         ----------
-        playlist : Union[str, Playlist]
+        playlist : Union[:class:`str`, Playlist]
             The playlist to modify
-        name : Optional[str]
+        name : Optional[:class:`str`]
             The new name of the playlist.
         public : Optional[bool]
             The public/private status of the playlist.
             `True` for public, `False` for private.
         collaborative : Optional[bool]
             If `True`, the playlist will become collaborative and other users will be able to modify the playlist.
-        description : Optional[str]
+        description : Optional[:class:`str`]
             The new playlist description
         """
         data = {}
@@ -370,14 +372,14 @@ class User(URIBase):
 
         Parameters
         ----------
-        name : str
+        name : :class:`str`
             The name of the playlist.
         public : Optional[bool]
             The public/private status of the playlist.
             `True` for public, `False` for private.
         collaborative : Optional[bool]
             If `True`, the playlist will become collaborative and other users will be able to modify the playlist.
-        description : Optional[str]
+        description : Optional[:class:`str`]
             The playlist description
 
         Returns
@@ -429,7 +431,7 @@ class User(URIBase):
             The number of entities to return. Default: 20. Minimum: 1. Maximum: 50.
         offset : Optional[int]
             The index of the first entity to return. Default: 0
-        time_range : Optional[str]
+        time_range : Optional[:class:`str`]
             Over what time frame the affinities are computed. (long_term, short_term, medium_term)
 
         Returns
@@ -449,7 +451,7 @@ class User(URIBase):
             The number of entities to return. Default: 20. Minimum: 1. Maximum: 50.
         offset : Optional[int]
             The index of the first entity to return. Default: 0
-        time_range : Optional[str]
+        time_range : Optional[:class:`str`]
             Over what time frame the affinities are computed. (long_term, short_term, medium_term)
 
         Returns

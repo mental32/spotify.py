@@ -10,13 +10,13 @@ class Track(URIBase):
 
     Attribtues
     ----------
-    id : str
+    id : :class:`str`
         The Spotify ID for the track.
-    name : str
+    name : :class:`str`
         The name of the track.
-    href : str
+    href : :class:`str`
         A link to the Web API endpoint providing full details of the track.
-    uri : str
+    uri : :class:`str`
         The Spotify URI for the track.
     duration : int
         The track length in milliseconds.
@@ -29,17 +29,17 @@ class Track(URIBase):
     track_number : int
         The number of the track.
         If an album has several discs, the track number is the number on the specified disc.
-    url : str
+    url : :class:`str`
         The open.spotify URL for this Track
     is_local : bool
         Whether or not the track is from a local file.
     popularity : int
         POPULARITY
-    preview_url : str
+    preview_url : :class:`str`
         The preview URL for this Track.
     images : List[Image]
         The images of the Track.
-    markets : List[str]
+    markets : List[:class:`str`]
         The available markets for the Track.
     """
 
@@ -90,7 +90,7 @@ class PlaylistTrack(Track):
 
     Attributes
     ----------
-    added_by : str
+    added_by : :class:`str`
         The Spotify user who added the track.
     is_local : bool
         Whether this track is a local file or not.
