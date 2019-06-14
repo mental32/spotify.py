@@ -13,6 +13,7 @@ _OPEN_RE = re.compile(r'http[s]?:\/\/open\.spotify\.com\/(.*)\/(.*)')
 
 @contextmanager
 def clean(l: dict, *names):
+    """A helper context manager that defers mutating a set of locals."""
     yield
     for name in names:
         l.pop(name)

@@ -82,7 +82,7 @@ class Playlist(URIBase):
             null the playlist status is not relevant.
     snapshot_id : str
         The version identifier for the current playlist.
-    tracks : Option[List[PlaylistTrack]]
+    tracks : Optional[List[PlaylistTrack]]
         list of playlist track objects.
     """
 

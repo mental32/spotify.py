@@ -1,3 +1,5 @@
+"""Source implementation for spotify Tracks, and any other semantically relevent, implementation."""
+
 import datetime
 
 from . import URIBase, Image, Artist
