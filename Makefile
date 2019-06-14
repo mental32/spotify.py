@@ -2,7 +2,6 @@ PYTHON := python3
 LINTER := flake8
 
 FORMATTER := black
-FORMATTER_ARGS := -S
 
 .PHONY: install pypi test lint clean format
 
@@ -16,11 +15,11 @@ test:
 	$(PYTHON) -m unittest discover -s test
 
 format:
-	$(FORMATTER) $(FORMATTER_ARGS) spotify
+	$(FORMATTER) spotify
 
 pypi: clean format
 	$(PYTHON) setup.py sdist
 	twine upload dist/*
 
 lint:
-	@$(LINTER) spotify > spotify.$(LINTER)
+	-$(LINTER) ./spotify > spotify.$(LINTER)
