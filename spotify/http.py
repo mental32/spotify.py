@@ -1,8 +1,7 @@
 import asyncio
 import sys
 import json
-import random
-import string
+from typing import Optional, List, Sequence, Union, Dict, Awaitable, BinaryIO
 from base64 import b64encode
 from urllib.parse import quote
 
@@ -48,15 +47,24 @@ class Route:
         self.url = self.BASE + self.path
 
         if kwargs:
-            parameters = {
-                key: (quote(v) if isinstance(v, str) else v)
-                for key, v in kwargs.items()
-            }
-            self.url = self.url.format(**parameters)
+            self.url = self.url.format(
+                {
+                    key: (quote(value) if isinstance(value, str) else value)
+                    for key, value in kwargs.items()
+                }
+            )
 
 
 class HTTPClient:
-    """Represents an HTTP client sending HTTP requests to the Spotify API.
+    """A class responsible for handling all HTTP logic.
+
+    This class combines a small amount of stateful logic control 
+    with the :meth:`request` method and a very thin wrapper over
+    the raw HTTP API.
+
+    All endpoint methods mirror the default arguments the API 
+    uses and is best described as a series of "good defaults"
+    for the routes.
 
     Parameters
     ----------
@@ -77,8 +85,11 @@ class HTTPClient:
     client_secret : str
         The client secret.
     """
+
     RETRY_AMOUNT = 10
-    DEFAULT_USER_AGENT = user_agent = f'Application (https://github.com/mental32/spotify.py {__version__}) Python/{_PYTHON_VERSION} aiohttp/{_AIOHTTP_VERSION}'
+    DEFAULT_USER_AGENT = (
+        user_agent
+    ) = f"Application (https://github.com/mental32/spotify.py {__version__}) Python/{_PYTHON_VERSION} aiohttp/{_AIOHTTP_VERSION}"
 
     def __init__(self, client_id, client_secret, loop=None):
         self.loop = loop or asyncio.get_event_loop()
@@ -90,32 +101,39 @@ class HTTPClient:
         self.bearer_info = None
 
     async def get_bearer_info(self):
-        """Get the application bearer token from client_id and client_secret."""
+        """Get the application bearer token from client_id and client_secret.
+
+        Raises
+        ------
+        SpotifyException
+            This will be raised when either `client_id` or
+            `client_secret` is `None`
+        """
         if self.client_id is None:
-            raise SpotifyException(_GET_BEARER_ERR % 'client_id')
+            raise SpotifyException(_GET_BEARER_ERR % "client_id")
 
         elif self.client_secret is None:
-            raise SpotifyException(_GET_BEARER_ERR % 'client_secret')
+            raise SpotifyException(_GET_BEARER_ERR % "client_secret")
 
-        token = b64encode(':'.join((self.client_id, self.client_secret)).encode())
+        token = b64encode(":".join((self.client_id, self.client_secret)).encode())
 
         kwargs = {
-            'url': 'https://accounts.spotify.com/api/token',
-            'data': {'grant_type': 'client_credentials'},
-            'headers': {'Authorization': 'Basic ' + token.decode()}
+            "url": "https://accounts.spotify.com/api/token",
+            "data": {"grant_type": "client_credentials"},
+            "headers": {"Authorization": f"Basic {token.decode()}"},
         }
 
         async with self._session.post(**kwargs) as resp:
-            return json.loads(await resp.text(encoding='utf-8'))
+            return json.loads(await resp.text(encoding="utf-8"))
 
     async def request(self, route, **kwargs):
-        """Make a request to the spotify API with the current bearer credentials.
+        r"""Make a request to the spotify API with the current bearer credentials.
 
         Parameters
         ----------
-        route : Union[tuple[str, str], Route]
+        route : Union[tuple[str, str], :class:`Route`]
             A tuple of the method and url or a :class:`Route` object.
-        kwargs : Any
+        \*\*kwargs : Any
             keyword arguments to pass into :class:`aiohttp.ClientSession.request`
         """
         if isinstance(route, tuple):
@@ -126,16 +144,24 @@ class HTTPClient:
 
         if self.bearer_info is None:
             self.bearer_info = bearer_info = await self.get_bearer_info()
-            access_token = bearer_info['access_token']
+            access_token = bearer_info["access_token"]
         else:
-            access_token = self.bearer_info['access_token']
+            access_token = self.bearer_info["access_token"]
 
         headers = {
-            'Authorization': 'Bearer ' + access_token,
-            'Content-Type': kwargs.get('content_type', 'application/json'),
-            'User-Agent': self.user_agent,
-            **kwargs.pop('headers', {})
+            "Authorization": "Bearer " + access_token,
+            "Content-Type": kwargs.get("content_type", "application/json"),
+            "User-Agent": self.user_agent,
+            **kwargs.pop("headers", {}),
         }
+
+        if "json" in kwargs:
+            headers["Content-Type"] = "application/json"
+            kwargs["data"] = json.dumps(
+                kwargs.pop("json"), separators=(",", ":"), ensure_ascii=True
+            )
+
+            print(kwargs)
 
         for _ in range(self.RETRY_AMOUNT):
             r = await self._session.request(method, url, headers=headers, **kwargs)
@@ -143,7 +169,7 @@ class HTTPClient:
                 status = r.status
 
                 try:
-                    data = json.loads(await r.text(encoding='utf-8'))
+                    data = json.loads(await r.text(encoding="utf-8"))
                 except json.decoder.JSONDecodeError:
                     data = {}
 
@@ -152,12 +178,12 @@ class HTTPClient:
 
                 if status == 401:
                     self.bearer_info = bearer_info = await self.get_bearer_info()
-                    headers['Authorization'] = 'Bearer ' + bearer_info['access_token']
+                    headers["Authorization"] = "Bearer " + bearer_info["access_token"]
                     continue
 
                 if status == 429:
                     # we're being rate limited.
-                    amount = r.headers.get('Retry-After')
+                    amount = r.headers.get("Retry-After")
                     await asyncio.sleep(int(amount), loop=self.loop)
                     continue
 
@@ -178,8 +204,13 @@ class HTTPClient:
         """Close the underlying HTTP session."""
         await self._session.close()
 
-    def album(self, spotify_id, market='US'):
-        """Get a spotify album by its ID.
+    # Methods are defined in the order that they are listed in
+    # the api docs (https://developer.spotify.com/documentation/web-api/reference/)
+
+    # Album related endpoints
+
+    def album(self, spotify_id: str, market: Optional[str] = "US") -> Awaitable:
+        """Get Spotify catalog information for a single album.
 
         Parameters
         ----------
@@ -187,22 +218,23 @@ class HTTPClient:
             The spotify_id to search by.
         market : Optional[str]
             An ISO 3166-1 alpha-2 country code.
-
-        Returns
-        -------
-        album : Dict
-            The album object.
         """
-        route = Route('GET', '/albums/{spotify_id}', spotify_id=spotify_id)
+        route = Route("GET", "/albums/{spotify_id}", spotify_id=spotify_id)
         payload = {}
 
         if market:
-            payload['market'] = market
+            payload["market"] = market
 
         return self.request(route, params=payload)
 
-    def album_tracks(self, spotify_id, limit=20, offset=0, market='US'):
-        """Get an albums tracks by an ID.
+    def album_tracks(
+        self,
+        spotify_id: str,
+        limit: Optional[int] = 20,
+        offset: Optional[int] = 0,
+        market="US",
+    ) -> Awaitable:
+        """Get Spotify catalog information about an album’s tracks.
 
         Parameters
         ----------
@@ -215,16 +247,16 @@ class HTTPClient:
         market : Optional[str]
             An ISO 3166-1 alpha-2 country code.
         """
-        route = Route('GET', '/albums/{spotify_id}/tracks', spotify_id=spotify_id)
-        payload = {'limit': limit, 'offset': offset}
+        route = Route("GET", "/albums/{spotify_id}/tracks", spotify_id=spotify_id)
+        payload = {"limit": limit, "offset": offset}
 
         if market:
-            payload['market'] = market
+            payload["market"] = market
 
         return self.request(route, params=payload)
 
-    def albums(self, spotify_ids, market='US'):
-        """Get a spotify album by its ID.
+    def albums(self, spotify_ids, market="US") -> Awaitable:
+        """Get Spotify catalog information for multiple albums identified by their Spotify IDs.
 
         Parameters
         ----------
@@ -233,27 +265,36 @@ class HTTPClient:
         market : Optional[str]
             An ISO 3166-1 alpha-2 country code.
         """
-        route = Route('GET', '/albums/')
-        payload = {'ids': spotify_ids}
+        route = Route("GET", "/albums/")
+        payload = {"ids": spotify_ids}
 
         if market:
-            payload['market'] = market
+            payload["market"] = market
 
         return self.request(route, params=payload)
 
-    def artist(self, spotify_id):
-        """Get a spotify artist by their ID.
+    # Artist related endpoints.
+
+    def artist(self, spotify_id) -> Awaitable:
+        """Get Spotify catalog information for a single artist identified by their unique Spotify ID.
 
         Parameters
         ----------
         spotify_id : str
             The spotify_id to search by.
         """
-        route = Route('GET', '/artists/{spotify_id}', spotify_id=spotify_id)
+        route = Route("GET", "/artists/{spotify_id}", spotify_id=spotify_id)
         return self.request(route)
 
-    def artist_albums(self, spotify_id, include_groups=None, limit=20, offset=0, market='US'):
-        """Get an artists tracks by their ID.
+    def artist_albums(
+        self,
+        spotify_id,
+        include_groups=None,
+        limit: Optional[int] = 20,
+        offset: Optional[int] = 0,
+        market="US",
+    ):
+        """Get Spotify catalog information about an artist’s albums.
 
         Parameters
         ----------
@@ -268,19 +309,19 @@ class HTTPClient:
         market : Optional[str]
             An ISO 3166-1 alpha-2 country code.
         """
-        route = Route('GET', '/artists/{spotify_id}/albums', spotify_id=spotify_id)
-        payload = {'limit': limit, 'offset': offset}
+        route = Route("GET", "/artists/{spotify_id}/albums", spotify_id=spotify_id)
+        payload = {"limit": limit, "offset": offset}
 
         if include_groups:
-            payload['include_groups'] = include_groups
+            payload["include_groups"] = include_groups
 
         if market:
-            payload['market'] = market
+            payload["market"] = market
 
         return self.request(route, params=payload)
 
-    def artist_top_tracks(self, spotify_id, country):
-        """Get an artists top tracks per country with their ID.
+    def artist_top_tracks(self, spotify_id, country) -> Awaitable:
+        """Get Spotify catalog information about an artist’s top tracks by country.
 
         Parameters
         ----------
@@ -289,35 +330,41 @@ class HTTPClient:
         country : COUNTRY_TP
             COUNTRY
         """
-        route = Route('GET', '/artists/{spotify_id}/top-tracks', spotify_id=spotify_id)
-        payload = {'country': country}
+        route = Route("GET", "/artists/{spotify_id}/top-tracks", spotify_id=spotify_id)
+        payload = {"country": country}
         return self.request(route, params=payload)
 
-    def artist_related_artists(self, spotify_id):
-        """Get related artists for an artist by their ID.
+    def artist_related_artists(self, spotify_id) -> Awaitable:
+        """Get Spotify catalog information about artists similar to a given artist.
+
+        Similarity is based on analysis of the Spotify community’s listening history.
 
         Parameters
         ----------
         spotify_id : str
             The spotify_id to search by.
         """
-        route = Route('GET', '/artists/{spotify_id}/related-artists', spotify_id=spotify_id)
+        route = Route(
+            "GET", "/artists/{spotify_id}/related-artists", spotify_id=spotify_id
+        )
         return self.request(route)
 
-    def artists(self, spotify_ids):
-        """Get a spotify artists by their IDs.
+    def artists(self, spotify_ids) -> Awaitable:
+        """Get Spotify catalog information for several artists based on their Spotify IDs.
 
         Parameters
         ----------
         spotify_id : List[str]
             The spotify_ids to search with.
         """
-        route = Route('GET', '/artists')
-        payload = {'ids': spotify_ids}
+        route = Route("GET", "/artists")
+        payload = {"ids": spotify_ids}
         return self.request(route, params=payload)
 
-    def category(self, category_id, country=None, locale=None):
-        """Get a single category used to tag items in Spotify.
+    # Browse endpoints.
+
+    def category(self, category_id, country=None, locale=None) -> Awaitable:
+        """Get a single category used to tag items in Spotify (on, for example, the Spotify player’s “Browse” tab).
 
         Parameters
         ----------
@@ -328,18 +375,26 @@ class HTTPClient:
         locale : LOCALE_TP
             LOCALE
         """
-        route = Route('GET', '/browse/categories/{category_id}', category_id=category_id)
+        route = Route(
+            "GET", "/browse/categories/{category_id}", category_id=category_id
+        )
         payload = {}
 
         if country:
-            payload['country'] = country
+            payload["country"] = country
 
         if locale:
-            payload['locale'] = locale
+            payload["locale"] = locale
 
         return self.request(route, params=payload)
 
-    def category_playlists(self, category_id, limit=20, offset=0, country=None):
+    def category_playlists(
+        self,
+        category_id,
+        limit: Optional[int] = 20,
+        offset: Optional[int] = 0,
+        country=None,
+    ) -> Awaitable:
         """Get a list of Spotify playlists tagged with a particular category.
 
         Parameters
@@ -353,16 +408,24 @@ class HTTPClient:
         country : COUNTRY_TP
             COUNTRY
         """
-        route = Route('GET', '/browse/categories/{category_id}/playlists', category_id=category_id)
-        payload = {'limit': limit, 'offset': offset}
+        route = Route(
+            "GET", "/browse/categories/{category_id}/playlists", category_id=category_id
+        )
+        payload = {"limit": limit, "offset": offset}
 
         if country:
-            payload['country'] = country
+            payload["country"] = country
 
         return self.request(route, params=payload)
 
-    def categories(self, limit=20, offset=0, country=None, locale=None):
-        """Get a list of categories used to tag items in Spotify.
+    def categories(
+        self,
+        limit: Optional[int] = 20,
+        offset: Optional[int] = 0,
+        country=None,
+        locale=None,
+    ) -> Awaitable:
+        """Get a list of categories used to tag items in Spotify (on, for example, the Spotify player’s “Browse” tab).
 
         Parameters
         ----------
@@ -375,19 +438,26 @@ class HTTPClient:
         locale : LOCALE_TP
             LOCALE
         """
-        route = Route('GET', '/browse/categories')
-        payload = {'limit': limit, 'offset': offset}
+        route = Route("GET", "/browse/categories")
+        payload = {"limit": limit, "offset": offset}
 
         if country:
-            payload['country'] = country
+            payload["country"] = country
 
         if locale:
-            payload['locale'] = locale
+            payload["locale"] = locale
 
         return self.request(route, params=payload)
 
-    def featured_playlists(self, locale=None, country=None, timestamp=None, limit=20, offset=0):
-        """Get a list of Spotify featured playlists.
+    def featured_playlists(
+        self,
+        locale=None,
+        country=None,
+        timestamp=None,
+        limit: Optional[int] = 20,
+        offset: Optional[int] = 0,
+    ):
+        """Get a list of Spotify featured playlists (shown, for example, on a Spotify player’s ‘Browse’ tab).
 
         Parameters
         ----------
@@ -402,22 +472,24 @@ class HTTPClient:
         offset : Optional[int]
             The index of the first item to return. Default: 0
         """
-        route = Route('GET', '/browse/featured-playlists')
-        payload = {'limit': limit, 'offset': offset}
+        route = Route("GET", "/browse/featured-playlists")
+        payload = {"limit": limit, "offset": offset}
 
         if country:
-            payload['country'] = country
+            payload["country"] = country
 
         if locale:
-            payload['locale'] = locale
+            payload["locale"] = locale
 
         if timestamp:
-            payload['timestamp'] = timestamp
+            payload["timestamp"] = timestamp
 
         return self.request(route, params=payload)
 
-    def new_releases(self, *, country=None, limit=20, offset=0):
-        """Get a list of new album releases featured in Spotify.
+    def new_releases(
+        self, *, country=None, limit: Optional[int] = 20, offset: Optional[int] = 0
+    ) -> Awaitable:
+        """Get a list of new album releases featured in Spotify (shown, for example, on a Spotify player’s “Browse” tab).
 
         Parameters
         ----------
@@ -428,15 +500,24 @@ class HTTPClient:
         country : COUNTRY_TP
             COUNTRY
         """
-        route = Route('GET', '/browse/new-releases')
-        payload = {'limit': limit, 'offset': offset}
+        route = Route("GET", "/browse/new-releases")
+        payload = {"limit": limit, "offset": offset}
 
         if country:
-            payload['country'] = country
+            payload["country"] = country
 
         return self.request(route, params=payload)
 
-    def recommendations(self, seed_artists, seed_genres, seed_tracks, *, limit=20, market=None, **filters):
+    def recommendations(
+        self,
+        seed_artists,
+        seed_genres,
+        seed_tracks,
+        *,
+        limit: Optional[int] = 20,
+        market=None,
+        **filters,
+    ):
         """Get Recommendations Based on Seeds.
 
         Parameters
@@ -458,403 +539,1105 @@ class HTTPClient:
         target_* : Optional[Keyword arguments]
             For each of the tunable track attributes (below) a target value may be provided.
         """
-        route = Route('GET', '/recommendations')
-        payload = {'seed_artists': seed_artists, 'seed_genres': seed_genres, 'seed_tracks': seed_tracks, 'limit': limit}
+        route = Route("GET", "/recommendations")
+        payload = {
+            "seed_artists": seed_artists,
+            "seed_genres": seed_genres,
+            "seed_tracks": seed_tracks,
+            "limit": limit,
+        }
 
         if market:
-            payload['market'] = market
+            payload["market"] = market
 
         if filters:
             payload.update(filters)
 
         return self.request(route, param=payload)
 
-    def following_artists_or_users(self, ids, *, type='artist'):
+    # Follow related endpoints.
+
+    def following_artists_or_users(self, ids, *, type="artist") -> Awaitable:
         """Check to see if the current user is following one or more artists or other Spotify users.
 
         Parameters
         ----------
-        ids : List[str]
+        ids : List[:class:`str`]
             A comma-separated list of the artist or the user Spotify IDs to check.
             A maximum of 50 IDs can be sent in one request.
-        type : Optional[str]
+        type : Optional[:class:`str`]
             The ID type: either "artist" or "user".
             Default: "artist"
         """
-        route = Route('GET', '/me/following/contains')
-        payload = {'ids': ids, 'type': type}
+        route = Route("GET", "/me/following/contains")
+        payload = {"ids": ids, "type": type}
 
         return self.request(route, params=payload)
 
-    def following_playlists(self, owner_id, playlist_id, *, ids):
-        route = Route('GET', '/users/{owner_id}/playlists/{playlist_id}/followers/contains', owner_id=owner_id, playlist_id=playlist_id)
-        payload = {'ids': ids}
+    def following_playlists(self, playlist_id: str, ids: List[str]) -> Awaitable:
+        """Check to see if one or more Spotify users are following a specified playlist.
+
+        Parameters
+        ----------
+        playlist_id : :class:`str`
+            The Spotify ID of the playlist.
+        ids : List[:class:`str`]
+            A list of the artist or the user Spotify IDs.
+        """
+        route = Route(
+            "GET",
+            "/playlists/{playlist_id}/followers/contains",
+            owner_id=owner_id,
+            playlist_id=playlist_id,
+        )
+        payload = {"ids": ids}
 
         return self.request(route, params=payload)
 
-    def follow_artist_or_user(self, ids, *, type='artist'):
+    def follow_artist_or_user(self, type: str, ids: List[str]) -> Awaitable:
         """Add the current user as a follower of one or more artists or other Spotify users.
 
         Parameters
         ----------
-        ids : List[str]
-            A comma-separated list of the artist or the user Spotify IDs to check.
-            A maximum of 50 IDs can be sent in one request.
-        type : Optional[str]
-            The ID type: either "artist" or "user".
-            Default: "artist"
+        type : :class:`str`
+            either artist or user.
+        ids : List[:class:`str`]
+            A list of the artist or the user Spotify IDs.
         """
-        route = Route('PUT', '/me/following')
-        payload = {'ids': ids, 'type': type}
+        route = Route("PUT", "/me/following")
+        payload = {"ids": ids, "type": type}
 
         return self.request(route, params=payload)
 
-    def follow_playlist(self, owner_id, playlist_id, *, public=False):
-        route = Route('PUT', '/users/{owner_id}/playlists/{playlist_id}/followers', owner_id=owner_id, playlist_id=playlist_id)
+    def follow_playlist(
+        self, playlist_id: str, *, public: Optional[bool] = True
+    ) -> Awaitable:
+        """Add the current user as a follower of a playlist.
 
-        content = json.dumps({'public': public})
+        Parameters
+        ----------
+        playlist_id : :class:`str`
+            The Spotify ID of the playlist. Any playlist can be followed, regardless of its public/private status, as long as you know its playlist ID.
+        public : Optional[:class:`bool`]
+            Defaults to true. If true the playlist will be included in user’s public playlists, if false it will remain private.
+        """
+        route = Route(
+            "PUT", "/playlists/{playlist_id}/followers", playlist_id=playlist_id
+        )
+
+        content = json.dumps({"public": public})
 
         return self.request(route, content=content)
 
-    def followed_artists(self, limit=20, after=None):
-        route = Route('GET', '/me/following')
-        payload = {'limit': limit, 'type': 'artist'}
+    def followed_artists(
+        self, *, limit: Optional[int] = 20, after: Optional[str] = None
+    ) -> Awaitable:
+        """Get the current user’s followed artists.
+
+        Paramters
+        ---------
+        limit : Optional[:class:`int`]
+            The maximum number of items to return. Default: 20. Minimum: 1. Maximum: 50.
+        after : Optional[:class:`str`]
+            The last artist ID retrieved from the previous request.
+        """
+        route = Route("GET", "/me/following")
+        payload = {"limit": limit, "type": "artist"}
 
         if after:
-            payload['after'] = after
+            payload["after"] = after
 
         return self.request(route, params=payload)
 
-    def unfollow_artists_or_users(self, ids, *, type='artist'):
-        route = Route('DELETE', '/me/following')
-        payload = {'ids': ids, 'type': type}
+    def unfollow_artists_or_users(self, type: str, ids: List[str]) -> Awaitable:
+        """Remove the current user as a follower of one or more artists or other Spotify users.
+
+        Parameters
+        ----------
+        type : :class:`str`
+            either artist or user.
+        ids : List[:class:`str`]
+            A list of the artist or the user Spotify IDs.
+        """
+        route = Route("DELETE", "/me/following")
+        payload = {"ids": ids, "type": type}
 
         return self.request(route, params=payload)
 
-    def unfollow_playlist(self, owner_id, playlist_id):
-        route = Route('DELETE', '/users/{owner_id}/playlists/{playlist_id}/followers', owner_id=owner_id, playlist_id=playlist_id)
+    def unfollow_playlist(self, playlist_id: str) -> Awaitable:
+        """Remove the current user as a follower of a playlist.
+
+        Parameters
+        ----------
+        playlist_id : :class:`str`
+            The Spotify ID of the playlist that is to be no longer followed.
+        """
+        route = Route(
+            "DELETE", "/playlists/{playlist_id}/followers", playlist_id=playlist_id
+        )
 
         return self.request(route)
 
-    def is_saved_album(self, ids):
-        route = Route('GET', '/me/albums/contains')
-        payload = {'ids': ids}
+    def is_saved_album(self, ids) -> Awaitable:
+        """Check if one or more albums is already saved in the current Spotify user’s ‘Your Music’ library.
+
+        Parameters
+        ----------
+        ids : List[:class:`str`]
+            A list of the Spotify IDs.
+        """
+        route = Route("GET", "/me/albums/contains")
+        payload = {"ids": ",".join(ids)}
 
         return self.request(route, params=payload)
 
-    def is_saved_track(self, ids):
-        route = Route('GET', '/me/tracks/contains')
-        payload = {'ids': ids}
+    def is_saved_track(self, ids: List[str]) -> Awaitable:
+        """Check if one or more tracks is already saved in the current Spotify user’s ‘Your Music’ library.
+
+        Parameters
+        ----------
+        ids : List[:class:`str`]
+            A list of the Spotify IDs.
+        """
+        route = Route("GET", "/me/tracks/contains")
+        payload = {"ids": ",".join(ids)}
 
         return self.request(route, params=payload)
 
-    def saved_albums(self, *, limit=20, offset=0, market=None):
-        route = Route('GET', '/me/albums')
-        payload = {'limit': limit, 'offset': offset}
+    def saved_albums(
+        self,
+        *,
+        limit: Optional[int] = 20,
+        offset: Optional[int] = 0,
+        market: Optional[str] = None,
+    ) -> Awaitable:
+        """Get a list of the albums saved in the current Spotify user’s ‘Your Music’ library.
+
+        Parameters
+        ----------
+        limit : Optional[:class:`str`]
+            The maximum number of objects to return. Default: 20. Minimum: 1. Maximum: 50.
+        offset : Optional[:class:`str`]
+            The index of the first object to return. Default: 0 (i.e., the first object). Use with limit to get the next set of objects.
+        market : Optional[:class:`str`]
+            An ISO 3166-1 alpha-2 country code or the string from_token. Provide this parameter if you want to apply Track Relinking.
+        """
+        route = Route("GET", "/me/albums")
+        payload = {"limit": limit, "offset": offset}
 
         if market:
-            payload['market'] = market
+            payload["market"] = market
 
         return self.request(route, params=payload)
 
-    def saved_tracks(self, *, limit=20, offset=0, market=None):
-        route = Route('GET', '/me/tracks')
-        payload = {'limit': limit, 'offset': offset}
+    def saved_tracks(
+        self,
+        *,
+        limit: Optional[int] = 20,
+        offset: Optional[int] = 0,
+        market: Optional[str] = None,
+    ) -> Awaitable:
+        """Get a list of the songs saved in the current Spotify user’s ‘Your Music’ library.
+
+        Parameters
+        ----------
+        limit : Optional[:class:`str`]
+            The maximum number of objects to return. Default: 20. Minimum: 1. Maximum: 50.
+        offset : Optional[:class:`str`]
+            The index of the first object to return. Default: 0 (i.e., the first object). Use with limit to get the next set of objects.
+        market : Optional[:class:`str`]
+            An ISO 3166-1 alpha-2 country code or the string from_token. Provide this parameter if you want to apply Track Relinking.
+        """
+        route = Route("GET", "/me/tracks")
+        payload = {"limit": limit, "offset": offset}
 
         if market:
-            payload['market'] = market
+            payload["market"] = market
 
         return self.request(route, params=payload)
 
-    def delete_saved_albums(self, ids):
-        route = Route('DELETE', '/me/albums')
-        payload = {'ids': ids}
+    def delete_saved_albums(self, ids: List[str]) -> Awaitable:
+        """Remove one or more albums from the current user’s ‘Your Music’ library.
 
-        return self.request(route, params=payload)
+        Parameters
+        ----------
+        ids : List[:class:`str`]
+            A list of the Spotify IDs.
+        """
+        route = Route("DELETE", "/me/albums")
+        return self.request(route, json=ids)
 
-    def delete_saved_tracks(self, ids):
-        route = Route('DELETE', '/me/tracks')
-        payload = {'ids': ids}
+    def delete_saved_tracks(self, ids: List[str]) -> Awaitable:
+        """Remove one or more tracks from the current user’s ‘Your Music’ library.
 
-        return self.request(route, params=payload)
+        Parameters
+        ----------
+        ids : List[:class:`str`]
+            A list of the Spotify IDs.
+        """
+        route = Route("DELETE", "/me/tracks")
+        return self.request(route, json=ids)
 
-    def save_tracks(self, ids):
-        route = Route('PUT', '/me/tracks')
-        payload = {'ids': ids}
+    def save_tracks(self, ids: List[str]) -> Awaitable:
+        """Save one or more tracks to the current user’s ‘Your Music’ library.
 
-        return self.request(route, params=payload)
+        Parameters
+        ----------
+        ids : List[:class:`str`]
+            A list of the Spotify IDs.
+        """
+        route = Route("PUT", "/me/tracks")
+        return self.request(route, json=ids)
 
-    def save_albums(self, ids):
-        route = Route('PUT', '/me/albums')
-        payload = {'ids': ids}
+    def save_albums(self, ids: List[str]) -> Awaitable:
+        """Save one or more albums to the current user’s ‘Your Music’ library.
 
-        return self.request(route, params=payload)
+        Parameters
+        ----------
+        ids : List[:class:`str`]
+            A list of the Spotify IDs.
+        """
+        route = Route("PUT", "/me/albums")
+        return self.request(route, json=ids)
 
-    def top_artists_or_tracks(self, type, *, limit=20, offset=0, time_range=None):
-        route = Route('GET', '/me/top/{type}', type=type)
-        payload = {'limit': limit, 'offset': offset}
+    def top_artists_or_tracks(
+        self,
+        type: str,
+        *,
+        limit: Optional[int] = 20,
+        offset: Optional[int] = 0,
+        time_range: Optional[str] = None,
+    ) -> Awaitable:
+        """Get the current user’s top artists or tracks based on calculated affinity.
 
-        if time_range:
-            payload['time_range'] = time_range
+        Affinity is a measure of the expected preference a user has for a particular track or artist.
+        It is based on user behavior, including play history, but does not include actions made while in incognito mode.
+        Light or infrequent users of Spotify may not have sufficient play history to generate a full affinity data set.
+
+        As a user’s behavior is likely to shift over time, this preference data is available over three time spans.
+
+        For each time range, the top 50 tracks and artists are available for each user.
+        In the future, it is likely that this restriction will be relaxed. This data is typically updated once each day for each user.
+
+        Parameters
+        ----------
+        type : :class;`str`
+            The type of entity to return. Valid values: "artists" or "tracks".
+        limit : Optional[:class:`int`]
+            The number of entities to return. Default: 20. Minimum: 1. Maximum: 50. For example: limit=2
+        offset : Optional[:class:`int`]
+            The index of the first entity to return. Default: 0 (i.e., the first track). Use with limit to get the next set of entities.
+        time_range : Optional[:class:`str`]
+            Over what time frame the affinities are computed. 
+            Valid values: 
+             - "long_term" (calculated from several years of data and including all new data as it becomes available)
+             - "medium_term" (approximately last 6 months)
+             - "short_term" (approximately last 4 weeks). Default: medium_term.
+        """
+        route = Route("GET", "/me/top/{type}", type=type)
+        payload = {"limit": limit, "offset": offset}
+
+        if time_range is not None:
+            payload["time_range"] = time_range
 
         return self.request(route)
 
-    def available_devices(self):
-        route = Route('GET', '/me/player/devices')
+    def available_devices(self) -> Awaitable:
+        """Get information about a user’s available devices."""
+        route = Route("GET", "/me/player/devices")
         return self.request(route)
 
-    def current_player(self, *, market=None):
-        route = Route('GET', '/me/player')
+    def current_player(self, *, market: Optional[str] = None) -> Awaitable:
+        """Get information about the user’s current playback state, including track, track progress, and active device.
+
+        Parameters
+        ----------
+        market : Optional[:class:`str`]
+            An ISO 3166-1 alpha-2 country code or the string from_token. Provide this parameter if you want to apply Track Relinking.
+        """
+        route = Route("GET", "/me/player")
         payload = {}
 
         if market:
-            payload['market'] = market
+            payload["market"] = market
 
         return self.request(route, params=payload)
 
-    def recently_played(self, *, limit=20, before=None, after=None):
-        route = Route('GET', '/me/player/recently-played')
-        payload = {'limit': limit}
+    def recently_played(
+        self,
+        *,
+        limit: Optional[int] = 20,
+        before: Optional[str] = None,
+        after: Optional[str] = None,
+    ) -> Awaitable:
+        """Get tracks from the current user’s recently played tracks.
+
+        Returns the most recent 50 tracks played by a user.
+        Note that a track currently playing will not be visible in play history until it has completed.
+        A track must be played for more than 30 seconds to be included in play history.
+
+        Any tracks listened to while the user had “Private Session” enabled in their client will not be returned in the list of recently played tracks.
+
+        The endpoint uses a bidirectional cursor for paging.
+        Follow the next field with the before parameter to move back in time, or use the after parameter to move forward in time. 
+        If you supply no before or after parameter, the endpoint will return the most recently played songs, and the next link will page back in time.
+
+        Parameter
+        ---------
+        limit : Optional[:class:`int`]
+            The maximum number of items to return. Default: 20. Minimum: 1. Maximum: 50.
+        after : Optional[:class:`str`]
+            A Unix timestamp in milliseconds. Returns all items after (but not including) this cursor position. If after is specified, before must not be specified.
+        before : Optional[:class:`str`]
+            A Unix timestamp in milliseconds. Returns all items before (but not including) this cursor position. If before is specified, after must not be specified.
+        """
+        route = Route("GET", "/me/player/recently-played")
+        payload = {"limit": limit}
 
         if before:
-            payload['before'] = before
+            payload["before"] = before
         elif after:
-            payload['after'] = after
+            payload["after"] = after
 
         return self.request(route, params=payload)
 
-    def currently_playing(self, *, market=None):
-        route = Route('GET', '/me/player/currently-playing')
+    def currently_playing(self, *, market: Optional[str] = None) -> Awaitable:
+        """Get the object currently being played on the user’s Spotify account.
+
+        Parameters
+        ----------
+        market : Optional[:class:`str`]
+            An ISO 3166-1 alpha-2 country code or the string from_token. Provide this parameter if you want to apply Track Relinking.
+        """
+        route = Route("GET", "/me/player/currently-playing")
         payload = {}
 
         if market:
-            payload['market'] = market
+            payload["market"] = market
 
         return self.request(route, params=payload)
 
-    def pause_playback(self, *, device_id=None):
-        route = Route('PUT', '/me/player/pause')
+    def pause_playback(self, *, device_id: Optional[str] = None) -> Awaitable:
+        """Pause playback on the user’s account.
+
+        Parameters
+        ----------
+        device_id : Optional[:class:`str`]
+            The id of the device this command is targeting. If not supplied, the user’s currently active device is the target.
+        """
+        route = Route("PUT", "/me/player/pause")
         payload = {}
 
         if device_id:
-            payload['device_id'] = device_id
+            payload["device_id"] = device_id
 
         return self.request(route, params=payload)
 
-    def seek_playback(self, position_ms, *, device_id=None):
-        route = Route('PUT', '/me/player/seek')
-        payload = {'position_ms': position_ms}
+    def seek_playback(
+        self, position_ms: int, *, device_id: Optional[str] = None
+    ) -> Awaitable:
+        """Seeks to the given position in the user’s currently playing track.
+
+        Parameters
+        ----------
+        position_ms : :class:`int`
+            The position in milliseconds to seek to. Must be a positive number. Passing in a position that is greater than the length of the track will cause the player to start playing the next song.
+        device_id : Optional[:class:`str`]
+            The id of the device this command is targeting. If not supplied, the user’s currently active device is the target.
+        """
+        route = Route("PUT", "/me/player/seek")
+        payload = {"position_ms": position_ms}
 
         if device_id:
-            payload['device_id'] = device_id
+            payload["device_id"] = device_id
 
         return self.request(route, params=payload)
 
-    def repeat_playback(self, state, *, device_id=None):
-        route = Route('PUT', '/me/player/repeat')
-        payload = {'state': state}
+    def repeat_playback(
+        self, state: str, *, device_id: Optional[str] = None
+    ) -> Awaitable:
+        """Set the repeat mode for the user’s playback. Options are repeat-track, repeat-context, and off.
+
+        Parameters
+        ----------
+        state : :class:`str`
+            "track", "context" or "off".
+             - track will repeat the current track.
+             - context will repeat the current context.
+             - off will turn repeat off.
+        device_id : Optional[str]
+            The id of the device this command is targeting. If not supplied, the user’s currently active device is the target.
+        """
+        route = Route("PUT", "/me/player/repeat")
+        payload = {"state": state}
 
         if device_id:
-            payload['device_id'] = device_id
+            payload["device_id"] = device_id
 
         return self.request(route, params=payload)
 
-    def set_playback_volume(self, volume, *, device_id=None):
-        route = Route('PUT', '/me/player/volume')
-        payload = {'volume_percent': volume}
+    def set_playback_volume(
+        self, volume: int, *, device_id: Optional[str] = None
+    ) -> Awaitable:
+        """Set the volume for the user’s current playback device.
+
+        Parameters
+        ----------
+        volume : :class:`int`
+            The volume to set. Must be a value from 0 to 100 inclusive.
+        device_id : Optional[:class:`str`]
+            The id of the device this command is targeting. If not supplied, the user’s currently active device is the target.
+        """
+        route = Route("PUT", "/me/player/volume")
+        payload = {"volume_percent": volume}
 
         if device_id:
-            payload['device_id'] = device_id
+            payload["device_id"] = device_id
 
         return self.request(route, params=payload)
 
-    def skip_next(self, *, device_id=None):
-        route = Route('POST', '/me/player/next')
+    def skip_next(self, *, device_id: Optional[str] = None) -> Awaitable:
+        """Skips to next track in the user’s queue.
+
+        Parameters
+        ----------
+        device_id : Optional[:class:`str`]
+            The id of the device this command is targeting. If not supplied, the user’s currently active device is the target.
+        """
+        route = Route("POST", "/me/player/next")
         payload = {}
 
         if device_id:
-            payload['device_id'] = device_id
+            payload["device_id"] = device_id
 
         return self.request(route, params=payload)
 
-    def skip_previous(self, *, device_id=None):
-        route = Route('POST', '/me/player/previous')
+    def skip_previous(self, *, device_id: Optional[str] = None) -> Awaitable:
+        """Skips to previous track in the user’s queue.
+
+        Parameters
+        ----------
+        device_id : Optional[:class:`str`]
+            The id of the device this command is targeting. If not supplied, the user’s currently active device is the target.
+        """
+        route = Route("POST", "/me/player/previous")
         payload = {}
 
         if device_id:
-            payload['device_id'] = device_id
+            payload["device_id"] = device_id
 
         return self.request(route, params=payload)
 
-    def play_playback(self, context_uri, *, offset=None, device_id=None):
-        route = Route('PUT', '/me/player/play')
-        payload = {}
+    def play_playback(
+        self,
+        context_uri: Union[str, Sequence[str]],
+        *,
+        offset: Optional[Union[str, int]] = None,
+        device_id: Optional[str] = None,
+        position_ms: Optional[int] = 0,
+    ) -> Awaitable:
+        """Start a new context or resume current playback on the user’s active device.
+
+        Parameters
+        ----------
+        context_uri : Union[str, Sequence[:class:`str`]]
+            The context to play, if it is a string
+            then it must be a uri of a album, artist
+            or playlist.
+
+            Otherwise a sequece of strings can be passed
+            in and they must all be track URIs
+        offset : Optional[Union[:class:`str`, :class:`int`]]
+            The offset of which to start from,
+            must either be an integer or a track URI.
+        device_id : Optional[:class:`str`]
+            The id of the device this command is targeting. If not supplied, the user’s currently active device is the target.
+        position_ms : Optional[:class:`int`]
+            indicates from what position to start playback. Must be a positive number.
+            Passing in a position that is greater than the length of the track will cause the player to start playing the next song.
+        """
+        route = Route("PUT", "/me/player/play")
+        payload = {"position_ms": position_ms}
 
         if isinstance(context_uri, str):
-            payload['context_uri'] = {'context_uri': context_uri}
+            payload["context_uri"] = {"context_uri": context_uri}
 
         elif context_uri is not None:
-            payload['uris'] = {'uris': list(*context_uri)}
+            payload["uris"] = {"uris": list(*context_uri)}
 
         else:
-            raise TypeError('`context_uri` must be a string or an iterable object, got %s' % type(context_uri))
+            raise TypeError(
+                f"`context_uri` must be a string or an iterable object, got {type(context_uri)}"
+            )
 
-        if offset:
-            payload['offset'] = offset
+        can_set_offset = "uris" in payload or any(
+            string in payload["context_uri"] for string in ("playlist", "album")
+        )
 
-        if device_id:
-            payload['device_id'] = device_id
+        if offset is not None:
+            if can_set_offset:
+                if isinstance(offset, str):
+                    _offset = {"uri": offset}
 
-        return self.request(route, data=json.dumps(payload))
+                elif isinstance(offset, int):
+                    _offset = {"position": offset}
 
-    def shuffle_playback(self, state, *, device_id=None):
-        route = Route('PUT', '/me/player/seek')
-        payload = {'state': state}
+                else:
+                    raise TypeError(
+                        f"`offset` should be either a string or an integer, got {type(offset)}"
+                    )
 
-        if device_id:
-            payload['device_id'] = device_id
+                payload["offset"] = offset
+            else:
+                raise ValueError(
+                    "not able to set `offset` as either `context_uri` was not a list or it was a playlist or album uri."
+                )
+
+        if device_id is not None:
+            payload["device_id"] = device_id
+
+        return self.request(route, json=payload)
+
+    def shuffle_playback(
+        self, state: bool, *, device_id: Optional[str] = None
+    ) -> Awaitable:
+        """Toggle shuffle on or off for user’s playback.
+
+        Parameters
+        ----------
+        state : :class:`bool`
+            True : Shuffle user’s playback
+            False : Do not shuffle user’s playback.
+        device_id : Optional[:class:`str`]
+            The id of the device this command is targeting. If not supplied, the user’s currently active device is the target.
+        """
+        route = Route("PUT", "/me/player/seek")
+        payload = {"state": state}
+
+        if device_id is not None:
+            payload["device_id"] = device_id
 
         return self.request(route, params=payload)
 
-    def transfer_player(self, device_id, *, play=None):
-        route = Route('PUT', '/me/player')
-        payload = {'device_ids': [device_id]}
+    def transfer_player(
+        self, device_id: str, *, play: Optional[bool] = False
+    ) -> Awaitable:
+        """Transfer playback to a new device and determine if it should start playing.
 
-        if play:
-            payload['play'] = play
+        .. note:
 
-        return self.request(route, data=json.dumps(payload))
+            Note that a value of false for the play parameter when also transferring to another device_id will not pause playback.
+            To ensure that playback is paused on the new device you should send a pause command to the currently active device before transferring to the new device_id.
 
-    def add_playlist_tracks(self, playlist_id, tracks, *, position=None):
-        route = Route('POST', '/playlists/{playlist_id}/tracks', playlist_id=playlist_id)
-        payload = {'uris': tracks}
+        Parameters
+        ----------
+        device_id : :class:`str`
+            A Spotify Device ID
+        play : Optional[:class:`bool`]
+            True: ensure playback happens on new device.
+            False or not provided: keep the current playback state.
+        """
+        route = Route("PUT", "/me/player")
+        payload = {"device_ids": [device_id], "play": play}
 
-        if position:
-            payload['position'] = position
+        return self.request(route, json=payload)
 
-        return self.request(route, params=payload)
+    def add_playlist_tracks(
+        self,
+        playlist_id: str,
+        tracks: Sequence[Union[str]],
+        position: Optional[int] = None,
+    ) -> Awaitable:
+        """Add one or more tracks to a user’s playlist.
 
-    def change_playlist_details(self, playlist_id, *, data):
-        route = Route('PUT', '/playlists/{playlist_id}', playlist_id=playlist_id)
-        return self.request(route, data=json.dumps(data))
+        Parameters
+        ----------
+        playlist_id : :class:`str`
+            The Spotify ID for the playlist.
+        tracks : Sequence[Union[:class:`str`]]
+            A sequence of track URIs.
+        position : Optional[:class:`int`]
+            The position to insert the tracks, a zero-based index. 
+        """
+        route = Route(
+            "POST", "/playlists/{playlist_id}/tracks", playlist_id=playlist_id
+        )
 
-    def create_playlist(self, user_id, *, data):
-        route = Route('POST', '/users/{user_id}/playlists', user_id=user_id)
-        return self.request(route, data=json.dumps(data))
+        payload = {"uris": [track for track in tracks]}
 
-    def current_playlists(self, *, limit=20, offset=0):
-        route = Route('GET', '/me/playlists')
-        return self.request(route, params={'limit': limit, 'offset': offset})
+        if position is not None:
+            payload["position"] = position
 
-    def get_playlists(self, user_id, *, limit=20, offset=0):
-        route = Route('GET', '/users/{user_id}/playlists', user_id=user_id)
-        return self.request(route, params={'limit': limit, 'offset': offset})
+        return self.request(route, json=payload)
 
-    def get_playlist_cover_image(self, playlist_id):
-        route = Route('GET', '/playlists/{playlist_id}/images', playlist_id=playlist_id)
+    def change_playlist_details(
+        self,
+        playlist_id: str,
+        *,
+        name: str,
+        public: Optional[bool] = True,
+        collaborative: Optional[bool] = False,
+        description: Optional[str] = "",
+    ) -> Awaitable:
+        """Change a playlist’s name and public/private state. (The user must, of course, own the playlist.)
+
+        Parameters
+        ----------
+        playlist_id : :class:`str`
+            The Spotify ID for the playlist.
+        name : :class:`str`
+            The name for the new playlist
+        public : Optional[:class:`bool`]
+            Defaults to true . If true the playlist will be public, if false it will be private
+        collaborative : Optional[:class:`bool`]
+            Defaults to false . If true the playlist will be collaborative.
+            .. note::
+                to create a collaborative playlist you must also set public to false
+        description : Optional[:class:`str`]
+            The value for playlist description as displayed in Spotify Clients and in the Web API.
+        """
+        route = Route("PUT", "/playlists/{playlist_id}", playlist_id=playlist_id)
+        return self.request(route, json=data)
+
+    def create_playlist(
+        self,
+        user_id: str,
+        *,
+        name: str,
+        public: Optional[bool] = True,
+        collaborative: Optional[bool] = False,
+        description: Optional[str] = "",
+    ) -> Awaitable:
+        """Create a playlist for a Spotify user. (The playlist will be empty until you add tracks.)
+
+        Parameters
+        ----------
+        user_id : :class:`str`
+            The user’s Spotify user ID.
+        name : :class:`str`
+            The name for the new playlist
+        public : Optional[:class:`bool`]
+            Defaults to true . If true the playlist will be public, if false it will be private
+        collaborative : Optional[:class:`bool`]
+            Defaults to false . If true the playlist will be collaborative.
+            .. note::
+                to create a collaborative playlist you must also set public to false
+        description : Optional[:class:`str`]
+            The value for playlist description as displayed in Spotify Clients and in the Web API.
+        """
+        route = Route("POST", "/users/{user_id}/playlists", user_id=user_id)
+
+        payload = {
+            "name": name,
+            "public": public,
+            "collaborative": collaborative,
+            "description": description,
+        }
+
+        return self.request(route, json=payload)
+
+    def current_playlists(
+        self, *, limit: Optional[int] = 20, offset: Optional[int] = 0
+    ) -> Awaitable:
+        """Get a list of the playlists owned or followed by the current Spotify user.
+
+        Parameters
+        ----------
+        limit : Optional[:class:`str`]
+            The maximum number of playlists to return. Default: 20. Minimum: 1. Maximum: 50.
+        offset : Optional[:class:`str`]
+            he index of the first playlist to return. Default: 0 (the first object). Maximum offset: 100.000.        
+        """
+        route = Route("GET", "/me/playlists")
+        return self.request(route, params={"limit": limit, "offset": offset})
+
+    def get_playlists(
+        self, user_id: str, *, limit: Optional[int] = 20, offset: Optional[int] = 0
+    ) -> Awaitable:
+        """Get a list of the playlists owned or followed by a Spotify user.
+
+        Parameters
+        ----------
+        user_id : :class:`str`
+            The user’s Spotify user ID.
+        limit : Optional[:class:`str`]
+            The maximum number of playlists to return. Default: 20. Minimum: 1. Maximum: 50.
+        offset : Optional[:class:`str`]
+            he index of the first playlist to return. Default: 0 (the first object). Maximum offset: 100.000.
+        """
+        route = Route("GET", "/users/{user_id}/playlists", user_id=user_id)
+        return self.request(route, params={"limit": limit, "offset": offset})
+
+    def get_playlist_cover_image(self, playlist_id: str) -> Awaitable:
+        """Get the current image associated with a specific playlist.
+
+        Parameters
+        ----------
+        playlist_id : :class:`str`
+            The Spotify ID for the playlist.
+        """
+        route = Route("GET", "/playlists/{playlist_id}/images", playlist_id=playlist_id)
         return self.request(route)
 
-    def get_playlist(self, playlist_id, *, fields=None, market=None):
-        route = Route('GET', '/playlists/{playlist_id}', playlist_id=playlist_id)
+    def get_playlist(
+        self,
+        playlist_id: str,
+        *,
+        fields: Optional[str] = None,
+        market: Optional[str] = None,
+    ) -> Awaitable:
+        """Get a playlist owned by a Spotify user.
+
+        Parameters
+        ----------
+        playlist_id : :class:`str`
+            The Spotify ID for the playlist.
+        fields: Optional[:class:`str`]
+            Filters for the query: a comma-separated list of the fields to return.
+            If omitted, all fields are returned. For example, to get just the total number of tracks and the request limit: `fields=total,limit`
+
+            A dot separator can be used to specify non-reoccurring fields, while parentheses can be used to specify reoccurring fields within objects. 
+            For example, to get just the added date and user ID of the adder: `fields=items(added_at,added_by.id)`
+
+            Use multiple parentheses to drill down into nested objects, for example: `fields=items(track(name,href,album(name,href)))`
+
+            Fields can be excluded by prefixing them with an exclamation mark, for example: `fields=items.track.album(!external_urls,images)
+        market : Optional[:class:`str`]
+            An ISO 3166-1 alpha-2 country code or the string "from_token".
+            Provide this parameter if you want to apply Track Relinking.
+        """
+        route = Route("GET", "/playlists/{playlist_id}", playlist_id=playlist_id)
         payload = {}
 
         if fields:
-            payload['fields'] = fields
+            payload["fields"] = fields
 
         if market:
-            payload['market'] = market
+            payload["market"] = market
 
         return self.request(route, params=payload)
 
-    def get_playlist_tracks(self, playlist_id, *, fields=None, market=None, limit=20, offset=0):
-        route = Route('GET', '/playlists/{playlist_id}/tracks', playlist_id=playlist_id)
-        payload = {'limit': limit, 'offset': offset}
+    def get_playlist_tracks(
+        self,
+        playlist_id: str,
+        *,
+        fields: Optional[str] = None,
+        market: Optional[str] = None,
+        limit: Optional[int] = 20,
+        offset: Optional[int] = 0,
+    ) -> Awaitable:
+        """Get full details of the tracks of a playlist owned by a Spotify user.
+
+        Parameters
+        ----------
+        playlist_id : :class:`str`
+            The Spotify ID for the playlist.
+        fields: Optional[:class:`str`]
+            Filters for the query: a comma-separated list of the fields to return.
+            If omitted, all fields are returned. For example, to get just the total number of tracks and the request limit: `fields=total,limit`
+
+            A dot separator can be used to specify non-reoccurring fields, while parentheses can be used to specify reoccurring fields within objects. 
+            For example, to get just the added date and user ID of the adder: `fields=items(added_at,added_by.id)`
+
+            Use multiple parentheses to drill down into nested objects, for example: `fields=items(track(name,href,album(name,href)))`
+
+            Fields can be excluded by prefixing them with an exclamation mark, for example: `fields=items.track.album(!external_urls,images)
+        limit : Optional[:class:`str`]
+            The maximum number of tracks to return. Default: 100. Minimum: 1. Maximum: 100.
+        offset : Optional[:class:`str`]
+            The index of the first track to return. Default: 0 (the first object).
+        market : Optional[:class:`str`]
+            An ISO 3166-1 alpha-2 country code or the string "from_token".
+            Provide this parameter if you want to apply Track Relinking.
+        """
+        route = Route("GET", "/playlists/{playlist_id}/tracks", playlist_id=playlist_id)
+        payload = {"limit": limit, "offset": offset}
 
         if fields:
-            payload['fields'] = fields
+            payload["fields"] = fields
 
         if market:
-            payload['market'] = market
+            payload["market"] = market
 
         return self.request(route, params=payload)
 
-    def remove_playlist_tracks(self, playlist_id, tracks, *, position=None, snapshot_id=None):
-        route = Route('DELETE ', '/playlists/{playlist_id}/tracks', playlist_id=playlist_id)
-        payload = {'uris': tracks}
+    def remove_playlist_tracks(
+        self,
+        playlist_id: str,
+        tracks: Sequence[Union[str, Dict[str, Union[str, int]]]],
+        *,
+        snapshot_id: str = None,
+    ) -> Awaitable:
+        """Remove one or more tracks from a user’s playlist.
 
-        if position:
-            payload['position'] = position
+        Parameters
+        ----------
+        playlist_id : str
+            The id of the playlist to target
+        tracks : Sequence[Union[str, Dict[str, Union[str, int]]]]
+            Either a sequence of track URIs to remove a specific occurence
+            of a track or for targeted removal pass in a dict that looks like
+            `{'uri': URI, 'position': POSITIONS}` where `URI` is  track URI and
+            `POSITIONS` is an list of integers
+        snapshot_id : Optional[str]
+            The snapshot to target.
+        """
+        route = Route(
+            "DELETE ", "/playlists/{playlist_id}/tracks", playlist_id=playlist_id
+        )
+        payload = {
+            "tracks": [
+                ({"uri": track} if isinstance(track, str) else track)
+                for track in tracks
+            ]
+        }
 
         if snapshot_id:
-            payload['snapshot_id'] = snapshot_id
+            payload["snapshot_id"] = snapshot_id
 
-        return self.request(route, params=payload)
+        return self.request(route, json=payload)
 
-    def reorder_playlists_tracks(self, playlist_id, range_start, range_length, insert_before, *, snapshot_id=None):
-        route = Route('PUT', '/playlists/{playlist_id}/tracks', playlist_id=playlist_id)
-        payload = {'range_start': range_start, 'range_length': range_length, 'insert_before': insert_before}
+    def reorder_playlists_tracks(
+        self,
+        playlist_id: str,
+        range_start: int,
+        range_length: int,
+        insert_before: int,
+        *,
+        snapshot_id: Optional[str] = None,
+    ) -> Awaitable:
+        """Reorder a track or a group of tracks in a playlist.
+
+        Visualization of how reordering tracks works
+
+        .. image:: /images/visualization-reordering-tracks.png
+
+        .. note::
+            When reordering tracks, the timestamp indicating when they were added and the user who added them will be kept untouched.
+            In addition, the users following the playlists won’t be notified about changes in the playlists when the tracks are reordered.
+
+        Parameters
+        ----------
+        playlist_id : :class:`str`
+            The Spotify ID for the playlist.
+        range_start : :class:`int`
+            The position of the first track to be reordered.
+        range_length : :class:`int`
+            The amount of tracks to be reordered. Defaults to 1 if not set.
+
+            The range of tracks to be reordered begins from the range_start position, and includes the range_length subsequent tracks.
+        insert_before : :class:`int`
+            The position where the tracks should be inserted.
+
+            To reorder the tracks to the end of the playlist, simply set insert_before to the position after the last track.
+        snapshot_id : Optional[:class:`str`]
+            The playlist’s snapshot ID against which you want to make the changes.
+        """
+        route = Route("PUT", "/playlists/{playlist_id}/tracks", playlist_id=playlist_id)
+        payload = {
+            "range_start": range_start,
+            "range_length": range_length,
+            "insert_before": insert_before,
+        }
 
         if snapshot_id:
-            payload['snapshot_id'] = snapshot_id
+            payload["snapshot_id"] = snapshot_id
 
-        return self.request(route, data=payload)
+        return self.request(route, json=payload)
 
-    def replace_playlist_tracks(self, playlist_id, tracks):
-        route = Route('PUT', '/playlists/{playlist_id}/tracks', playlist_id=playlist_id)
-        payload = {'uris': tracks}
+    def replace_playlist_tracks(self, playlist_id: str, tracks: List[str]) -> Awaitable:
+        """Replace all the tracks in a playlist, overwriting its existing tracks.
+
+        .. note::
+
+            This powerful request can be useful for replacing tracks, re-ordering existing tracks, or clearing the playlist.
+
+        Parameters
+        ----------
+        playlist_id : :class:`str`
+            The Spotify ID for the playlist.
+        tracks : List[:class:`str`]
+            A list of tracks to replace with.
+        """
+        route = Route("PUT", "/playlists/{playlist_id}/tracks", playlist_id=playlist_id)
+        payload = {"uris": tracks}
+
+        return self.request(route, json=payload)
+
+    def upload_playlist_cover_image(
+        self, playlist_id: str, file: BinaryIO
+    ) -> Awaitable:
+        """Replace the image used to represent a specific playlist.
+
+        Parameters
+        ----------
+        playlist_id : :class:`str`
+            The Spotify ID for the playlist.
+        file : File-like object
+            An file-like object that supports reading
+            the contents that are being read should be :class:`bytes`
+        """
+        route = Route("PUT", "/playlists/{playlist_id}/images", playlist_id=playlist_id)
+        return self.request(
+            route, data=b64encode(file.read()), content_type="image/jpeg"
+        )
+
+    def track_audio_analysis(self, track_id: str) -> Awaitable:
+        """Get a detailed audio analysis for a single track identified by its unique Spotify ID.
+
+        The Audio Analysis endpoint provides low-level audio analysis for all of the tracks in the Spotify catalog.
+        The Audio Analysis describes the track’s structure and musical content, including rhythm, pitch, and timbre.
+        All information is precise to the audio sample.
+
+        Many elements of analysis include confidence values, a floating-point number ranging from 0.0 to 1.0.
+        Confidence indicates the reliability of its corresponding attribute.
+        Elements carrying a small confidence value should be considered speculative.
+        There may not be sufficient data in the audio to compute the attribute with high certainty.
+
+        Parameters
+        ----------
+        track_id : :class:`str`
+            The Spotify ID for the track.
+        """
+        route = Route("GET", "/audio-analysis/{id}", id=track_id)
+        return self.request(route)
+
+    def track_audio_features(self, track_id: str) -> Awaitable:
+        """Get audio feature information for a single track identified by its unique Spotify ID.
+
+        Parameters
+        ----------
+        track_id : :class:`str`
+            The Spotify ID for the track.
+        """
+        route = Route("GET", "/audio-features/{id}", id=track_id)
+        return self.request(route)
+
+    def audio_features(self, track_ids: List[str]) -> Awaitable:
+        """Get audio features for multiple tracks based on their Spotify IDs.
+
+        Parameters
+        ----------
+        track_ids : List[:class:`str`]
+            A comma-separated list of the Spotify IDs for the tracks. Maximum: 100 IDs.
+        """
+        route = Route("GET", "/audio-features")
+        return self.request(route, params={"ids": track_ids})
+
+    def track(self, track_id: str, market: Optional[str] = None) -> Awaitable:
+        """Get Spotify catalog information for a single track identified by its unique Spotify ID.
+
+        Parameters
+        ----------
+        track_id : :class:`str`
+            The Spotify ID for the track.
+        market : Optional[:class:`str`]
+            An ISO 3166-1 alpha-2 country code or the string "from_token".
+            Provide this parameter if you want to apply Track Relinking.
+        """
+        route = Route("GET", "/tracks/{id}", id=track_id)
+
+        if market is not None:
+            payload = {"market": market}
 
         return self.request(route, params=payload)
 
-    def upload_playlist_cover_image(self, playlist_id, file):
-        route = Route('PUT', '/playlists/{playlist_id}/images', playlist_id=playlist_id)
-        return self.request(route, data=b64encode(file.read()), content_type='image/jpeg')
+    def tracks(self, track_ids: List[str], market: Optional[str] = None) -> Awaitable:
+        """Get Spotify catalog information for multiple tracks based on their Spotify IDs.
 
-    def track_audio_analysis(self, track_id):
-        route = Route('GET', '/audio-analysis/{id}', id=track_id)
+        Parameters
+        ----------
+        track_ids : List[:class:`str`]
+            A comma-separated list of the Spotify IDs for the tracks. Maximum: 50 IDs.
+        market : Optional[:class:`str`]
+            An ISO 3166-1 alpha-2 country code or the string "from_token".
+            Provide this parameter if you want to apply Track Relinking.
+        """
+        route = Route("GET", "/tracks")
+        payload = {"ids": track_ids}
+
+        if market is not None:
+            payload["market"] = market
+
+        return self.request(route, params=payload)
+
+    def current_user(self) -> Awaitable:
+        """Get detailed profile information about the current user (including the current user’s username)."""
+        route = Route("GET", "/me")
         return self.request(route)
 
-    def track_audio_features(self, track_id):
-        route = Route('GET', '/audio-features/{id}', id=track_id)
+    def user(self, user_id: str) -> Awaitable:
+        """Get public profile information about a Spotify user.
+
+        Parameters
+        ---------
+        user_id : class:`str`
+            The user’s Spotify user ID.
+        """
+        route = Route("GET", "/users/{user_id}", user_id=user_id)
         return self.request(route)
 
-    def audio_features(self, track_ids):
-        route = Route('GET', '/audio-features')
-        return self.request(route, params={'ids': track_ids})
+    def search(
+        self,
+        q: str,
+        queary_type: Optional[str] = "track,playlist,artist,album",
+        market: Optional[str] = "US",
+        limit: Optional[int] = 20,
+        offset: Optional[int] = 0,
+        include_external: Optional[str] = "audio",
+    ) -> Awaitable:
+        """Get Spotify Catalog information about artists, albums, tracks or playlists that match a keyword string.
 
-    def track(self, track_id):
-        route = Route('GET', '/tracks/{id}', id=track_id)
-        return self.request(route)
+        Parameters
+        ----------
+        q : :class:`str`
+            Search query keywords and optional field filters and operators. e.g. `roadhouse blues.`
+        query_type : Optional[:class:`str`]
+            A comma-separated list of item types to search across. (default: "track,playlist,artist,album")
+            Valid types are: album , artist, playlist, and track.
+            Search results include hits from all the specified item types. 
+        market Optional[:class:`str`]
+            An ISO 3166-1 alpha-2 country code or the string "from_token". (default: "US")
+            If a country code is specified, only artists, albums, and tracks with content that is playable in that market is returned.
 
-    def tracks(self, track_ids):
-        route = Route('GET', '/tracks')
-        return self.request(route, params={'ids': track_ids})
+            .. note::
+                - Playlist results are not affected by the market parameter.
+                - If market is set to "from_token", and a valid access token is specified in the request header, only content playable in the country associated with the user account, is returned.
+                - Users can view the country that is associated with their account in the account settings. A user must grant access to the user-read-private scope prior to when the access token is issued.
+        limit : Optional[:class:`int`]
+            Maximum number of results to return. (Default: 20, Minimum: 1, Maximum: 50)
 
-    def current_user(self):
-        route = Route('GET', '/me')
-        return self.request(route)
-
-    def user(self, user_id):
-        route = Route('GET', '/users/{user_id}', user_id=user_id)
-        return self.request(route)
-
-    def search(self, q, queary_type='track,playlist,artist,album', market='US', limit=20, offset=0):
-        route = Route('GET', '/search')
-        payload = {'q': q, 'type': queary_type, 'limit': limit, 'offset': offset}
+            .. note::
+                The limit is applied within each type, not on the total response.
+                For example, if the limit value is 3 and the type is artist,album, the response contains 3 artists and 3 albums.
+        offset : Optional[:class:`int`]
+            The index of the first result to return.
+            Default: 0 (the first result).
+            Maximum offset (including limit): 10,000.
+            Use with limit to get the next page of search results.
+        include_external : :class:`str`
+            Possible values: `audio`
+            If `include_external=audio` is specified the response will include any relevant audio content that is hosted externally.
+            By default external content is filtered out from responses.
+        """
+        route = Route("GET", "/search")
+        payload = {"q": q, "type": queary_type, "limit": limit, "offset": offset}
 
         if market:
-            payload['market'] = market
+            payload["market"] = market
 
         return self.request(route, params=payload)
 
 
 class HTTPUserClient(HTTPClient):
     """HTTPClient for access to user endpoints."""
+
     def __init__(self, token, loop=None):
         self.loop = loop or asyncio.get_event_loop()
         self._session = aiohttp.ClientSession(loop=self.loop)
 
-        self.bearer_info = {'access_token': token}
+        self.bearer_info = {"access_token": token}
         self.token = token
 
     async def get_bearer_info(self):
-        return {'access_token': self.token}
+        return {"access_token": self.token}
