@@ -230,6 +230,7 @@ class User(URIBase):
 
     ### Playlist track methods
 
+    @ensure_http
     async def add_tracks(self, playlist: Union[str, Playlist], *tracks) -> str:
         """Add one or more tracks to a user’s playlist.
 
@@ -251,6 +252,7 @@ class User(URIBase):
         )
         return data['snapshot_id']
 
+    @ensure_http
     async def replace_tracks(self, playlist, *tracks) -> str:
         """Replace all the tracks in a playlist, overwriting its existing tracks.
 
@@ -268,6 +270,7 @@ class User(URIBase):
             tracks=','.join(str(track) for track in tracks),
         )
 
+    @ensure_http
     async def remove_tracks(self, playlist, *tracks):
         """Remove one or more tracks from a user’s playlist.
 
@@ -289,6 +292,7 @@ class User(URIBase):
         )
         return data['snapshot_id']
 
+    @ensure_http
     async def reorder_tracks(
         self, playlist, start, insert_before, length=1, *, snapshot_id=None
     ):
@@ -416,6 +420,7 @@ class User(URIBase):
             for playlist_data in data['items']
         ]
 
+    @ensure_http
     async def top_artists(self, **data) -> List[Artist]:
         """Get the current user’s top artists based on calculated affinity.
 
@@ -435,6 +440,7 @@ class User(URIBase):
         """
         return await self._get_top(Artist, data)
 
+    @ensure_http
     async def top_tracks(self, **data) -> List[Track]:
         """Get the current user’s top tracks based on calculated affinity.
 
