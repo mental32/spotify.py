@@ -37,28 +37,31 @@ class SyncMeta(type):
             if inspect.iscoroutinefunction(func):
                 _func = getattr(base, name)
 
-                if isinstance(func, classmethod):
+                def wrap(f):
+                    if isinstance(f, classmethod):
 
-                    @classmethod
-                    @functools.wraps(func)
-                    def wrapper(cls, client, *args, **kwargs):
-                        assert isinstance(
-                            client, _Client
-                        ), "First argument of classmethod was not a `spotify.Client` instance"
-                        client.__client_thread__.run_coro(
-                            _func, client, *args, **kwargs
-                        )
+                        @classmethod
+                        @functools.wraps(f)
+                        def wrapper(cls, client, *args, **kwargs):
+                            assert isinstance(
+                                client, _Client
+                            ), "First argument of classmethod was not a `spotify.Client` instance"
+                            client.__client_thread__.run_coro(
+                                f, client, *args, **kwargs
+                            )
 
-                else:
+                    else:
 
-                    @functools.wraps(func)
-                    def wrapper(self, *args, **kwargs):
-                        return self.__client_thread__.run_coro(
-                            _func(self, *args, **kwargs)
-                        )
+                        @functools.wraps(f)
+                        def wrapper(self, *args, **kwargs):
+                            return self.__client_thread__.run_coro(
+                                f(self, *args, **kwargs)
+                            )
 
-                setattr(klass, func.__name__, wrapper)
-            del name, func
+                    return wrapper
+
+                setattr(klass, name, wrap(_func))
+            del name
         return klass
 
 
