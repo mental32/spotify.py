@@ -1629,7 +1629,7 @@ class HTTPClient:
             By default external content is filtered out from responses.
         """
         route = Route("GET", "/search")
-        payload = {"q": q, "type": queary_type, "limit": limit, "offset": offset}
+        payload = {"q": quote(q), "type": queary_type, "limit": limit, "offset": offset}
 
         if market:
             payload["market"] = market

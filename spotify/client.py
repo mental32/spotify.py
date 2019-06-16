@@ -248,7 +248,7 @@ class Client:
             raise ValueError(_SEARCH_TYPE_ERR % types_.difference(_SEARCH_TYPES).pop())
 
         kwargs = {
-            "q": q.replace(" ", "+"),
+            "q": q,
             "queary_type": ",".join(tp.strip() for tp in types),
             "market": market,
             "limit": limit,
