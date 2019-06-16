@@ -101,7 +101,7 @@ class User(URIBase):
             if key in ("limit", "offset", "time_range")
         }
 
-        resp = await self.http.top_artists_or_tracks(_str[klass], **data)
+        resp = await self.http.top_artists_or_tracks(_str, **data)
 
         return [klass(self.__client, item) for item in resp["items"]]
 
