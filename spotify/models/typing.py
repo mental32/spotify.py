@@ -2,7 +2,7 @@
 
 from typing import Union, Sequence
 
-from . import URIBase
+from .base import URIBase
 
 SomeURI = Union[URIBase, str]
 SomeURIs = Sequence[Union[URIBase, str]]
