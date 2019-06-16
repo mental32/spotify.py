@@ -202,6 +202,15 @@ class Playlist(URIBase):
             head.tracks = tracks[:100], tracks[100:]
             await self.extend_tracks(head)
 
+    async def clear_tracks(self):
+        """Clear the playlists tracks.
+
+        .. warning::
+
+            This is a desctructive operation and is very hard to reverse!
+        """
+        await self.__http.replace_playlist_tracks(self.id, tracks=[])
+
     async def remove_tracks(self, *tracks):
         """Remove one or more tracks from a user’s playlist.
 
@@ -252,7 +261,7 @@ class Playlist(URIBase):
         return data["snapshot_id"]
 
     async def extend_tracks(
-        self, tracks: Union['Playlist', PartialTracks, List[Union[Track, str]]]
+        self, tracks: Union["Playlist", PartialTracks, List[Union[Track, str]]]
     ):
         """Extend a playlists tracks with that of another playlist, PartialTracks or a list of Track/Track URIs.
 
