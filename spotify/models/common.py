@@ -108,3 +108,6 @@ class Device:
 
     def __repr__(self):
         return '<spotify.Device: "%s">' % (self.name or self.id)
+
+    def __str__(self):
+        return self.id
