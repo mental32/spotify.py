@@ -56,7 +56,7 @@ class Artist(URIBase):
         limit: Optional[int] = 20,
         offset: Optional[int] = 0,
         include_groups=None,
-        market: Optional[str] = None
+        market: Optional[str] = None,
     ) -> List["Album"]:
         """Get the albums of a Spotify artist.
 

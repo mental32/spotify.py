@@ -162,7 +162,7 @@ class Player(SpotifyBase):
         self,
         *uris: SomeURIs,
         offset: Optional[Offset] = 0,
-        device: Optional[SomeDevice] = None
+        device: Optional[SomeDevice] = None,
     ):
         """Start a new context or resume current playback on the user’s active device.
 
