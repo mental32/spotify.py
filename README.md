@@ -24,6 +24,8 @@ import spotify.sync as spotify  # Nothing requires async/await now!
  - Sorting a playlist by popularity
 
 ```py
+import sys
+
 import spotify
 
 playlist_uri =   # Playlist uri here
@@ -36,8 +38,13 @@ client = spotify.Client(client_id, secret)
 async def main():
     user = await spotify.User.from_token(client, token)
 
-    playlist = next(filter((lambda playlist: playlist.uri == playlist_uri), await user.get_playlists()))
-    tracks = await playlist.get_all_tracks()
+    try:
+        playlist = next(playlist for playlist in (await user.get_playlists()) if playlist.uri == playlist_uri)
+    except StopIteration:
+        print('No playlists were found!', file=sys.stderr)
+        return
+    else:
+        tracks = await playlist.get_all_tracks()
 
     sorted_tracks = sorted(tracks, reverse=True, key=(lambda track: track.popularity))
 
