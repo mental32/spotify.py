@@ -19,11 +19,7 @@ class Image:
         self.url = url
 
     def __repr__(self):
-        return '<spotify.Image: "%s" (width: %s, height: %s)>' % (
-            self.url,
-            self.width,
-            self.height,
-        )
+        return f'<spotify.Image: {self.url!r} (width: {self.width!r}, height: {self.height!r})>'
 
     def __eq__(self, other):
         return type(self) is type(other) and self.url == other.url
@@ -54,7 +50,7 @@ class Context:
         self.uri = data.get("uri")
 
     def __repr__(self):
-        return '<spotify.Context: "%s">' % (self.uri)
+        return f'<spotify.Context: {self.uri!r}>'
 
     def __eq__(self, other):
         return type(self) is type(other) and self.uri == other.uri
@@ -107,7 +103,7 @@ class Device:
         return type(self) is type(other) and self.id == other.id
 
     def __repr__(self):
-        return '<spotify.Device: "%s">' % (self.name or self.id)
+        return f'<spotify.Device: {(self.name or self.id)!r}>'
 
     def __str__(self):
         return self.id

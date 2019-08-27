@@ -73,7 +73,7 @@ class User(URIBase):
         self.product = data.pop("product", None)
 
     def __repr__(self):
-        return '<spotify.User: "%s">' % (self.display_name or self.id)
+        return f'<spotify.User: {(self.display_name or self.id)!r}>'
 
     def __getattr__(self, key, value):
         try:
