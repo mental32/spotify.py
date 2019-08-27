@@ -1,7 +1,7 @@
 from .. import _clean_namespace
-from .base import SpotifyBase, URIBase
 from . import typing
 
+from .base import SpotifyBase, URIBase
 from .common import Device, Context, Image
 from .artist import Artist
 from .track import Track, PlaylistTrack
@@ -12,16 +12,16 @@ from .playlist import Playlist, PartialTracks
 from .user import User
 
 __all__ = (
-    'User',
-    'Track',
-    'PlaylistTrack',
-    'Artist',
-    'Album',
-    'Playlist',
-    'PartialTracks',
-    'Library',
-    'Player',
-    'Device',
-    'Context',
-    'Image',
+    "User",
+    "Track",
+    "PlaylistTrack",
+    "Artist",
+    "Album",
+    "Playlist",
+    "PartialTracks",
+    "Library",
+    "Player",
+    "Device",
+    "Context",
+    "Image",
 )

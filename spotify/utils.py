@@ -7,12 +7,13 @@ from typing import Callable
 
 from .errors import SpotifyException
 
-_URI_RE = re.compile(r'^.*:([a-zA-Z0-9]+)$')
-_OPEN_RE = re.compile(r'http[s]?:\/\/open\.spotify\.com\/(.*)\/(.*)')
+_URI_RE = re.compile(r"^.*:([a-zA-Z0-9]+)$")
+_OPEN_RE = re.compile(r"http[s]?:\/\/open\.spotify\.com\/(.*)\/(.*)")
 
 
 @contextmanager
 def clean(l: dict, *names):
+    """A helper context manager that defers mutating a set of locals."""
     yield
     for name in names:
         l.pop(name)
@@ -93,7 +94,7 @@ class OAuth2:
         The URL for OAuth2
     """
 
-    _BASE = 'https://accounts.spotify.com/authorize/?response_type=code&{parameters}'
+    _BASE = "https://accounts.spotify.com/authorize/?response_type=code&{parameters}"
 
     def __init__(
         self, client_id: str, redirect_uri: str, *, scope: str = None, state: str = None
@@ -105,7 +106,7 @@ class OAuth2:
         self.scope = scope
 
     def __repr__(self):
-        return '<spotfy.OAuth2: client_id={0!r}, scope={1!r}>'.format(
+        return "<spotfy.OAuth2: client_id={0!r}, scope={1!r}>".format(
             self.client_id, self.scope
         )
 
@@ -122,15 +123,15 @@ class OAuth2:
         client_id: str, redirect_uri: str, *, scope: str = None, state: str = None
     ) -> str:
         """Construct a OAuth2 URL instead of an OAuth2 object."""
-        attrs = {'client_id': client_id, 'redirect_uri': quote(redirect_uri)}
+        attrs = {"client_id": client_id, "redirect_uri": quote(redirect_uri)}
 
         if scope is not None:
-            attrs['scope'] = quote(scope)
+            attrs["scope"] = quote(scope)
 
         if state is not None:
-            attrs['state'] = state
+            attrs["state"] = state
 
-        parameters = '&'.join('{0}={1}'.format(*item) for item in attrs.items())
+        parameters = "&".join("{0}={1}".format(*item) for item in attrs.items())
 
         return OAuth2._BASE.format(parameters=parameters)
 
@@ -142,20 +143,20 @@ class OAuth2:
     @property
     def attrs(self):
         """Attributes used when constructing url parameters."""
-        data = {'client_id': self.client_id, 'redirect_uri': quote(self.redirect_uri)}
+        data = {"client_id": self.client_id, "redirect_uri": quote(self.redirect_uri)}
 
         if self.scope is not None:
-            data['scope'] = quote(self.scope)
+            data["scope"] = quote(self.scope)
 
         if self.state is not None:
-            data['state'] = self.state
+            data["state"] = self.state
 
         return data
 
     @property
     def parameters(self) -> str:
         """URL parameters used."""
-        return '&'.join('{0}={1}'.format(*item) for item in self.attrs.items())
+        return "&".join("{0}={1}".format(*item) for item in self.attrs.items())
 
     @property
     def url(self) -> str:

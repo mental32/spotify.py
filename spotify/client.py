@@ -5,9 +5,9 @@ from .http import HTTPClient
 from .utils import to_id
 from . import OAuth2, Artist, Album, Track, User, Playlist
 
-_TYPES = {'artist': Artist, 'album': Album, 'playlist': Playlist, 'track': Track}
+_TYPES = {"artist": Artist, "album": Album, "playlist": Playlist, "track": Track}
 
-_SEARCH_TYPES = {'track', 'playlist', 'artist', 'album'}
+_SEARCH_TYPES = {"track", "playlist", "artist", "album"}
 _SEARCH_TYPE_ERR = (
     'Bad queary type! got "%s" expected any of: track, playlist, artist, album'
 )
@@ -85,7 +85,9 @@ class Client:
     async def user_from_token(self, token: str) -> User:
         """Create a user session from a token.
 
-        This code is equivelent to `User.from_token(client, token)`
+        .. note::
+
+            This code is equivelent to `User.from_token(client, token)`
 
         Parameters
         ----------
@@ -94,12 +96,12 @@ class Client:
 
         Returns
         -------
-        user : User
+        user : :class:`spotify.User`
             The user from the ID
         """
         return await User.from_token(self, token)
 
-    async def get_album(self, spotify_id: str, *, market: str = 'US') -> Album:
+    async def get_album(self, spotify_id: str, *, market: str = "US") -> Album:
         """Retrive an album with a spotify ID.
 
         Parameters
@@ -111,7 +113,7 @@ class Client:
 
         Returns
         -------
-        album : Album
+        album : :class:`spotify.Album`
             The album from the ID
         """
         data = await self.http.album(to_id(spotify_id), market=market)
@@ -167,7 +169,7 @@ class Client:
 
     # Get multiple objects
 
-    async def get_albums(self, *ids: List[str], market: str = 'US') -> List[Album]:
+    async def get_albums(self, *ids: List[str], market: str = "US") -> List[Album]:
         """Retrive multiple albums with a list of spotify IDs.
 
         Parameters
@@ -183,9 +185,9 @@ class Client:
             The albums from the IDs
         """
         data = await self.http.albums(
-            ','.join(to_id(_id) for _id in ids), market=market
+            ",".join(to_id(_id) for _id in ids), market=market
         )
-        return list(Album(self, album) for album in data['albums'])
+        return list(Album(self, album) for album in data["albums"])
 
     async def get_artists(self, *ids: List[str]) -> List[Artist]:
         """Retrive multiple artists with a list of spotify IDs.
@@ -200,14 +202,14 @@ class Client:
         artists : List[Artist]
             The artists from the IDs
         """
-        data = await self.http.artists(','.join(to_id(_id) for _id in ids))
-        return list(Artist(self, artist) for artist in data['artists'])
+        data = await self.http.artists(",".join(to_id(_id) for _id in ids))
+        return list(Artist(self, artist) for artist in data["artists"])
 
     async def search(
         self,
         q: str,
         *,
-        types: Optional[Iterable[str]] = ['track', 'playlist', 'artist', 'album'],
+        types: Optional[Iterable[str]] = ["track", "playlist", "artist", "album"],
         limit: Optional[int] = 20,
         offset: Optional[int] = 0,
         market: Optional[str] = None
@@ -234,8 +236,8 @@ class Client:
         results : Dict[str, List[Union[Track, Playlist, Artist, Album]]]
             The results of the search.
         """
-        if not hasattr(types, '__iter__'):
-            raise TypeError('types must be an iterable.')
+        if not hasattr(types, "__iter__"):
+            raise TypeError("types must be an iterable.")
 
         elif not isinstance(types, list):
             types = list(item for item in types)
@@ -246,16 +248,16 @@ class Client:
             raise ValueError(_SEARCH_TYPE_ERR % types_.difference(_SEARCH_TYPES).pop())
 
         kwargs = {
-            'q': q.replace(' ', '+'),
-            'queary_type': ','.join(tp.strip() for tp in types),
-            'market': market,
-            'limit': limit,
-            'offset': offset,
+            "q": q,
+            "queary_type": ",".join(tp.strip() for tp in types),
+            "market": market,
+            "limit": limit,
+            "offset": offset,
         }
 
         data = await self.http.search(**kwargs)
 
         return {
-            key: [_TYPES[obj['type']](self, obj) for obj in value['items']]
+            key: [_TYPES[obj["type"]](self, obj) for obj in value["items"]]
             for key, value in data.items()
         }

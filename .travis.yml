@@ -1,7 +1,6 @@
 
 language: python
 python:
-  - "3.5"
   - "3.6"
   - "3.7"
   - "3.8"
@@ -11,6 +10,6 @@ branches:
     - "master"
 
 script:
-  - python3.6 -m flake8
+  - python3.7 -m flake8
 
 cache: pip

@@ -31,7 +31,7 @@ class SyncExecution(threading.Thread):
             channel = self.channel
 
             while True:
-                await asyncio.sleep(0)
+                await asyncio.sleep(0.0001)
 
                 if channel.full():
                     coro, out = channel.get()

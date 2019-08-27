@@ -15,37 +15,53 @@ class SyncMeta(type):
         base = bases[0]
         base_name = base.__name__
 
-        if base_name in ('HTTPClient', 'HTTPUserClient'):
+        if base_name in ("HTTPClient", "HTTPUserClient"):
 
             def __init__(self, *args, **kwargs):
                 super(type(self), self).__init__(*args, **kwargs)
-                self.__client_thread__ = kwargs['loop']._thread
+                self.__client_thread__ = kwargs["loop"]._thread
 
-        elif base_name != 'Client':
+        elif base_name != "Client":
 
             def __init__(self, client, *args, **kwargs):
                 super(type(self), self).__init__(client, *args, **kwargs)
                 self.__client_thread__ = client.__client_thread__
 
         try:
-            setattr(klass, '__init__', __init__)
+            setattr(klass, "__init__", __init__)
         except NameError:
             pass
 
         for name, func in inspect.getmembers(base):
-            if inspect.iscoroutinefunction(func):
 
-                def wrap(func):
-                    @functools.wraps(func)
-                    def wrapper(self, *args, **kwargs):
-                        return self.__client_thread__.run_coro(
-                            func(self, *args, **kwargs)
-                        )
+            if inspect.iscoroutinefunction(func):
+                _func = getattr(base, name)
+
+                def wrap(f):
+                    if isinstance(f, classmethod):
+
+                        @classmethod
+                        @functools.wraps(f)
+                        def wrapper(cls, client, *args, **kwargs):
+                            assert isinstance(
+                                client, _Client
+                            ), "First argument of classmethod was not a `spotify.Client` instance"
+                            client.__client_thread__.run_coro(
+                                f, client, *args, **kwargs
+                            )
+
+                    else:
+
+                        @functools.wraps(f)
+                        def wrapper(self, *args, **kwargs):
+                            return self.__client_thread__.run_coro(
+                                f(self, *args, **kwargs)
+                            )
 
                     return wrapper
 
-                setattr(klass, func.__name__, wrap(getattr(base, name)))
-            del name, func
+                setattr(klass, name, wrap(_func))
+            del name
         return klass
 
 
@@ -54,7 +70,7 @@ class Client(_Client, metaclass=SyncMeta):
         thread = SyncExecution()
         thread.start()
 
-        kwargs['loop'] = thread._loop
+        kwargs["loop"] = thread._loop
 
         super().__init__(*args, **kwargs)
         self.__thread = self.__client_thread__ = thread
@@ -64,7 +80,7 @@ def _install(_types):
     for name, obj in _types.items():
 
         class Mock(obj, metaclass=SyncMeta):
-            __slots__ = ('__client_thread__',)
+            __slots__ = ("__client_thread__",)
 
         Mock.__name__ = obj.__name__
         Mock.__qualname__ = obj.__qualname__

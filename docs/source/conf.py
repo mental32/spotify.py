@@ -36,8 +36,8 @@ master_doc = 'index'
 # extensions coming with Sphinx (named 'sphinx.ext.*') or your custom
 # ones.
 extensions = [
-	'sphinx.ext.napoleon',
-	'sphinx.ext.autodoc',
+    'sphinx.ext.napoleon',
+    'sphinx.ext.autodoc',
 ]
 
 autodoc_member_order = 'bysource'
@@ -55,17 +55,7 @@ exclude_patterns = []
 
 # The theme to use for HTML and HTML Help pages.  See the documentation for
 # a list of builtin themes.
-#
-# html_theme = 'alabaster'
-# html_theme = 'press'
-
-try:
-	import sphinx_readable_theme
-
-	html_theme_path = [sphinx_readable_theme.get_html_theme_path()]
-	html_theme = 'readable'
-except ImportError:
-	html_theme = 'alabaster'
+html_theme = 'alabaster'
 
 # Add any paths that contain custom static files (such as style sheets) here,
 # relative to this directory. They are copied after the builtin static files,

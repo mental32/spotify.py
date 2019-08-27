@@ -41,26 +41,26 @@ class Player(SpotifyBase):
         self.__client = client
         self.__user = user
 
-        self.repeat_state = data.get('repeat_state', None)
-        self.timestamp = data.pop('timestamp', None)
-        self.progress_ms = data.pop('progress_ms', None)
-        self.shuffle_state = data.pop('shuffle_state', None)
-        self.is_playing = data.pop('is_playing', None)
+        self.repeat_state = data.get("repeat_state", None)
+        self.timestamp = data.pop("timestamp", None)
+        self.progress_ms = data.pop("progress_ms", None)
+        self.shuffle_state = data.pop("shuffle_state", None)
+        self.is_playing = data.pop("is_playing", None)
 
-        context = data.pop('context', None)
+        context = data.pop("context", None)
         if context:
             self.context = Context(context)
 
-        device = data.pop('device', None)
+        device = data.pop("device", None)
         if device:
             self.device = Device(device)
 
-        item = data.pop('item', None)
+        item = data.pop("item", None)
         if item:
             self.item = Track(client, item)
 
     def __repr__(self):
-        return '<spotify.Player: "%s">' % repr(self.user)
+        return f"<spotify.Player: {self.user!r}>"
 
     # Properties
 
@@ -162,7 +162,7 @@ class Player(SpotifyBase):
         self,
         *uris: SomeURIs,
         offset: Optional[Offset] = 0,
-        device: Optional[SomeDevice] = None
+        device: Optional[SomeDevice] = None,
     ):
         """Start a new context or resume current playback on the user’s active device.
 
@@ -195,7 +195,7 @@ class Player(SpotifyBase):
         if device is not None:
             if not isinstance(device, (Device, str)):
                 raise TypeError(
-                    'Expected `device` to either be a spotify.Device or a string. got {type(0)!r}'.format(
+                    "Expected `device` to either be a spotify.Device or a string. got {type(0)!r}".format(
                         device
                     )
                 )
