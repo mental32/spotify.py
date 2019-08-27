@@ -1046,6 +1046,10 @@ class HTTPClient:
     ) -> Awaitable:
         """Start a new context or resume current playback on the user’s active device.
 
+        .. note::
+
+            In order to resume playback set the context_uri to None.
+
         Parameters
         ----------
         context_uri : Union[str, Sequence[:class:`str`]]
@@ -1070,16 +1074,25 @@ class HTTPClient:
         if isinstance(context_uri, str):
             payload["context_uri"] = {"context_uri": context_uri}
 
-        elif context_uri is not None:
+        elif hasattr(context_uri, '__iter__'):
             payload["uris"] = {"uris": list(*context_uri)}
+
+        elif context_uri is None:
+            pass  # Do nothing, context_uri == None is allowed and intended for resume's
 
         else:
             raise TypeError(
                 f"`context_uri` must be a string or an iterable object, got {type(context_uri)}"
             )
 
-        can_set_offset = "uris" in payload or any(
-            string in payload["context_uri"] for string in ("playlist", "album")
+        can_set_offset = (
+            context_uri is not None
+            and (
+                "uris" in payload 
+                or any(
+                    string in payload["context_uri"] for string in ("playlist", "album")
+                )
+            )
         )
 
         if offset is not None:
