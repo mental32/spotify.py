@@ -1,7 +1,7 @@
 import asyncio
 import sys
 import json
-from typing import Optional, List, Sequence, Union, Dict, Awaitable, BinaryIO
+from typing import Optional, List, Sequence, Union, Dict, Awaitable, BinaryIO, Tuple
 from base64 import b64encode
 from urllib.parse import quote
 
@@ -15,44 +15,6 @@ __all__ = ("HTTPClient", "HTTPUserClient", "Route")
 _GET_BEARER_ERR = "%s was `None` when getting a bearer token."
 _PYTHON_VERSION = ".".join(str(_) for _ in sys.version_info[:3])
 _AIOHTTP_VERSION = aiohttp.__version__
-
-
-class Route:
-    """Used for constructing URLs for API endpoints.
-
-    Parameters
-    ----------
-    method : str
-        The HTTP/REST method used.
-    path : str
-        A path to be formatted.
-    kwargs : Any
-        The arguments to used to format the path.
-
-    Attributes
-    ----------
-    path : str
-        The path template.
-    method : str
-        The HTTP method used.
-    url : str
-        The formatted path.
-    """
-
-    BASE = "https://api.spotify.com/v1"
-
-    def __init__(self, method, path, **kwargs):
-        self.path = path
-        self.method = method
-        self.url = self.BASE + self.path
-
-        if kwargs:
-            self.url = self.url.format(
-                **{
-                    key: (quote(value) if isinstance(value, str) else value)
-                    for key, value in kwargs.items()
-                }
-            )
 
 
 class HTTPClient:
@@ -100,6 +62,38 @@ class HTTPClient:
 
         self.bearer_info = None
 
+    @staticmethod
+    def route(
+        method: str, path: str, *, base: str = "https://api.spotify.com/v1", **kwargs
+    ) -> Tuple[str, str]:
+        """Used for constructing URLs for API endpoints.
+
+        Parameters
+        ----------
+        method : str
+            The HTTP/REST method used.
+        path : str
+            A path to be formatted.
+        kwargs : Any
+            The arguments to used to format the path.
+
+        Returns
+        -------
+        route : Tuple[str, str]
+            A tuple of the method and formatted url path to use.
+        """
+        url = base + path
+
+        if kwargs:
+            url = url.format(
+                **{
+                    key: (quote(value) if isinstance(value, str) else value)
+                    for key, value in kwargs.items()
+                }
+            )
+
+        return (method, url)
+
     async def get_bearer_info(
         self,
         client_id: Optional[str] = None,
@@ -141,16 +135,15 @@ class HTTPClient:
 
         Parameters
         ----------
-        route : Union[tuple[str, str], :class:`Route`]
-            A tuple of the method and url or a :class:`Route` object.
+        route : Tuple[str, str]
+            A tuple of the method and url gained from :meth:`route`.
         \*\*kwargs : Any
             keyword arguments to pass into :class:`aiohttp.ClientSession.request`
         """
-        if isinstance(route, tuple):
-            method, url = route
-        else:
-            method = route.method
-            url = route.url
+        assert isinstance(route, tuple), 'route parameter was not a tuple!'
+        assert len(route) == 2, 'route parameter must have exactly two items'
+
+        method, url, = route
 
         if self.bearer_info is None:
             self.bearer_info = bearer_info = await self.get_bearer_info()
@@ -227,7 +220,7 @@ class HTTPClient:
         market : Optional[str]
             An ISO 3166-1 alpha-2 country code.
         """
-        route = Route("GET", "/albums/{spotify_id}", spotify_id=spotify_id)
+        route = self.route("GET", "/albums/{spotify_id}", spotify_id=spotify_id)
         payload = {}
 
         if market:
@@ -255,7 +248,7 @@ class HTTPClient:
         market : Optional[str]
             An ISO 3166-1 alpha-2 country code.
         """
-        route = Route("GET", "/albums/{spotify_id}/tracks", spotify_id=spotify_id)
+        route = self.route("GET", "/albums/{spotify_id}/tracks", spotify_id=spotify_id)
         payload = {"limit": limit, "offset": offset}
 
         if market:
@@ -273,7 +266,7 @@ class HTTPClient:
         market : Optional[str]
             An ISO 3166-1 alpha-2 country code.
         """
-        route = Route("GET", "/albums/")
+        route = self.route("GET", "/albums/")
         payload = {"ids": spotify_ids}
 
         if market:
@@ -291,7 +284,7 @@ class HTTPClient:
         spotify_id : str
             The spotify_id to search by.
         """
-        route = Route("GET", "/artists/{spotify_id}", spotify_id=spotify_id)
+        route = self.route("GET", "/artists/{spotify_id}", spotify_id=spotify_id)
         return self.request(route)
 
     def artist_albums(
@@ -317,7 +310,7 @@ class HTTPClient:
         market : Optional[str]
             An ISO 3166-1 alpha-2 country code.
         """
-        route = Route("GET", "/artists/{spotify_id}/albums", spotify_id=spotify_id)
+        route = self.route("GET", "/artists/{spotify_id}/albums", spotify_id=spotify_id)
         payload = {"limit": limit, "offset": offset}
 
         if include_groups:
@@ -338,7 +331,9 @@ class HTTPClient:
         country : COUNTRY_TP
             COUNTRY
         """
-        route = Route("GET", "/artists/{spotify_id}/top-tracks", spotify_id=spotify_id)
+        route = self.route(
+            "GET", "/artists/{spotify_id}/top-tracks", spotify_id=spotify_id
+        )
         payload = {"country": country}
         return self.request(route, params=payload)
 
@@ -352,7 +347,7 @@ class HTTPClient:
         spotify_id : str
             The spotify_id to search by.
         """
-        route = Route(
+        route = self.route(
             "GET", "/artists/{spotify_id}/related-artists", spotify_id=spotify_id
         )
         return self.request(route)
@@ -365,7 +360,7 @@ class HTTPClient:
         spotify_id : List[str]
             The spotify_ids to search with.
         """
-        route = Route("GET", "/artists")
+        route = self.route("GET", "/artists")
         payload = {"ids": spotify_ids}
         return self.request(route, params=payload)
 
@@ -383,7 +378,7 @@ class HTTPClient:
         locale : LOCALE_TP
             LOCALE
         """
-        route = Route(
+        route = self.route(
             "GET", "/browse/categories/{category_id}", category_id=category_id
         )
         payload = {}
@@ -416,7 +411,7 @@ class HTTPClient:
         country : COUNTRY_TP
             COUNTRY
         """
-        route = Route(
+        route = self.route(
             "GET", "/browse/categories/{category_id}/playlists", category_id=category_id
         )
         payload = {"limit": limit, "offset": offset}
@@ -446,7 +441,7 @@ class HTTPClient:
         locale : LOCALE_TP
             LOCALE
         """
-        route = Route("GET", "/browse/categories")
+        route = self.route("GET", "/browse/categories")
         payload = {"limit": limit, "offset": offset}
 
         if country:
@@ -480,7 +475,7 @@ class HTTPClient:
         offset : Optional[int]
             The index of the first item to return. Default: 0
         """
-        route = Route("GET", "/browse/featured-playlists")
+        route = self.route("GET", "/browse/featured-playlists")
         payload = {"limit": limit, "offset": offset}
 
         if country:
@@ -508,7 +503,7 @@ class HTTPClient:
         country : COUNTRY_TP
             COUNTRY
         """
-        route = Route("GET", "/browse/new-releases")
+        route = self.route("GET", "/browse/new-releases")
         payload = {"limit": limit, "offset": offset}
 
         if country:
@@ -547,7 +542,7 @@ class HTTPClient:
         target_* : Optional[Keyword arguments]
             For each of the tunable track attributes (below) a target value may be provided.
         """
-        route = Route("GET", "/recommendations")
+        route = self.route("GET", "/recommendations")
         payload = {
             "seed_artists": seed_artists,
             "seed_genres": seed_genres,
@@ -577,7 +572,7 @@ class HTTPClient:
             The ID type: either "artist" or "user".
             Default: "artist"
         """
-        route = Route("GET", "/me/following/contains")
+        route = self.route("GET", "/me/following/contains")
         payload = {"ids": ids, "type": type}
 
         return self.request(route, params=payload)
@@ -592,7 +587,7 @@ class HTTPClient:
         ids : List[:class:`str`]
             A list of the artist or the user Spotify IDs.
         """
-        route = Route(
+        route = self.route(
             "GET",
             "/playlists/{playlist_id}/followers/contains",
             owner_id=owner_id,
@@ -612,7 +607,7 @@ class HTTPClient:
         ids : List[:class:`str`]
             A list of the artist or the user Spotify IDs.
         """
-        route = Route("PUT", "/me/following")
+        route = self.route("PUT", "/me/following")
         payload = {"ids": ids, "type": type}
 
         return self.request(route, params=payload)
@@ -629,7 +624,7 @@ class HTTPClient:
         public : Optional[:class:`bool`]
             Defaults to true. If true the playlist will be included in user’s public playlists, if false it will remain private.
         """
-        route = Route(
+        route = self.route(
             "PUT", "/playlists/{playlist_id}/followers", playlist_id=playlist_id
         )
 
@@ -649,7 +644,7 @@ class HTTPClient:
         after : Optional[:class:`str`]
             The last artist ID retrieved from the previous request.
         """
-        route = Route("GET", "/me/following")
+        route = self.route("GET", "/me/following")
         payload = {"limit": limit, "type": "artist"}
 
         if after:
@@ -667,7 +662,7 @@ class HTTPClient:
         ids : List[:class:`str`]
             A list of the artist or the user Spotify IDs.
         """
-        route = Route("DELETE", "/me/following")
+        route = self.route("DELETE", "/me/following")
         payload = {"ids": ids, "type": type}
 
         return self.request(route, params=payload)
@@ -680,7 +675,7 @@ class HTTPClient:
         playlist_id : :class:`str`
             The Spotify ID of the playlist that is to be no longer followed.
         """
-        route = Route(
+        route = self.route(
             "DELETE", "/playlists/{playlist_id}/followers", playlist_id=playlist_id
         )
 
@@ -694,7 +689,7 @@ class HTTPClient:
         ids : List[:class:`str`]
             A list of the Spotify IDs.
         """
-        route = Route("GET", "/me/albums/contains")
+        route = self.route("GET", "/me/albums/contains")
         payload = {"ids": ",".join(ids)}
 
         return self.request(route, params=payload)
@@ -707,7 +702,7 @@ class HTTPClient:
         ids : List[:class:`str`]
             A list of the Spotify IDs.
         """
-        route = Route("GET", "/me/tracks/contains")
+        route = self.route("GET", "/me/tracks/contains")
         payload = {"ids": ",".join(ids)}
 
         return self.request(route, params=payload)
@@ -730,7 +725,7 @@ class HTTPClient:
         market : Optional[:class:`str`]
             An ISO 3166-1 alpha-2 country code or the string from_token. Provide this parameter if you want to apply Track Relinking.
         """
-        route = Route("GET", "/me/albums")
+        route = self.route("GET", "/me/albums")
         payload = {"limit": limit, "offset": offset}
 
         if market:
@@ -756,7 +751,7 @@ class HTTPClient:
         market : Optional[:class:`str`]
             An ISO 3166-1 alpha-2 country code or the string from_token. Provide this parameter if you want to apply Track Relinking.
         """
-        route = Route("GET", "/me/tracks")
+        route = self.route("GET", "/me/tracks")
         payload = {"limit": limit, "offset": offset}
 
         if market:
@@ -772,7 +767,7 @@ class HTTPClient:
         ids : List[:class:`str`]
             A list of the Spotify IDs.
         """
-        route = Route("DELETE", "/me/albums")
+        route = self.route("DELETE", "/me/albums")
         return self.request(route, json=ids)
 
     def delete_saved_tracks(self, ids: List[str]) -> Awaitable:
@@ -783,7 +778,7 @@ class HTTPClient:
         ids : List[:class:`str`]
             A list of the Spotify IDs.
         """
-        route = Route("DELETE", "/me/tracks")
+        route = self.route("DELETE", "/me/tracks")
         return self.request(route, json=ids)
 
     def save_tracks(self, ids: List[str]) -> Awaitable:
@@ -794,7 +789,7 @@ class HTTPClient:
         ids : List[:class:`str`]
             A list of the Spotify IDs.
         """
-        route = Route("PUT", "/me/tracks")
+        route = self.route("PUT", "/me/tracks")
         return self.request(route, json=ids)
 
     def save_albums(self, ids: List[str]) -> Awaitable:
@@ -805,7 +800,7 @@ class HTTPClient:
         ids : List[:class:`str`]
             A list of the Spotify IDs.
         """
-        route = Route("PUT", "/me/albums")
+        route = self.route("PUT", "/me/albums")
         return self.request(route, json=ids)
 
     def top_artists_or_tracks(
@@ -842,7 +837,7 @@ class HTTPClient:
              - "medium_term" (approximately last 6 months)
              - "short_term" (approximately last 4 weeks). Default: medium_term.
         """
-        route = Route("GET", "/me/top/{type}", type=type)
+        route = self.route("GET", "/me/top/{type}", type=type)
         payload = {"limit": limit, "offset": offset}
 
         if time_range is not None:
@@ -852,7 +847,7 @@ class HTTPClient:
 
     def available_devices(self) -> Awaitable:
         """Get information about a user’s available devices."""
-        route = Route("GET", "/me/player/devices")
+        route = self.route("GET", "/me/player/devices")
         return self.request(route)
 
     def current_player(self, *, market: Optional[str] = None) -> Awaitable:
@@ -863,7 +858,7 @@ class HTTPClient:
         market : Optional[:class:`str`]
             An ISO 3166-1 alpha-2 country code or the string from_token. Provide this parameter if you want to apply Track Relinking.
         """
-        route = Route("GET", "/me/player")
+        route = self.route("GET", "/me/player")
         payload = {}
 
         if market:
@@ -899,7 +894,7 @@ class HTTPClient:
         before : Optional[:class:`str`]
             A Unix timestamp in milliseconds. Returns all items before (but not including) this cursor position. If before is specified, after must not be specified.
         """
-        route = Route("GET", "/me/player/recently-played")
+        route = self.route("GET", "/me/player/recently-played")
         payload = {"limit": limit}
 
         if before:
@@ -917,7 +912,7 @@ class HTTPClient:
         market : Optional[:class:`str`]
             An ISO 3166-1 alpha-2 country code or the string from_token. Provide this parameter if you want to apply Track Relinking.
         """
-        route = Route("GET", "/me/player/currently-playing")
+        route = self.route("GET", "/me/player/currently-playing")
         payload = {}
 
         if market:
@@ -933,7 +928,7 @@ class HTTPClient:
         device_id : Optional[:class:`str`]
             The id of the device this command is targeting. If not supplied, the user’s currently active device is the target.
         """
-        route = Route("PUT", "/me/player/pause")
+        route = self.route("PUT", "/me/player/pause")
         payload = {}
 
         if device_id:
@@ -953,7 +948,7 @@ class HTTPClient:
         device_id : Optional[:class:`str`]
             The id of the device this command is targeting. If not supplied, the user’s currently active device is the target.
         """
-        route = Route("PUT", "/me/player/seek")
+        route = self.route("PUT", "/me/player/seek")
         payload = {"position_ms": position_ms}
 
         if device_id:
@@ -976,7 +971,7 @@ class HTTPClient:
         device_id : Optional[str]
             The id of the device this command is targeting. If not supplied, the user’s currently active device is the target.
         """
-        route = Route("PUT", "/me/player/repeat")
+        route = self.route("PUT", "/me/player/repeat")
         payload = {"state": state}
 
         if device_id:
@@ -996,7 +991,7 @@ class HTTPClient:
         device_id : Optional[:class:`str`]
             The id of the device this command is targeting. If not supplied, the user’s currently active device is the target.
         """
-        route = Route("PUT", "/me/player/volume")
+        route = self.route("PUT", "/me/player/volume")
         payload = {"volume_percent": volume}
 
         if device_id:
@@ -1012,7 +1007,7 @@ class HTTPClient:
         device_id : Optional[:class:`str`]
             The id of the device this command is targeting. If not supplied, the user’s currently active device is the target.
         """
-        route = Route("POST", "/me/player/next")
+        route = self.route("POST", "/me/player/next")
         payload = {}
 
         if device_id:
@@ -1028,7 +1023,7 @@ class HTTPClient:
         device_id : Optional[:class:`str`]
             The id of the device this command is targeting. If not supplied, the user’s currently active device is the target.
         """
-        route = Route("POST", "/me/player/previous")
+        route = self.route("POST", "/me/player/previous")
         payload = {}
 
         if device_id:
@@ -1068,7 +1063,7 @@ class HTTPClient:
             indicates from what position to start playback. Must be a positive number.
             Passing in a position that is greater than the length of the track will cause the player to start playing the next song.
         """
-        route = Route("PUT", "/me/player/play")
+        route = self.route("PUT", "/me/player/play")
         payload = {"position_ms": position_ms}
 
         if isinstance(context_uri, str):
@@ -1085,14 +1080,9 @@ class HTTPClient:
                 f"`context_uri` must be a string or an iterable object, got {type(context_uri)}"
             )
 
-        can_set_offset = (
-            context_uri is not None
-            and (
-                "uris" in payload 
-                or any(
-                    string in payload["context_uri"] for string in ("playlist", "album")
-                )
-            )
+        can_set_offset = context_uri is not None and (
+            "uris" in payload
+            or any(string in payload["context_uri"] for string in ("playlist", "album"))
         )
 
         if offset is not None:
@@ -1132,7 +1122,7 @@ class HTTPClient:
         device_id : Optional[:class:`str`]
             The id of the device this command is targeting. If not supplied, the user’s currently active device is the target.
         """
-        route = Route("PUT", "/me/player/seek")
+        route = self.route("PUT", "/me/player/seek")
         payload = {"state": state}
 
         if device_id is not None:
@@ -1158,7 +1148,7 @@ class HTTPClient:
             True: ensure playback happens on new device.
             False or not provided: keep the current playback state.
         """
-        route = Route("PUT", "/me/player")
+        route = self.route("PUT", "/me/player")
         payload = {"device_ids": [device_id], "play": play}
 
         return self.request(route, json=payload)
@@ -1180,7 +1170,7 @@ class HTTPClient:
         position : Optional[:class:`int`]
             The position to insert the tracks, a zero-based index. 
         """
-        route = Route(
+        route = self.route(
             "POST", "/playlists/{playlist_id}/tracks", playlist_id=playlist_id
         )
 
@@ -1217,7 +1207,7 @@ class HTTPClient:
         description : Optional[:class:`str`]
             The value for playlist description as displayed in Spotify Clients and in the Web API.
         """
-        route = Route("PUT", "/playlists/{playlist_id}", playlist_id=playlist_id)
+        route = self.route("PUT", "/playlists/{playlist_id}", playlist_id=playlist_id)
         return self.request(route, json=data)
 
     def create_playlist(
@@ -1246,7 +1236,7 @@ class HTTPClient:
         description : Optional[:class:`str`]
             The value for playlist description as displayed in Spotify Clients and in the Web API.
         """
-        route = Route("POST", "/users/{user_id}/playlists", user_id=user_id)
+        route = self.route("POST", "/users/{user_id}/playlists", user_id=user_id)
 
         payload = {
             "name": name,
@@ -1269,7 +1259,7 @@ class HTTPClient:
         offset : Optional[:class:`str`]
             he index of the first playlist to return. Default: 0 (the first object). Maximum offset: 100.000.        
         """
-        route = Route("GET", "/me/playlists")
+        route = self.route("GET", "/me/playlists")
         return self.request(route, params={"limit": limit, "offset": offset})
 
     def get_playlists(
@@ -1286,7 +1276,7 @@ class HTTPClient:
         offset : Optional[:class:`str`]
             he index of the first playlist to return. Default: 0 (the first object). Maximum offset: 100.000.
         """
-        route = Route("GET", "/users/{user_id}/playlists", user_id=user_id)
+        route = self.route("GET", "/users/{user_id}/playlists", user_id=user_id)
         return self.request(route, params={"limit": limit, "offset": offset})
 
     def get_playlist_cover_image(self, playlist_id: str) -> Awaitable:
@@ -1297,7 +1287,9 @@ class HTTPClient:
         playlist_id : :class:`str`
             The Spotify ID for the playlist.
         """
-        route = Route("GET", "/playlists/{playlist_id}/images", playlist_id=playlist_id)
+        route = self.route(
+            "GET", "/playlists/{playlist_id}/images", playlist_id=playlist_id
+        )
         return self.request(route)
 
     def get_playlist(
@@ -1327,7 +1319,7 @@ class HTTPClient:
             An ISO 3166-1 alpha-2 country code or the string "from_token".
             Provide this parameter if you want to apply Track Relinking.
         """
-        route = Route("GET", "/playlists/{playlist_id}", playlist_id=playlist_id)
+        route = self.route("GET", "/playlists/{playlist_id}", playlist_id=playlist_id)
         payload = {}
 
         if fields:
@@ -1371,7 +1363,9 @@ class HTTPClient:
             An ISO 3166-1 alpha-2 country code or the string "from_token".
             Provide this parameter if you want to apply Track Relinking.
         """
-        route = Route("GET", "/playlists/{playlist_id}/tracks", playlist_id=playlist_id)
+        route = self.route(
+            "GET", "/playlists/{playlist_id}/tracks", playlist_id=playlist_id
+        )
         payload = {"limit": limit, "offset": offset}
 
         if fields:
@@ -1403,7 +1397,7 @@ class HTTPClient:
         snapshot_id : Optional[str]
             The snapshot to target.
         """
-        route = Route(
+        route = self.route(
             "DELETE ", "/playlists/{playlist_id}/tracks", playlist_id=playlist_id
         )
         payload = {
@@ -1454,7 +1448,9 @@ class HTTPClient:
         snapshot_id : Optional[:class:`str`]
             The playlist’s snapshot ID against which you want to make the changes.
         """
-        route = Route("PUT", "/playlists/{playlist_id}/tracks", playlist_id=playlist_id)
+        route = self.route(
+            "PUT", "/playlists/{playlist_id}/tracks", playlist_id=playlist_id
+        )
         payload = {
             "range_start": range_start,
             "range_length": range_length,
@@ -1480,7 +1476,9 @@ class HTTPClient:
         tracks : List[:class:`str`]
             A list of tracks to replace with.
         """
-        route = Route("PUT", "/playlists/{playlist_id}/tracks", playlist_id=playlist_id)
+        route = self.route(
+            "PUT", "/playlists/{playlist_id}/tracks", playlist_id=playlist_id
+        )
         payload = {"uris": tracks}
 
         return self.request(route, json=payload)
@@ -1498,7 +1496,9 @@ class HTTPClient:
             An file-like object that supports reading
             the contents that are being read should be :class:`bytes`
         """
-        route = Route("PUT", "/playlists/{playlist_id}/images", playlist_id=playlist_id)
+        route = self.route(
+            "PUT", "/playlists/{playlist_id}/images", playlist_id=playlist_id
+        )
         return self.request(
             route, data=b64encode(file.read()), content_type="image/jpeg"
         )
@@ -1520,7 +1520,7 @@ class HTTPClient:
         track_id : :class:`str`
             The Spotify ID for the track.
         """
-        route = Route("GET", "/audio-analysis/{id}", id=track_id)
+        route = self.route("GET", "/audio-analysis/{id}", id=track_id)
         return self.request(route)
 
     def track_audio_features(self, track_id: str) -> Awaitable:
@@ -1531,7 +1531,7 @@ class HTTPClient:
         track_id : :class:`str`
             The Spotify ID for the track.
         """
-        route = Route("GET", "/audio-features/{id}", id=track_id)
+        route = self.route("GET", "/audio-features/{id}", id=track_id)
         return self.request(route)
 
     def audio_features(self, track_ids: List[str]) -> Awaitable:
@@ -1542,7 +1542,7 @@ class HTTPClient:
         track_ids : List[:class:`str`]
             A comma-separated list of the Spotify IDs for the tracks. Maximum: 100 IDs.
         """
-        route = Route("GET", "/audio-features")
+        route = self.route("GET", "/audio-features")
         return self.request(route, params={"ids": track_ids})
 
     def track(self, track_id: str, market: Optional[str] = None) -> Awaitable:
@@ -1556,7 +1556,7 @@ class HTTPClient:
             An ISO 3166-1 alpha-2 country code or the string "from_token".
             Provide this parameter if you want to apply Track Relinking.
         """
-        route = Route("GET", "/tracks/{id}", id=track_id)
+        route = self.route("GET", "/tracks/{id}", id=track_id)
 
         if market is not None:
             payload = {"market": market}
@@ -1574,7 +1574,7 @@ class HTTPClient:
             An ISO 3166-1 alpha-2 country code or the string "from_token".
             Provide this parameter if you want to apply Track Relinking.
         """
-        route = Route("GET", "/tracks")
+        route = self.route("GET", "/tracks")
         payload = {"ids": track_ids}
 
         if market is not None:
@@ -1584,7 +1584,7 @@ class HTTPClient:
 
     def current_user(self) -> Awaitable:
         """Get detailed profile information about the current user (including the current user’s username)."""
-        route = Route("GET", "/me")
+        route = self.route("GET", "/me")
         return self.request(route)
 
     def user(self, user_id: str) -> Awaitable:
@@ -1595,7 +1595,7 @@ class HTTPClient:
         user_id : class:`str`
             The user’s Spotify user ID.
         """
-        route = Route("GET", "/users/{user_id}", user_id=user_id)
+        route = self.route("GET", "/users/{user_id}", user_id=user_id)
         return self.request(route)
 
     def search(
@@ -1641,7 +1641,7 @@ class HTTPClient:
             If `include_external=audio` is specified the response will include any relevant audio content that is hosted externally.
             By default external content is filtered out from responses.
         """
-        route = Route("GET", "/search")
+        route = self.route("GET", "/search")
         payload = {"q": quote(q), "type": queary_type, "limit": limit, "offset": offset}
 
         if market:
