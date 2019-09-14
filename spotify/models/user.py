@@ -75,9 +75,9 @@ class User(URIBase):
     def __repr__(self):
         return f'<spotify.User: {(self.display_name or self.id)!r}>'
 
-    def __getattr__(self, key, value):
+    def __getattribute__(self, attr):
         try:
-            value = object.__getattr__(self, key, value)
+            value = object.__getattribute__(self, attr)
         except AttributeError as err:
             raise AttributeError from err
 
