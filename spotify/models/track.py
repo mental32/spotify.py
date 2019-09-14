@@ -72,7 +72,7 @@ class Track(URIBase):
         self.markets = data.pop("available_markets", [])
 
     def __repr__(self):
-        return f'<spotify.Track: {self.name!r}>'
+        return f"<spotify.Track: {self.name!r}>"
 
     def audio_analysis(self):
         """Get a detailed audio analysis for the track."""
@@ -112,4 +112,4 @@ class PlaylistTrack(Track):
         self.is_local = data["is_local"]
 
     def __repr__(self):
-        return f'<spotify.PlaylistTrack: {self.name!r}>'
+        return f"<spotify.PlaylistTrack: {self.name!r}>"

@@ -74,7 +74,7 @@ class User(URIBase):
         self.product = data.pop("product", None)
 
     def __repr__(self):
-        return f'<spotify.User: {(self.display_name or self.id)!r}>'
+        return f"<spotify.User: {(self.display_name or self.id)!r}>"
 
     def __getattribute__(self, attr):
         try:
@@ -134,13 +134,10 @@ class User(URIBase):
 
         headers = {
             "Authorization": f"Basic {b64encode(':'.join((client_id, client_secret)).encode()).decode()}",
-            "Content-Type": "application/x-www-form-urlencoded"
+            "Content-Type": "application/x-www-form-urlencoded",
         }
 
-
-        raw = await client.http.request(
-            route, headers=headers, params=payload
-        )
+        raw = await client.http.request(route, headers=headers, params=payload)
 
         token = raw["access_token"]
 
@@ -185,13 +182,13 @@ class User(URIBase):
         """
         data = await self.http.currently_playing()
 
-        if 'item' in data:
-            context = data.pop('context', None)
+        if "item" in data:
+            context = data.pop("context", None)
 
             if context is not None:
-                data['context'] = Context(context)
+                data["context"] = Context(context)
             else:
-                data['context'] = None
+                data["context"] = None
 
             data["item"] = Track(self.__client, data.get("item"))
 

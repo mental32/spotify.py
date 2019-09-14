@@ -140,8 +140,8 @@ class HTTPClient:
         \*\*kwargs : Any
             keyword arguments to pass into :class:`aiohttp.ClientSession.request`
         """
-        assert isinstance(route, tuple), 'route parameter was not a tuple!'
-        assert len(route) == 2, 'route parameter must have exactly two items'
+        assert isinstance(route, tuple), "route parameter was not a tuple!"
+        assert len(route) == 2, "route parameter must have exactly two items"
 
         method, url, = route
 
@@ -1069,7 +1069,7 @@ class HTTPClient:
         if isinstance(context_uri, str):
             payload["context_uri"] = {"context_uri": context_uri}
 
-        elif hasattr(context_uri, '__iter__'):
+        elif hasattr(context_uri, "__iter__"):
             payload["uris"] = {"uris": list(*context_uri)}
 
         elif context_uri is None:
