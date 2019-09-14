@@ -49,7 +49,7 @@ class User(URIBase):
     """
 
     def __init__(self, client, data, **kwargs):
-        self.__client = client
+        self.__client = self.client = client
 
         try:
             self.http = kwargs.pop("http")
