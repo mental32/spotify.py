@@ -2,6 +2,7 @@
 
 import asyncio
 import functools
+from base64 import b64encode
 from typing import Optional, Dict, Union, List, Tuple
 
 from ..utils import to_id
@@ -128,8 +129,17 @@ class User(URIBase):
             "code": code,
         }
 
+        client_id = client.http.client_id
+        client_secret = client.http.client_secret
+
+        headers = {
+            "Authorization": f"Basic {b64encode(':'.join((client_id, client_secret)).encode()).decode()}",
+            "Content-Type": "application/x-www-form-urlencoded"
+        }
+
+
         raw = await client.http.request(
-            route, content_type="application/x-www-form-urlencoded", params=payload
+            route, headers=headers, params=payload
         )
 
         token = raw["access_token"]
