@@ -190,7 +190,7 @@ class User(URIBase):
             else:
                 data["context"] = None
 
-            data["item"] = Track(self.__client, data.get("item"))
+            data["item"] = Track(self.__client, data.get("item", {}) or {})
 
         return data
 
@@ -237,8 +237,8 @@ class User(URIBase):
         return [
             {
                 "played_at": track.get("played_at"),
-                "context": Context(track.get("context")),
-                "track": Track(client, track.get("track")),
+                "context": Context(track.get("context", {}) or {}),
+                "track": Track(client, track.get("track", {}) or {}),
             }
             for track in data["items"]
         ]
