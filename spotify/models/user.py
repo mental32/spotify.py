@@ -229,7 +229,7 @@ class User(URIBase):
         # List[T] where T: {'track': Track, 'content': Context: 'timestamp': ISO8601}
         return [
             {
-                "timestamp": track["timestamp"],
+                "played_at": track.get("played_at"),
                 "context": Context(track.get("context")),
                 "track": Track(client, track.get("track")),
             }
