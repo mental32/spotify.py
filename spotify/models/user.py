@@ -2,6 +2,7 @@
 
 import asyncio
 import functools
+from base64 import b64encode
 from typing import Optional, Dict, Union, List, Tuple
 
 from ..utils import to_id
@@ -48,7 +49,7 @@ class User(URIBase):
     """
 
     def __init__(self, client, data, **kwargs):
-        self.__client = client
+        self.__client = self.client = client
 
         try:
             self.http = kwargs.pop("http")
@@ -75,9 +76,9 @@ class User(URIBase):
     def __repr__(self):
         return f'<spotify.User: {(self.display_name or self.id)!r}>'
 
-    def __getattr__(self, key, value):
+    def __getattribute__(self, attr):
         try:
-            value = object.__getattr__(self, key, value)
+            value = object.__getattribute__(self, attr)
         except AttributeError as err:
             raise AttributeError from err
 
@@ -128,8 +129,17 @@ class User(URIBase):
             "code": code,
         }
 
+        client_id = client.http.client_id
+        client_secret = client.http.client_secret
+
+        headers = {
+            "Authorization": f"Basic {b64encode(':'.join((client_id, client_secret)).encode()).decode()}",
+            "Content-Type": "application/x-www-form-urlencoded"
+        }
+
+
         raw = await client.http.request(
-            route, content_type="application/x-www-form-urlencoded", params=payload
+            route, headers=headers, params=payload
         )
 
         token = raw["access_token"]
@@ -229,7 +239,7 @@ class User(URIBase):
         # List[T] where T: {'track': Track, 'content': Context: 'timestamp': ISO8601}
         return [
             {
-                "timestamp": track["timestamp"],
+                "played_at": track.get("played_at"),
                 "context": Context(track.get("context")),
                 "track": Track(client, track.get("track")),
             }
