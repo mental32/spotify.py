@@ -217,7 +217,7 @@ class Client:
         self,
         q: str,
         *,
-        types: Optional[Iterable[str]] = ["track", "playlist", "artist", "album"],
+        types: Optional[Iterable[str]] = ("track", "playlist", "artist", "album"),
         limit: Optional[int] = 20,
         offset: Optional[int] = 0,
         market: Optional[str] = None,
