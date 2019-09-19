@@ -46,6 +46,14 @@ class Client:
     def __repr__(self):
         return f"<spotify.Client: {self.http.client_id!r}>"
 
+    async def __aenter__(self) -> "Client":
+        return self
+
+    async def __aexit__(self, exc_type, exc_value, traceback) -> None:
+        await self.close()
+
+    # Properties
+
     @property
     def client_id(self) -> str:
         """:class:`str` - The Spotify client ID."""
