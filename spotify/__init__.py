@@ -1,4 +1,5 @@
-from .utils import OAuth2, clean as _clean_namespace
+from .oauth import *
+from .utils import clean as _clean_namespace
 
 __version__ = "0.5.1"  # noqa
 
