@@ -195,14 +195,14 @@ class Player(SpotifyBase):  # pylint: disable=too-many-instance-attributes
         if device is not None:
             if not isinstance(device, (Device, str)):
                 raise TypeError(
-                    "Expected `device` to either be a spotify.Device or a string. got {type(0)!r}".format(
-                        device
-                    )
+                    f"Expected `device` to either be a spotify.Device or a string. got {type(device)!r}"
                 )
-            else:
-                device = str(device)
 
-        await self.user.http.play_playback(context_uri, offset=offset, device_id=device)
+            device_id = str(device)
+
+        await self.user.http.play_playback(
+            context_uri, offset=offset, device_id=device_id
+        )
 
     async def shuffle(
         self, state: Optional[bool] = None, *, device: Optional[SomeDevice] = None
