@@ -17,7 +17,7 @@ def ensure_http(func):
     return func
 
 
-class User(URIBase):
+class User(URIBase):  # pylint: disable=too-many-instance-attributes
     """A Spotify User.
 
     Attributes
@@ -44,7 +44,7 @@ class User(URIBase):
     birthdate : :class:`str`
         The user’s date-of-birth.
     product : :class:`str`
-        The user’s Spotify subscription level: “premium”, “free”, etc. 
+        The user’s Spotify subscription level: “premium”, “free”, etc.
         (The subscription level “open” can be considered the same as “free”.)
     """
 
@@ -59,7 +59,7 @@ class User(URIBase):
             self.library = Library(client, self)
 
         # Public user object attributes
-        self.id = data.pop("id")
+        self.id = data.pop("id")  # pylint: disable=invalid-name
         self.uri = data.pop("uri")
         self.url = data.pop("external_urls").get("spotify", None)
         self.display_name = data.pop("display_name", None)
@@ -77,10 +77,7 @@ class User(URIBase):
         return f"<spotify.User: {(self.display_name or self.id)!r}>"
 
     def __getattribute__(self, attr):
-        try:
-            value = object.__getattribute__(self, attr)
-        except AttributeError as err:
-            raise AttributeError from err
+        value = object.__getattribute__(self, attr)
 
         if hasattr(value, "__ensure_http__") and not hasattr(self, "http"):
 
@@ -91,8 +88,7 @@ class User(URIBase):
                 )
 
             return _raise
-        else:
-            return value
+        return value
 
     async def _get_top(self, klass, data) -> List[Union[Track, Artist]]:
         _str = {Artist: "artists", Track: "tracks"}[klass]
@@ -157,8 +153,10 @@ class User(URIBase):
 
         if refresh is not None:
             expires_in, refresh_token, = refresh
-            self._refresh_task = self.client.loop.create_task(
-                self._refreshing_token(expires_in, refresh_token)
+            self._refresh_task = self.client.loop.create_task(  # pylint: disable=protected-access
+                self._refreshing_token(
+                    expires_in, refresh_token
+                )  # pylint: disable=protected-access
             )
 
         return self

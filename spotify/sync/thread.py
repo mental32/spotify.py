@@ -14,7 +14,7 @@ class SyncExecution(threading.Thread):
         self.__lock = threading.RLock()
         self.__loop = loop = asyncio.new_event_loop()
 
-        loop._thread = self
+        loop._thread = self  # pylint: disable=protected-access
 
     # Properties
 
@@ -71,5 +71,4 @@ class SyncExecution(threading.Thread):
 
         if err:
             raise err
-        else:
-            return task.result()
+        return task.result()

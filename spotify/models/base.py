@@ -8,20 +8,22 @@ class SpotifyBase:
     models based on the :class:`spotify,Client` type.
 
     Currently it is used to detect whether a Client is a syncronous
-    client and, if as such, construct and return the appropriate 
+    client and, if as such, construct and return the appropriate
     syncronous model.
     """
 
-    __slots__ = []
+    __slots__ = ()
 
-    def __new__(cls, client, *args, **kwargs):
+    def __new__(cls, client, *_, **__):
         if not isinstance(client, spotify.Client):
             raise TypeError(
                 f"{cls!r}: expected client argument to be an instance of spotify.Client. instead got {type(client)}"
             )
 
-        elif hasattr(client, "__client_thread__"):
-            cls = getattr(spotify.sync.models, cls.__name__)
+        if hasattr(client, "__client_thread__"):
+            cls = getattr(
+                spotify.sync.models, cls.__name__
+            )  # pylint: disable=self-cls-assignment
 
         return object.__new__(cls)
 
@@ -51,22 +53,23 @@ class SpotifyBase:
                 "Spotify object has no `href` attribute, therefore cannot be retrived"
             )
 
-        elif hasattr(self, "http"):
-            return await self.http.request(("GET", self.href))
+        if hasattr(self, "http"):
+            return await self.http.request(
+                ("GET", self.href)
+            )  # pylint: disable=no-member
 
-        else:
-            cls = type(self)
+        klass = type(self)
 
         try:
-            client = getattr(self, "_{0}__client".format(cls.__name__))
+            client = getattr(self, "_{0}__client".format(klass.__name__))
         except AttributeError:
             raise TypeError("Spotify object has no way to access a HTTPClient.")
         else:
-            http = client.http
+            http = client.http  # pylint: disable=no-member
 
-        data = await http.request(("GET", self.href))
+        data = await http.request(("GET", self.href))  # pylint: disable=no-member
 
-        return cls(client, data)
+        return klass(client, data)
 
 
 class URIBase(SpotifyBase):
@@ -83,10 +86,12 @@ class URIBase(SpotifyBase):
     """
 
     def __eq__(self, other):
-        return type(self) is type(other) and self.uri == other.uri
+        return (
+            type(self) is type(other) and self.uri == other.uri
+        )  # pylint: disable=no-member
 
     def __ne__(self, other):
         return not self.__eq__(other)
 
     def __str__(self):
-        return self.uri
+        return self.uri  # pylint: disable=no-member

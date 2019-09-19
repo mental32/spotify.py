@@ -3,7 +3,7 @@ from typing import Optional, List
 from . import URIBase, Image, Artist, Track
 
 
-class Album(URIBase):
+class Album(URIBase):  # pylint: disable=too-many-instance-attributes
     """A Spotify Album.
 
     Attributes
@@ -52,7 +52,7 @@ class Album(URIBase):
 
         self.markets = data.pop("avaliable_markets", None)
         self.url = data.pop("external_urls").get("spotify", None)
-        self.id = data.pop("id", None)
+        self.id = data.pop("id", None)  # pylint: disable=invalid-name
         self.name = data.pop("name", None)
         self.href = data.pop("href", None)
         self.uri = data.pop("uri", None)

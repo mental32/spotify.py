@@ -14,10 +14,10 @@ __title__ = "spotify"
 __author__ = "mental"
 __license__ = "MIT"
 
-_locals = locals()
+_locals = locals()  # pylint: disable=invalid-name
 
 with _clean_namespace(locals(), "_locals", "_clean_namespace"):
-    _types = dict(
+    _types = dict(  # pylint: disable=invalid-name
         (name, _locals[name])
         for name, obj in _locals.items()
         if isinstance(obj, type) and issubclass(obj, SpotifyBase)

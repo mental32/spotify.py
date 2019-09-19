@@ -18,6 +18,7 @@ class PartialTracks(SpotifyBase):
 
     def __init__(self, client, data):
         self.total = data["total"]
+        self.__client = client
         self.__func = partial(client.http.request, ("GET", data["href"]))
         self.__iter = None
 
@@ -50,7 +51,7 @@ class PartialTracks(SpotifyBase):
         return list(PlaylistTrack(self.__client, track) for track in data["items"])
 
 
-class Playlist(URIBase):
+class Playlist(URIBase):  # pylint: disable=too-many-instance-attributes
     """A Spotify Playlist.
 
     Attributes
@@ -98,7 +99,7 @@ class Playlist(URIBase):
         self.url = data.pop("external_urls").get("spotify", None)
         self.followers = data.pop("followers", {}).get("total", None)
         self.href = data.pop("href")
-        self.id = data.pop("id")
+        self.id = data.pop("id")  # pylint: disable=invalid-name
         self.images = list(Image(**image) for image in data.pop("images", []))
         self.name = data.pop("name")
         self.owner = User(client, data=data.pop("owner"))
@@ -297,4 +298,4 @@ class Playlist(URIBase):
             if not head:
                 break
 
-            data = await self.__http.add_playlist_tracks(self.id, tracks=head)
+            await self.__http.add_playlist_tracks(self.id, tracks=head)

@@ -20,11 +20,11 @@ _AIOHTTP_VERSION = aiohttp.__version__
 class HTTPClient:
     """A class responsible for handling all HTTP logic.
 
-    This class combines a small amount of stateful logic control 
+    This class combines a small amount of stateful logic control
     with the :meth:`request` method and a very thin wrapper over
     the raw HTTP API.
 
-    All endpoint methods mirror the default arguments the API 
+    All endpoint methods mirror the default arguments the API
     uses and is best described as a series of "good defaults"
     for the routes.
 
@@ -114,7 +114,7 @@ class HTTPClient:
         if client_id is None:
             raise SpotifyException(_GET_BEARER_ERR % "client_id")
 
-        elif client_secret is None:
+        if client_secret is None:
             raise SpotifyException(_GET_BEARER_ERR % "client_secret")
 
         token = b64encode(":".join((client_id, client_secret)).encode())
@@ -165,12 +165,14 @@ class HTTPClient:
             )
 
         for _ in range(self.RETRY_AMOUNT):
-            r = await self._session.request(method, url, headers=headers, **kwargs)
+            response = await self._session.request(
+                method, url, headers=headers, **kwargs
+            )
             try:
-                status = r.status
+                status = response.status
 
                 try:
-                    data = json.loads(await r.text(encoding="utf-8"))
+                    data = json.loads(await response.text(encoding="utf-8"))
                 except json.decoder.JSONDecodeError:
                     data = {}
 
@@ -184,7 +186,7 @@ class HTTPClient:
 
                 if status == 429:
                     # we're being rate limited.
-                    amount = r.headers.get("Retry-After")
+                    amount = response.headers.get("Retry-After")
                     await asyncio.sleep(int(amount), loop=self.loop)
                     continue
 
@@ -193,13 +195,13 @@ class HTTPClient:
                     continue
 
                 if status == 403:
-                    raise Forbidden(r, data)
-                elif status == 404:
-                    raise NotFound(r, data)
+                    raise Forbidden(response, data)
+
+                if status == 404:
+                    raise NotFound(response, data)
             finally:
-                await r.release()
-        else:
-            raise HTTPException(r, data)
+                await response.release()
+        raise HTTPException(response, data)
 
     async def close(self):
         """Close the underlying HTTP session."""
@@ -560,7 +562,7 @@ class HTTPClient:
 
     # Follow related endpoints.
 
-    def following_artists_or_users(self, ids, *, type="artist") -> Awaitable:
+    def following_artists_or_users(self, ids, *, type_="artist") -> Awaitable:
         """Check to see if the current user is following one or more artists or other Spotify users.
 
         Parameters
@@ -568,12 +570,12 @@ class HTTPClient:
         ids : List[:class:`str`]
             A comma-separated list of the artist or the user Spotify IDs to check.
             A maximum of 50 IDs can be sent in one request.
-        type : Optional[:class:`str`]
+        type_ : Optional[:class:`str`]
             The ID type: either "artist" or "user".
             Default: "artist"
         """
         route = self.route("GET", "/me/following/contains")
-        payload = {"ids": ids, "type": type}
+        payload = {"ids": ids, "type": type_}
 
         return self.request(route, params=payload)
 
@@ -597,18 +599,18 @@ class HTTPClient:
 
         return self.request(route, params=payload)
 
-    def follow_artist_or_user(self, type: str, ids: List[str]) -> Awaitable:
+    def follow_artist_or_user(self, type_: str, ids: List[str]) -> Awaitable:
         """Add the current user as a follower of one or more artists or other Spotify users.
 
         Parameters
         ----------
-        type : :class:`str`
+        type_ : :class:`str`
             either artist or user.
         ids : List[:class:`str`]
             A list of the artist or the user Spotify IDs.
         """
         route = self.route("PUT", "/me/following")
-        payload = {"ids": ids, "type": type}
+        payload = {"ids": ids, "type": type_}
 
         return self.request(route, params=payload)
 
@@ -652,18 +654,18 @@ class HTTPClient:
 
         return self.request(route, params=payload)
 
-    def unfollow_artists_or_users(self, type: str, ids: List[str]) -> Awaitable:
+    def unfollow_artists_or_users(self, type_: str, ids: List[str]) -> Awaitable:
         """Remove the current user as a follower of one or more artists or other Spotify users.
 
         Parameters
         ----------
-        type : :class:`str`
+        type_ : :class:`str`
             either artist or user.
         ids : List[:class:`str`]
             A list of the artist or the user Spotify IDs.
         """
         route = self.route("DELETE", "/me/following")
-        payload = {"ids": ids, "type": type}
+        payload = {"ids": ids, "type": type_}
 
         return self.request(route, params=payload)
 
@@ -805,7 +807,7 @@ class HTTPClient:
 
     def top_artists_or_tracks(
         self,
-        type: str,
+        type_: str,
         *,
         limit: Optional[int] = 20,
         offset: Optional[int] = 0,
@@ -824,20 +826,20 @@ class HTTPClient:
 
         Parameters
         ----------
-        type : :class;`str`
+        type_ : :class;`str`
             The type of entity to return. Valid values: "artists" or "tracks".
         limit : Optional[:class:`int`]
             The number of entities to return. Default: 20. Minimum: 1. Maximum: 50. For example: limit=2
         offset : Optional[:class:`int`]
             The index of the first entity to return. Default: 0 (i.e., the first track). Use with limit to get the next set of entities.
         time_range : Optional[:class:`str`]
-            Over what time frame the affinities are computed. 
-            Valid values: 
+            Over what time frame the affinities are computed.
+            Valid values:
              - "long_term" (calculated from several years of data and including all new data as it becomes available)
              - "medium_term" (approximately last 6 months)
              - "short_term" (approximately last 4 weeks). Default: medium_term.
         """
-        route = self.route("GET", "/me/top/{type}", type=type)
+        route = self.route("GET", "/me/top/{type_}", type_=type_)
         payload = {"limit": limit, "offset": offset}
 
         if time_range is not None:
@@ -882,7 +884,7 @@ class HTTPClient:
         Any tracks listened to while the user had “Private Session” enabled in their client will not be returned in the list of recently played tracks.
 
         The endpoint uses a bidirectional cursor for paging.
-        Follow the next field with the before parameter to move back in time, or use the after parameter to move forward in time. 
+        Follow the next field with the before parameter to move back in time, or use the after parameter to move forward in time.
         If you supply no before or after parameter, the endpoint will return the most recently played songs, and the next link will page back in time.
 
         Parameter
@@ -1168,7 +1170,7 @@ class HTTPClient:
         tracks : Sequence[Union[:class:`str`]]
             A sequence of track URIs.
         position : Optional[:class:`int`]
-            The position to insert the tracks, a zero-based index. 
+            The position to insert the tracks, a zero-based index.
         """
         route = self.route(
             "POST", "/playlists/{playlist_id}/tracks", playlist_id=playlist_id
@@ -1257,7 +1259,7 @@ class HTTPClient:
         limit : Optional[:class:`str`]
             The maximum number of playlists to return. Default: 20. Minimum: 1. Maximum: 50.
         offset : Optional[:class:`str`]
-            he index of the first playlist to return. Default: 0 (the first object). Maximum offset: 100.000.        
+            he index of the first playlist to return. Default: 0 (the first object). Maximum offset: 100.000.
         """
         route = self.route("GET", "/me/playlists")
         return self.request(route, params={"limit": limit, "offset": offset})
@@ -1309,7 +1311,7 @@ class HTTPClient:
             Filters for the query: a comma-separated list of the fields to return.
             If omitted, all fields are returned. For example, to get just the total number of tracks and the request limit: `fields=total,limit`
 
-            A dot separator can be used to specify non-reoccurring fields, while parentheses can be used to specify reoccurring fields within objects. 
+            A dot separator can be used to specify non-reoccurring fields, while parentheses can be used to specify reoccurring fields within objects.
             For example, to get just the added date and user ID of the adder: `fields=items(added_at,added_by.id)`
 
             Use multiple parentheses to drill down into nested objects, for example: `fields=items(track(name,href,album(name,href)))`
@@ -1349,7 +1351,7 @@ class HTTPClient:
             Filters for the query: a comma-separated list of the fields to return.
             If omitted, all fields are returned. For example, to get just the total number of tracks and the request limit: `fields=total,limit`
 
-            A dot separator can be used to specify non-reoccurring fields, while parentheses can be used to specify reoccurring fields within objects. 
+            A dot separator can be used to specify non-reoccurring fields, while parentheses can be used to specify reoccurring fields within objects.
             For example, to get just the added date and user ID of the adder: `fields=items(added_at,added_by.id)`
 
             Use multiple parentheses to drill down into nested objects, for example: `fields=items(track(name,href,album(name,href)))`
@@ -1598,7 +1600,7 @@ class HTTPClient:
         route = self.route("GET", "/users/{user_id}", user_id=user_id)
         return self.request(route)
 
-    def search(
+    def search(  # pylint: disable=invalid-name
         self,
         q: str,
         queary_type: Optional[str] = "track,playlist,artist,album",
@@ -1647,6 +1649,8 @@ class HTTPClient:
         if market:
             payload["market"] = market
 
+        # TODO: support 'include_external'
+
         return self.request(route, params=payload)
 
 
@@ -1654,11 +1658,9 @@ class HTTPUserClient(HTTPClient):
     """HTTPClient for access to user endpoints."""
 
     def __init__(self, token, loop=None):
-        self.loop = loop or asyncio.get_event_loop()
-        self._session = aiohttp.ClientSession(loop=self.loop)
-
+        super().__init__(None, None, loop)
         self.bearer_info = {"access_token": token}
         self.token = token
 
-    async def get_bearer_info(self):
+    async def get_bearer_info(self, *_, **__):
         return {"access_token": self.token}

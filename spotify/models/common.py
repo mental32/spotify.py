@@ -89,7 +89,7 @@ class Device:
     )
 
     def __init__(self, data):
-        self.id = data.get("id")
+        self.id = data.get("id")  # pylint: disable=invalid-name
         self.name = data.get("name")
         self.type = data.get("type")
 

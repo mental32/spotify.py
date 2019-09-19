@@ -51,7 +51,7 @@ class Client:
         return self.http.client_id
 
     @property
-    def id(self):
+    def id(self):  # pylint: disable=invalid-name
         return self.http.client_id
 
     def oauth2_url(
@@ -205,7 +205,7 @@ class Client:
         data = await self.http.artists(",".join(to_id(_id) for _id in ids))
         return list(Artist(self, artist) for artist in data["artists"])
 
-    async def search(
+    async def search(  # pylint: disable=invalid-name
         self,
         q: str,
         *,
@@ -239,7 +239,7 @@ class Client:
         if not hasattr(types, "__iter__"):
             raise TypeError("types must be an iterable.")
 
-        elif not isinstance(types, list):
+        if not isinstance(types, list):
             types = list(item for item in types)
 
         types_ = set(types)

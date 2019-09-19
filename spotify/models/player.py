@@ -7,7 +7,7 @@ Offset = Union[int, str, Track]
 SomeDevice = Union[Device, str]
 
 
-class Player(SpotifyBase):
+class Player(SpotifyBase):  # pylint: disable=too-many-instance-attributes
     """A Spotify Users current playback.
 
     Attributes

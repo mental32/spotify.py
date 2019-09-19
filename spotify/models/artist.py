@@ -3,7 +3,7 @@ from typing import Optional, List
 from . import URIBase, Image
 
 
-class Artist(URIBase):
+class Artist(URIBase):  # pylint: disable=too-many-instance-attributes
     """A Spotify Artist.
 
     Attributes
@@ -35,7 +35,7 @@ class Artist(URIBase):
         self.__client = client
 
         # Simplified object attributes
-        self.id = data.pop("id")
+        self.id = data.pop("id")  # pylint: disable=invalid-name
         self.uri = data.pop("uri")
         self.url = data.pop("external_urls").get("spotify", None)
         self.href = data.pop("href")
