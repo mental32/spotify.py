@@ -198,12 +198,10 @@ class User(URIBase):  # pylint: disable=too-many-instance-attributes
 
         Returns
         -------
-        player : Player
+        player : :class:`Player`
             A player object representing the current playback.
         """
-        self._player = player = Player(
-            self.__client, self, await self.http.current_player()
-        )
+        player = Player(self.__client, self, await self.http.current_player())
         return player
 
     @ensure_http
