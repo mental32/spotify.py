@@ -3,7 +3,7 @@
 import asyncio
 import functools
 from base64 import b64encode
-from typing import Optional, Dict, Union, List, Tuple
+from typing import Optional, Dict, Union, List, Tuple, Type
 
 from ..utils import to_id
 from ..http import HTTPUserClient
@@ -90,19 +90,21 @@ class User(URIBase):  # pylint: disable=too-many-instance-attributes
             return _raise
         return value
 
-    async def _get_top(self, klass, data) -> List[Union[Track, Artist]]:
-        _str = {Artist: "artists", Track: "tracks"}[klass]
+    async def _get_top(
+        self, klass: Type[Track, Artist], kwargs: dict
+    ) -> List[Union[Track, Artist]]:
+        target = {Artist: "artists", Track: "tracks"}[klass]
         data = {
             key: value
-            for key, value in data.items()
+            for key, value in kwargs.items()
             if key in ("limit", "offset", "time_range")
         }
 
-        resp = await self.http.top_artists_or_tracks(_str, **data)
+        resp = await self.http.top_artists_or_tracks(target, **data)
 
         return [klass(self.__client, item) for item in resp["items"]]
 
-    async def _refreshing_token(self, expires, token):
+    async def _refreshing_token(self, expires: int, token: str):
         while True:
             await asyncio.sleep(expires - 1)
 
