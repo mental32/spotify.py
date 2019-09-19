@@ -1210,7 +1210,15 @@ class HTTPClient:
             The value for playlist description as displayed in Spotify Clients and in the Web API.
         """
         route = self.route("PUT", "/playlists/{playlist_id}", playlist_id=playlist_id)
-        return self.request(route, json=data)
+
+        payload = {
+            "name": name,
+            "public": public,
+            "collaborative": collaborative,
+            "description": description,
+        }
+
+        return self.request(route, json=payload)
 
     def create_playlist(
         self,
