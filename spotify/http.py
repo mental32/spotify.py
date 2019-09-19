@@ -592,7 +592,6 @@ class HTTPClient:
         route = self.route(
             "GET",
             "/playlists/{playlist_id}/followers/contains",
-            owner_id=owner_id,
             playlist_id=playlist_id,
         )
         payload = {"ids": ids}
