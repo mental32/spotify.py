@@ -2,7 +2,7 @@ import re
 from dataclasses import dataclass
 from urllib.parse import quote_plus as quote
 from types import MappingProxyType
-from typing import Optional, Dict, Iterable
+from typing import Optional, Dict, Iterable, Union
 
 _RE_SCOPE = re.compile(r"")
 
@@ -89,7 +89,7 @@ class OAuth2:
         client_id: str,
         redirect_uri: str,
         *,
-        scopes: Optional[Iterable[str], Dict[str, bool]] = None,
+        scopes: Optional[Union[Iterable[str], Dict[str, bool]]] = None,
         state: str = None,
     ):
         self.client_id = client_id

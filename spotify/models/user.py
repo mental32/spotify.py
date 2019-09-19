@@ -3,7 +3,7 @@
 import asyncio
 import functools
 from base64 import b64encode
-from typing import Optional, Dict, Union, List, Tuple, Type
+from typing import Optional, Dict, Union, List, Tuple, Type, Union
 
 from ..utils import to_id
 from ..http import HTTPUserClient
@@ -92,7 +92,7 @@ class User(URIBase):  # pylint: disable=too-many-instance-attributes
         return value
 
     async def _get_top(
-        self, klass: Type[Track, Artist], kwargs: dict
+        self, klass: Type[Union[Track, Artist]], kwargs: dict
     ) -> List[Union[Track, Artist]]:
         target = {Artist: "artists", Track: "tracks"}[klass]
         data = {
