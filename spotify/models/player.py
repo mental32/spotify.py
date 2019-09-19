@@ -218,7 +218,7 @@ class Player(SpotifyBase):  # pylint: disable=too-many-instance-attributes
             The Device object or id of the device this command is targeting.
             If not supplied, the user’s currently active device is the target.
         """
-        await self.user.http.shuffle_playback(state)
+        await self.user.http.shuffle_playback(state, device_id=str(device))
 
     async def transfer(self, device: SomeDevice, ensure_playback: bool = False):
         """Transfer playback to a new device and determine if it should start playing.
