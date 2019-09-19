@@ -10,7 +10,7 @@ import aiohttp
 from . import __version__
 from .errors import HTTPException, Forbidden, NotFound, SpotifyException
 
-__all__ = ("HTTPClient", "HTTPUserClient", "Route")
+__all__ = ("HTTPClient", "HTTPUserClient")
 
 _GET_BEARER_ERR = "%s was `None` when getting a bearer token."
 _PYTHON_VERSION = ".".join(str(_) for _ in sys.version_info[:3])
