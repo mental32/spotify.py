@@ -84,7 +84,12 @@ class Client:
         url : :class:`str`
             The OAuth2 url.
         """
-        return OAuth2.url_(self.http.client_id, redirect_uri, scope=scope, state=state)
+        return OAuth2.url_only(
+            client_id=self.http.client_id,
+            redirect_uri=redirect_uri,
+            scope=scope,
+            state=state,
+        )
 
     async def close(self) -> None:
         """Close the underlying HTTP session to Spotify."""
