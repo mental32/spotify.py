@@ -588,6 +588,7 @@ class HTTPClient:
             The Spotify ID of the playlist.
         ids : List[:class:`str`]
             A list of the artist or the user Spotify IDs.
+            A maximum of five IDs are allowed.
         """
         route = self.route(
             "GET",
@@ -1617,7 +1618,7 @@ class HTTPClient:
         query_type : Optional[:class:`str`]
             A comma-separated list of item types to search across. (default: "track,playlist,artist,album")
             Valid types are: album , artist, playlist, and track.
-            Search results include hits from all the specified item types. 
+            Search results include hits from all the specified item types.
         market Optional[:class:`str`]
             An ISO 3166-1 alpha-2 country code or the string "from_token". (default: "US")
             If a country code is specified, only artists, albums, and tracks with content that is playable in that market is returned.

@@ -3,11 +3,11 @@ class Image:
 
     Attributes
     ----------
-    height : str
+    height : :class:`str`
         The height of the image.
-    width : str
+    width : :class:`str`
         The width of the image.
-    url : str
+    url : :class:`str`
         The URL of the image.
     """
 

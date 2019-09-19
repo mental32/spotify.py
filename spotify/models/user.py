@@ -48,13 +48,14 @@ class User(URIBase):  # pylint: disable=too-many-instance-attributes
         (The subscription level “open” can be considered the same as “free”.)
     """
 
-    def __init__(self, client, data, **kwargs):
+    def __init__(self, client: "spotify.Client", data: dict, **kwargs):
+        self._refresh_task = None
         self.__client = self.client = client
 
         try:
             self.http = kwargs.pop("http")
         except KeyError:
-            pass
+            pass  # TODO: Failing silently here, we should take some action.
         else:
             self.library = Library(client, self)
 
@@ -119,7 +120,27 @@ class User(URIBase):  # pylint: disable=too-many-instance-attributes
     ### Alternate constructors
 
     @classmethod
-    async def from_code(cls, client, code, *, redirect_uri, refresh=False):
+    async def from_code(
+        cls,
+        client: "spotify.Client",
+        code: str,
+        *,
+        redirect_uri: str,
+        refresh: Optional[bool] = False,
+    ):
+        """Create a :class:`User` object from an authorization code.
+
+        Parameters
+        ----------
+        client : :class:`spotify.Client`
+            The spotify client to associate the user with.
+        code : :class:`str`
+            The authorization code to use to further authenticate the user.
+        redirect_uri : :class:`str`
+            The rediriect URI to use in tandem with the authorization code.
+        refresh : Optional[:class:`bool`]
+            Wether to keep the http session authorized.
+        """
         route = ("POST", "https://accounts.spotify.com/api/token")
         payload = {
             "redirect_uri": redirect_uri,
@@ -147,8 +168,36 @@ class User(URIBase):  # pylint: disable=too-many-instance-attributes
         return await cls.from_token(client, token, refresh=refresh)
 
     @classmethod
-    async def from_token(cls, client, token, *, refresh=None):
+    async def from_token(
+        cls,
+        client: "spotify.Client",
+        token: str,
+        *,
+        refresh: Optional[Tuple[int, str]] = None,
+    ):
+        """Create a :class:`User` object from an access token.
+
+        Parameters
+        ----------
+        client : :class:`spotify.Client`
+            The spotify client to associate the user with.
+        token : :class:`str`
+            The access token to use for http requests.
+        refresh: Optional[Tuple[:class:`int`, :class:`str`]
+            When provided the refresh argument must be a tuple
+            of an integer representing the number of seconds until
+            the access token expires and a string representing the
+            refresh token to use to generate a new access token.
+        """
         http = HTTPUserClient(token)
+
+        if refresh is not None:
+            if not isinstance(refresh, tuple):
+                raise ValueError(f"refresh must be a tuple of an int and str.")
+
+            if not len(refresh) == 2:
+                raise ValueError(f"refresh must have exactly two elements.")
+
         data = await http.current_user()
 
         self = cls(client, data=data, http=http, token=token)
@@ -167,6 +216,7 @@ class User(URIBase):  # pylint: disable=too-many-instance-attributes
 
     @property
     def refresh(self):
+        """Optional[:class:`asyncio.Task`] - An asyncio task that is handling the session refresh or None if not refreshing."""
         return self._refresh_task
 
     ### Contextual methods
@@ -212,7 +262,7 @@ class User(URIBase):  # pylint: disable=too-many-instance-attributes
 
         Returns
         -------
-        devices : List[Device]
+        devices : List[:class:`Device`]
             The devices the user has available.
         """
         data = await self.http.available_devices()
@@ -389,7 +439,7 @@ class User(URIBase):  # pylint: disable=too-many-instance-attributes
 
         Returns
         -------
-        playlist : Playlist
+        playlist : :class:`Playlist`
             The playlist that was created.
         """
         data = {"name": name, "public": public, "collaborative": collaborative}

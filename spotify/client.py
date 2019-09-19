@@ -20,39 +20,43 @@ class Client:
 
     Parameters
     ----------
-    client_id : str
+    client_id : :class:`str`
         The client id provided by spotify for the app.
-    client_secret : str
+    client_secret : :class:`str`
         The client secret for the app.
-    loop : asyncio.AbstractEventLoop
+    loop : Optional[:class:`asyncio.AbstractEventLoop`]
         The event loop the client should run on, if no loop is specified `asyncio.get_event_loop()` is called and used instead.
 
     Attributes
     ----------
-    client_id : str
+    client_id : :class:`str`
         The applications client_id, also aliased as `id`
-    http : HTTPClient
+    http : :class:`HTTPClient`
         The HTTPClient that is being used.
-    loop : asyncio.AbstractEventLoop
+    loop : Optional[:class:`asyncio.AbstractEventLoop`]
         The event loop the client is running on.
     """
 
-    _default_http_client = HTTPClient
+    _default_http_client: HTTPClient = HTTPClient
 
     def __init__(self, client_id, client_secret, *, loop=None):
         self.loop = loop or asyncio.get_event_loop()
         self.http = self._default_http_client(client_id, client_secret, loop=loop)
 
     def __repr__(self):
-        return '<spotify.Client: "%s">' % self.http.client_id
+        return f"<spotify.Client: {self.http.client_id!r}>"
 
     @property
-    def client_id(self):
+    def client_id(self) -> str:
+        """:class:`str` - The Spotify client ID."""
         return self.http.client_id
 
     @property
     def id(self):  # pylint: disable=invalid-name
+        """:class:`str` - The Spotify client ID."""
         return self.http.client_id
+
+    # Public api
 
     def oauth2_url(
         self,
@@ -62,23 +66,27 @@ class Client:
     ) -> str:
         """Generate an outh2 url for user authentication.
 
+        This is an alias to :meth:`OAuth2.url_` but the
+        difference is that the client id is autmatically
+        passed in to the constructor.
+
         Parameters
         ----------
-        redirect_uri : str
+        redirect_uri : :class:`str`
             Where spotify should redirect the user to after authentication.
-        scope : Optional[str]
+        scope : Optional[:class:`str`]
             Space seperated spotify scopes for different levels of access.
-        state : Optional[str]
+        state : Optional[:class:`str`]
             Using a state value can increase your assurance that an incoming connection is the result of an authentication request.
 
         Returns
         -------
-        url : str
+        url : :class:`str`
             The OAuth2 url.
         """
         return OAuth2.url_(self.http.client_id, redirect_uri, scope=scope, state=state)
 
-    async def close(self):
+    async def close(self) -> None:
         """Close the underlying HTTP session to Spotify."""
         await self.http.close()
 
@@ -91,7 +99,7 @@ class Client:
 
         Parameters
         ----------
-        token : str
+        token : :class:`str`
             The token to attatch the user session to.
 
         Returns
@@ -106,9 +114,9 @@ class Client:
 
         Parameters
         ----------
-        spotify_id : str
+        spotify_id : :class:`str`
             The ID to search for.
-        market : Optional[str]
+        market : Optional[:class:`str`]
             An ISO 3166-1 alpha-2 country code
 
         Returns
@@ -194,12 +202,12 @@ class Client:
 
         Parameters
         ----------
-        ids : List[str]
-            the IDs to look for
+        ids : List[:class:`str`]
+            The IDs to look for.
 
         Returns
         -------
-        artists : List[Artist]
+        artists : List[:class:`Artist`]
             The artists from the IDs
         """
         data = await self.http.artists(",".join(to_id(_id) for _id in ids))
@@ -212,29 +220,42 @@ class Client:
         types: Optional[Iterable[str]] = ["track", "playlist", "artist", "album"],
         limit: Optional[int] = 20,
         offset: Optional[int] = 0,
-        market: Optional[str] = None
+        market: Optional[str] = None,
     ) -> Dict[str, List[Union[Track, Playlist, Artist, Album]]]:
         """Access the spotify search functionality.
 
+        >>> results = client.search('Cadet', types=['artist'])
+        >>> for artist in result.get('artists', []):
+        ...     if artist.name.lower() == 'cadet':
+        ...         print(repr(artist))
+        ...         break
+
         Parameters
         ----------
-        q : str
+        q : :class:`str`
             the search query
-        types : Optional[Iterable[str]]
+        types : Optional[Iterable[`:class:`str`]]
             A sequence of search types (can be any of `track`, `playlist`, `artist` or `album`) to refine the search request.
             A `ValueError` may be raised if a search type is found that is not valid.
-        limit : Optional[int]
+        limit : Optional[:class:`int`]
             The limit of search results to return when searching.
             Maximum limit is 50, any larger may raise a :class:`HTTPException`
-        offset : Optional[int]
+        offset : Optional[:class:`int`]
             The offset from where the api should start from in the search results.
-        market : Optional[str]
+        market : Optional[:class:`str`]
             An ISO 3166-1 alpha-2 country code. Provide this parameter if you want to apply Track Relinking.
 
         Returns
         -------
         results : Dict[str, List[Union[Track, Playlist, Artist, Album]]]
             The results of the search.
+
+        Raises
+        ------
+        TypeError
+            Raised when a parameter with a bad type is passed.
+        ValueError
+            Raised when a bad search type is passed with the `types` argument.
         """
         if not hasattr(types, "__iter__"):
             raise TypeError("types must be an iterable.")
