@@ -8,7 +8,7 @@ from .track import Track, PlaylistTrack
 from .player import Player
 from .album import Album
 from .library import Library
-from .playlist import Playlist, PartialTracks
+from .playlist import Playlist
 from .user import User
 
 __all__ = (
@@ -18,7 +18,6 @@ __all__ = (
     "Artist",
     "Album",
     "Playlist",
-    "PartialTracks",
     "Library",
     "Player",
     "Device",

@@ -11,4 +11,6 @@ with _clean_namespace(locals(), "name", "klass"):
         locals()[name] = klass
         setattr(models, name, klass)
 
-    Client._default_http_client = locals()["HTTPClient"]
+    Client._default_http_client = locals()[
+        "HTTPClient"
+    ]  # pylint: disable=protected-access

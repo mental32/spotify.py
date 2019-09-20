@@ -3,11 +3,11 @@ class Image:
 
     Attributes
     ----------
-    height : str
+    height : :class:`str`
         The height of the image.
-    width : str
+    width : :class:`str`
         The width of the image.
-    url : str
+    url : :class:`str`
         The URL of the image.
     """
 
@@ -89,7 +89,7 @@ class Device:
     )
 
     def __init__(self, data):
-        self.id = data.get("id")
+        self.id = data.get("id")  # pylint: disable=invalid-name
         self.name = data.get("name")
         self.type = data.get("type")
 

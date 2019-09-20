@@ -1,123 +1,150 @@
-from functools import partial
+from contextlib import asynccontextmanager
 from itertools import islice
-from typing import List, Optional, Union
+from typing import List, Optional, Union, Callable, Tuple
 
-from . import SpotifyBase, URIBase, Track, PlaylistTrack, Image
-
-
-class PartialTracks(SpotifyBase):
-    """A partial track object which contains information about the tracks but not the tracks itself.
-
-    Attributes
-    ----------
-    total : int
-        The total amount of tracks.
-    """
-
-    __slots__ = ("total", "__func", "__iter", "__client")
-
-    def __init__(self, client, data):
-        self.total = data["total"]
-        self.__func = partial(client.http.request, ("GET", data["href"]))
-        self.__iter = None
-
-    def __repr__(self):
-        return f"<spotify.PartialTracks: total={self.total!r}>"
-
-    def __aiter__(self):
-        return self
-
-    async def __anext__(self):
-        if self.__iter is None:
-            self.__iter = iter((await self.__func())["items"])
-
-        try:
-            track = next(self.__iter)
-        except StopIteration:
-            raise StopAsyncIteration
-        else:
-            return PlaylistTrack(self.__client, track)
-
-    async def build(self) -> List[PlaylistTrack]:
-        """get the track object for each link in the partial tracks data.
-
-        Returns
-        -------
-        tracks : List[PlaylistTrack]
-            The tracks
-        """
-        data = await self.__func()
-        return list(PlaylistTrack(self.__client, track) for track in data["items"])
+from ..http import HTTPUserClient
+from . import URIBase, Track, PlaylistTrack, Image
 
 
-class Playlist(URIBase):
+class Playlist(URIBase):  # pylint: disable=too-many-instance-attributes
     """A Spotify Playlist.
 
     Attributes
     ----------
-    collaborative : bool
+    collaborative : :class:`bool`
         Returns true if context is not search and the owner allows other users to modify the playlist. Otherwise returns false.
-    description : str
+    description : :class:`str`
         The playlist description. Only returned for modified, verified playlists, otherwise null.
-    url : str
+    url : :class:`str`
         The open.spotify URL.
-    followers : int
+    followers : :class:`int`
         The total amount of followers
-    href : str
+    href : :class:`str`
         A link to the Web API endpoint providing full details of the playlist.
-    id : str
+    id : :class:`str`
         The Spotify ID for the playlist.
-    images : List[Image]
+    images : List[:class:`spotify.Image`]
         Images for the playlist.
         The array may be empty or contain up to three images.
         The images are returned by size in descending order.
         If returned, the source URL for the image ( url ) is temporary and will expire in less than a day.
-    name : str
+    name : :class:`str`
         The name of the playlist.
-    owner : User
+    owner : :class:`spotify.User`
         The user who owns the playlist
-    public : bool
+    public : :class`bool`
         The playlist’s public/private status:
             true the playlist is public,
             false the playlist is private,
             null the playlist status is not relevant.
-    snapshot_id : str
+    snapshot_id : :class:`str`
         The version identifier for the current playlist.
-    tracks : Optional[List[PlaylistTrack]]
-        list of playlist track objects.
+    tracks : Optional[Tuple[:class:`PlaylistTrack`]]
+        A tuple of :class:`PlaylistTrack` objects or `None`.
     """
 
-    def __init__(self, client, data, *, http=None):
+    __slots__ = (
+        "collaborative",
+        "description",
+        "url",
+        "followers",
+        "href",
+        "id",
+        "images",
+        "name",
+        "owner",
+        "uri",
+        "total_tracks",
+
+        "__client",
+        "__http",
+        "__tracks",
+    )
+
+    def __init__(
+        self,
+        client: "spotify.Client",
+        data: Union[dict, "Playlist"],
+        *,
+        http: Optional[HTTPUserClient] = None,
+    ):
+        self.__client = client
+        self.__http = http
+        self.__tracks = None
+        self.total_tracks = None
+
+        if not isinstance(data, (Playlist, dict)):
+            raise TypeError("data must be a Playlist instance or a dict.")
+
+        if isinstance(data, dict):
+            self.__from_raw(data)
+        else:
+            for name in filter((lambda name: name[0] != "_"), Playlist.__slots__):
+                setattr(self, name, getattr(data, name))
+
+    def __repr__(self):
+        return f'<spotify.Playlist: {getattr(self, "name", None) or self.id}>'
+
+    def __len__(self):
+        return self.total_tracks
+
+    # Internals
+
+    def __from_raw(self, data: dict) -> None:
         from .user import User
 
-        self.__client = client
-        self.__http = http or client.http
+        client = self.__client
+
+        self.id = data.pop("id")  # pylint: disable=invalid-name
+
+        self.images = tuple(Image(**image) for image in data.pop("images", []))
+        self.owner = User(client, data=data.pop("owner"))
 
         self.collaborative = data.pop("collaborative")
         self.description = data.pop("description", None)
-        self.url = data.pop("external_urls").get("spotify", None)
         self.followers = data.pop("followers", {}).get("total", None)
         self.href = data.pop("href")
-        self.id = data.pop("id")
-        self.images = list(Image(**image) for image in data.pop("images", []))
         self.name = data.pop("name")
-        self.owner = User(client, data=data.pop("owner"))
+        self.url = data.pop("external_urls").get("spotify", None)
         self.uri = data.pop("uri")
 
-        if "next" in data["tracks"]:  # Paging object.
-            pass  # TODO: Support paging objects.
-        else:
-            self._tracks = tracks = PartialTracks(client, data.pop("tracks"))
-            self.total_tracks = tracks.total
+        self.__tracks = tracks = (
+            tuple(PlaylistTrack(client, item) for item in data["tracks"]["items"])
+            if "items" in data["tracks"]
+            else None
+        )
 
-    def __repr__(self):
-        return '<spotify.Playlist: "%s">' % (getattr(self, "name", None) or self.id)
+        self.total_tracks = len(tracks) if tracks is not None else data["tracks"]["total"]
+
+    @asynccontextmanager
+    async def __mutate_tracks(self):
+        if self.tracks is None:
+            self.__tracks = await self.get_all_tracks()
+
+        tracks = list(self.tracks)
+        prev_len = len(tracks)
+
+        yield tracks
+
+        if not prev_len and not len(tracks):
+            # the tracks were empty and is still empty.
+            # skip the api call.
+            return
+
+        await self.replace_tracks(*tracks)
+        self.__tracks = tuple(tracks)
+
+    # Properties
+
+    @property
+    def tracks(self):
+        return self.__tracks
 
     # Track retrieval
 
     async def get_tracks(
         self, *, limit: Optional[int] = 20, offset: Optional[int] = 0
-    ) -> List[PlaylistTrack]:
+    ) -> Tuple[PlaylistTrack]:
         """Get a fraction of a playlists tracks.
 
         Parameters
@@ -129,18 +156,20 @@ class Playlist(URIBase):
 
         Returns
         -------
-        tracks : List[PlaylistTrack]
+        tracks : Tuple[PlaylistTrack]
             The tracks of the playlist.
         """
         data = self.__http.get_playlist_tracks(self.id, limit=limit, offset=offset)
-        return list(PlaylistTrack(self.__client, item) for item in data["items"])
+        return tuple(
+            PlaylistTrack(self.__client, item) for item in data["items"]
+        )
 
-    async def get_all_tracks(self) -> List[PlaylistTrack]:
+    async def get_all_tracks(self) -> Tuple[PlaylistTrack]:
         """Get all playlist tracks from the playlist.
 
         Returns
         -------
-        tracks : List[PlaylistTrack]
+        tracks : Tuple[:class:`PlaylistTrack`]
             The playlists tracks.
         """
         _tracks = []
@@ -154,25 +183,45 @@ class Playlist(URIBase):
             offset += 50
 
         self.total_tracks = len(_tracks)
-        return list(_tracks)
+        return tuple(_tracks)
 
     # Playlist structure modification
+
+    # Basic api wrapping
 
     async def add_tracks(self, *tracks) -> str:
         """Add one or more tracks to a user’s playlist.
 
         Parameters
         ----------
-        tracks : Sequence[Union[str, Track]]
+        tracks : Iterable[Union[:class:`str`, :class:`Track`]]
             Tracks to add to the playlist
 
         Returns
         -------
-        snapshot_id : str
+        snapshot_id : :class:`str`
             The snapshot id of the playlist.
         """
         data = await self.__http.add_playlist_tracks(
-            self.id, tracks=(str(track) for track in tracks)
+            self.id, tracks=[str(track) for track in tracks]
+        )
+        return data["snapshot_id"]
+
+    async def remove_tracks(self, *tracks):
+        """Remove one or more tracks from a user’s playlist.
+
+        Parameters
+        ----------
+        tracks : Iterable[Union[:class:`str`, :class:`Track`]]
+            Tracks to remove from the playlist
+
+        Returns
+        -------
+        snapshot_id : :class:`str`
+            The snapshot id of the playlist.
+        """
+        data = await self.__http.remove_playlist_tracks(
+            self.id, tracks=[str(track) for track in tracks]
         )
         return data["snapshot_id"]
 
@@ -183,51 +232,33 @@ class Playlist(URIBase):
 
         Parameters
         ----------
-        tracks : Sequence[Union[str, Track]]
+        tracks : Iterable[Union[:class:`str`, :class:`Track`]]
             Tracks to place in the playlist
         """
         if not isinstance(tracks, (list, tuple)):
             tracks = list(*tracks)
 
+        bucket = []
+        for track in tracks:
+            if not isinstance(track, (str, Track)):
+                raise TypeError(f"tracks must be a iterable of strings or Track instances. Got {type(track)!r}")
+
+            bucket.append(str(track))
+
+        tracks = tuple(bucket)
+
         if len(tracks) <= 100:
-            head = tracks
+            head, tracks = tracks, []
         else:
-            head.tracks = tracks[:100], tracks[100:]
+            head, tracks = tracks[:100], tracks[100:]
 
         await self.__http.replace_playlist_tracks(
-            self.id, tracks=(str(track) for track in head)
+            self.id, tracks=head
         )
 
         while tracks:
-            head.tracks = tracks[:100], tracks[100:]
-            await self.extend_tracks(head)
-
-    async def clear_tracks(self):
-        """Clear the playlists tracks.
-
-        .. warning::
-
-            This is a desctructive operation and is very hard to reverse!
-        """
-        await self.__http.replace_playlist_tracks(self.id, tracks=[])
-
-    async def remove_tracks(self, *tracks):
-        """Remove one or more tracks from a user’s playlist.
-
-        Parameters
-        ----------
-        tracks : Sequence[Union[str, Track]]
-            Tracks to remove from the playlist
-
-        Returns
-        -------
-        snapshot_id : str
-            The snapshot id of the playlist.
-        """
-        data = await self.__http.remove_playlist_tracks(
-            self.id, tracks=(str(track) for track in tracks)
-        )
-        return data["snapshot_id"]
+            head, tracks = tracks[:100], tracks[100:]
+            await self.extend(head)
 
     async def reorder_tracks(
         self,
@@ -260,17 +291,37 @@ class Playlist(URIBase):
         )
         return data["snapshot_id"]
 
-    async def extend_tracks(
-        self, tracks: Union["Playlist", PartialTracks, List[Union[Track, str]]]
+    # Library functionality.
+
+    async def clear(self):
+        """Clear the playlists tracks.
+
+        .. note::
+
+            This method will mutate the current
+            playlist object, and the spotify Playlist.
+
+        .. warning::
+
+            This is a desctructive operation and can not be reversed!
+        """
+        await self.__http.replace_playlist_tracks(self.id, tracks=[])
+
+    async def extend(
+        self, tracks: Union["Playlist", List[Union[Track, str]]]
     ):
-        """Extend a playlists tracks with that of another playlist, PartialTracks or a list of Track/Track URIs.
+        """Extend a playlists tracks with that of another playlist or a list of Track/Track URIs.
+
+        .. note::
+
+            This method will mutate the current
+            playlist object, and the spotify Playlist.
 
         Parameters
         ----------
-        tracks : Union[Playlist, PartialTracks, List[Union[Track, str]]]
+        tracks : Union["Playlist", List[Union[Track, str]]]
             Tracks to add to the playlist, acceptable values are:
              - A :class:`spotify.Playlist` object
-             - A :class:`spotify.models.PartialTracks` object
              - A :class:`list` of :class:`spotify.Track` objects or Track URIs
 
         Returns
@@ -281,12 +332,9 @@ class Playlist(URIBase):
         if isinstance(tracks, Playlist):
             tracks = await tracks.get_all_tracks()
 
-        elif isinstance(tracks, PartialTracks):
-            tracks = await tracks.build()
-
         elif not isinstance(tracks, (list, tuple)):
             raise TypeError(
-                f"`tracks` was an invalid type, expected any of: Playlist, PartialTracks, List[Union[Track, str]], instead got {type(tracks)}"
+                f"`tracks` was an invalid type, expected any of: Playlist, List[Union[Track, str]], instead got {type(tracks)}"
             )
 
         tracks = (str(track) for track in tracks)
@@ -297,4 +345,94 @@ class Playlist(URIBase):
             if not head:
                 break
 
-            data = await self.__http.add_playlist_tracks(self.id, tracks=head)
+            await self.__http.add_playlist_tracks(self.id, tracks=head)
+
+    async def insert(self, index, obj: Union[PlaylistTrack, Track]) -> None:
+        """Insert an object before the index.
+
+        .. note::
+
+            This method will mutate the current
+            playlist object, and the spotify Playlist.
+        """
+        if not isinstance(obj, (PlaylistTrack, Track)):
+            raise TypeError(
+                f"Expected a PlaylistTrack or Track object instead got {obj!r}"
+            )
+
+        async with self.__mutate_tracks() as tracks:
+            tracks.insert(index, obj)
+
+    async def pop(self, index: int = -1) -> PlaylistTrack:
+        """Remove and return the track at the specified index.
+
+        .. note::
+
+            This method will mutate the current
+            playlist object, and the spotify Playlist.
+
+        Returns
+        -------
+        playlist_track : :class:`PlaylistTrack`
+            The track that was removed.
+
+        Raises
+        ------
+        IndexError
+            If there are no tracks or the index is out of range.
+        """
+        async with self.__mutate_tracks() as tracks:
+            return tracks.pop(index)
+
+    async def sort(
+        self,
+        *,
+        key: Optional[Callable[[PlaylistTrack], bool]] = None,
+        reverse: Optional[bool] = False,
+    ) -> None:
+        """Stable sort the playlist in place.
+
+        .. note::
+
+            This method will mutate the current
+            playlist object, and the spotify Playlist.
+        """
+        async with self.__mutate_tracks() as tracks:
+            tracks.sort(key=key, reverse=reverse)
+
+    async def remove(self, value: Union[PlaylistTrack, Track]) -> None:
+        """Remove the first occurence of the value.
+
+        .. note::
+
+            This method will mutate the current
+            playlist object, and the spotify Playlist.
+
+        Raises
+        -------
+        ValueError
+            If the value is not present.
+        """
+        async with self.__mutate_tracks() as tracks:
+            tracks.remove(value)
+
+    async def copy(self) -> "Playlist":
+        """Return a shallow copy of the playlist object.
+
+        Returns
+        -------
+        playlist : :class:`Playlist`
+            The playlist object copy.
+        """
+        return Playlist(client=self.__client, data=self, http=self.__http)
+
+    async def reverse(self) -> None:
+        """Reverse the playlist in place.
+
+        .. note::
+
+            This method will mutate the current
+            playlist object, and the spotify Playlist.
+        """
+        async with self.__mutate_tracks() as tracks:
+            tracks.reverse()

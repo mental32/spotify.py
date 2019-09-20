@@ -3,7 +3,7 @@
 import asyncio
 import functools
 from base64 import b64encode
-from typing import Optional, Dict, Union, List, Tuple
+from typing import Optional, Dict, Union, List, Tuple, Type, Union
 
 from ..utils import to_id
 from ..http import HTTPUserClient
@@ -17,7 +17,7 @@ def ensure_http(func):
     return func
 
 
-class User(URIBase):
+class User(URIBase):  # pylint: disable=too-many-instance-attributes
     """A Spotify User.
 
     Attributes
@@ -44,22 +44,23 @@ class User(URIBase):
     birthdate : :class:`str`
         The user’s date-of-birth.
     product : :class:`str`
-        The user’s Spotify subscription level: “premium”, “free”, etc. 
+        The user’s Spotify subscription level: “premium”, “free”, etc.
         (The subscription level “open” can be considered the same as “free”.)
     """
 
-    def __init__(self, client, data, **kwargs):
+    def __init__(self, client: "spotify.Client", data: dict, **kwargs):
+        self._refresh_task = None
         self.__client = self.client = client
 
         try:
             self.http = kwargs.pop("http")
         except KeyError:
-            pass
+            pass  # TODO: Failing silently here, we should take some action.
         else:
             self.library = Library(client, self)
 
         # Public user object attributes
-        self.id = data.pop("id")
+        self.id = data.pop("id")  # pylint: disable=invalid-name
         self.uri = data.pop("uri")
         self.url = data.pop("external_urls").get("spotify", None)
         self.display_name = data.pop("display_name", None)
@@ -77,10 +78,7 @@ class User(URIBase):
         return f"<spotify.User: {(self.display_name or self.id)!r}>"
 
     def __getattribute__(self, attr):
-        try:
-            value = object.__getattribute__(self, attr)
-        except AttributeError as err:
-            raise AttributeError from err
+        value = object.__getattribute__(self, attr)
 
         if hasattr(value, "__ensure_http__") and not hasattr(self, "http"):
 
@@ -91,22 +89,23 @@ class User(URIBase):
                 )
 
             return _raise
-        else:
-            return value
+        return value
 
-    async def _get_top(self, klass, data) -> List[Union[Track, Artist]]:
-        _str = {Artist: "artists", Track: "tracks"}[klass]
+    async def _get_top(
+        self, klass: Type[Union[Track, Artist]], kwargs: dict
+    ) -> List[Union[Track, Artist]]:
+        target = {Artist: "artists", Track: "tracks"}[klass]
         data = {
             key: value
-            for key, value in data.items()
+            for key, value in kwargs.items()
             if key in ("limit", "offset", "time_range")
         }
 
-        resp = await self.http.top_artists_or_tracks(_str, **data)
+        resp = await self.http.top_artists_or_tracks(target, **data)
 
         return [klass(self.__client, item) for item in resp["items"]]
 
-    async def _refreshing_token(self, expires, token):
+    async def _refreshing_token(self, expires: int, token: str):
         while True:
             await asyncio.sleep(expires - 1)
 
@@ -121,7 +120,27 @@ class User(URIBase):
     ### Alternate constructors
 
     @classmethod
-    async def from_code(cls, client, code, *, redirect_uri, refresh=False):
+    async def from_code(
+        cls,
+        client: "spotify.Client",
+        code: str,
+        *,
+        redirect_uri: str,
+        refresh: Optional[bool] = False,
+    ):
+        """Create a :class:`User` object from an authorization code.
+
+        Parameters
+        ----------
+        client : :class:`spotify.Client`
+            The spotify client to associate the user with.
+        code : :class:`str`
+            The authorization code to use to further authenticate the user.
+        redirect_uri : :class:`str`
+            The rediriect URI to use in tandem with the authorization code.
+        refresh : Optional[:class:`bool`]
+            Wether to keep the http session authorized.
+        """
         route = ("POST", "https://accounts.spotify.com/api/token")
         payload = {
             "redirect_uri": redirect_uri,
@@ -149,16 +168,46 @@ class User(URIBase):
         return await cls.from_token(client, token, refresh=refresh)
 
     @classmethod
-    async def from_token(cls, client, token, *, refresh=None):
+    async def from_token(
+        cls,
+        client: "spotify.Client",
+        token: str,
+        *,
+        refresh: Optional[Tuple[int, str]] = None,
+    ):
+        """Create a :class:`User` object from an access token.
+
+        Parameters
+        ----------
+        client : :class:`spotify.Client`
+            The spotify client to associate the user with.
+        token : :class:`str`
+            The access token to use for http requests.
+        refresh: Optional[Tuple[:class:`int`, :class:`str`]
+            When provided the refresh argument must be a tuple
+            of an integer representing the number of seconds until
+            the access token expires and a string representing the
+            refresh token to use to generate a new access token.
+        """
         http = HTTPUserClient(token)
+
+        if refresh is not None:
+            if not isinstance(refresh, tuple):
+                raise ValueError(f"refresh must be a tuple of an int and str.")
+
+            if not len(refresh) == 2:
+                raise ValueError(f"refresh must have exactly two elements.")
+
         data = await http.current_user()
 
         self = cls(client, data=data, http=http, token=token)
 
         if refresh is not None:
             expires_in, refresh_token, = refresh
-            self._refresh_task = self.client.loop.create_task(
-                self._refreshing_token(expires_in, refresh_token)
+            self._refresh_task = self.client.loop.create_task(  # pylint: disable=protected-access
+                self._refreshing_token(
+                    expires_in, refresh_token
+                )  # pylint: disable=protected-access
             )
 
         return self
@@ -167,6 +216,7 @@ class User(URIBase):
 
     @property
     def refresh(self):
+        """Optional[:class:`asyncio.Task`] - An asyncio task that is handling the session refresh or None if not refreshing."""
         return self._refresh_task
 
     ### Contextual methods
@@ -190,7 +240,7 @@ class User(URIBase):
             else:
                 data["context"] = None
 
-            data["item"] = Track(self.__client, data.get("item"))
+            data["item"] = Track(self.__client, data.get("item", {}) or {})
 
         return data
 
@@ -200,12 +250,10 @@ class User(URIBase):
 
         Returns
         -------
-        player : Player
+        player : :class:`Player`
             A player object representing the current playback.
         """
-        self._player = player = Player(
-            self.__client, self, await self.http.current_player()
-        )
+        player = Player(self.__client, self, await self.http.current_player())
         return player
 
     @ensure_http
@@ -214,7 +262,7 @@ class User(URIBase):
 
         Returns
         -------
-        devices : List[Device]
+        devices : List[:class:`Device`]
             The devices the user has available.
         """
         data = await self.http.available_devices()
@@ -237,8 +285,8 @@ class User(URIBase):
         return [
             {
                 "played_at": track.get("played_at"),
-                "context": Context(track.get("context")),
-                "track": Track(client, track.get("track")),
+                "context": Context(track.get("context", {}) or {}),
+                "track": Track(client, track.get("track", {}) or {}),
             }
             for track in data["items"]
         ]
@@ -391,7 +439,7 @@ class User(URIBase):
 
         Returns
         -------
-        playlist : Playlist
+        playlist : :class:`Playlist`
             The playlist that was created.
         """
         data = {"name": name, "public": public, "collaborative": collaborative}
@@ -402,6 +450,7 @@ class User(URIBase):
         playlist_data = await self.http.create_playlist(self.id, **data)
         return Playlist(self.__client, playlist_data, http=self.http)
 
+    @ensure_http
     async def get_playlists(self, *, limit=20, offset=0):
         """get the users playlists from spotify.
 
@@ -417,14 +466,10 @@ class User(URIBase):
         playlists : List[Playlist]
             A list of the users playlists.
         """
-        if hasattr(self, "http"):
-            http = self.http
-        else:
-            http = self.__client.http
+        data = await self.http.get_playlists(self.id, limit=limit, offset=offset)
 
-        data = await http.get_playlists(self.id, limit=limit, offset=offset)
         return [
-            Playlist(self.__client, playlist_data, http=http)
+            Playlist(self.__client, playlist_data, http=self.http)
             for playlist_data in data["items"]
         ]
 

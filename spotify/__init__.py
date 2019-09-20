@@ -1,6 +1,7 @@
-from .utils import OAuth2, clean as _clean_namespace
+from .oauth import *
+from .utils import clean as _clean_namespace
 
-__version__ = "0.5.1"  # noqa
+__version__ = "0.6.0"  # noqa
 
 from .errors import *
 from .models import *
@@ -14,10 +15,10 @@ __title__ = "spotify"
 __author__ = "mental"
 __license__ = "MIT"
 
-_locals = locals()
+_locals = locals()  # pylint: disable=invalid-name
 
 with _clean_namespace(locals(), "_locals", "_clean_namespace"):
-    _types = dict(
+    _types = dict(  # pylint: disable=invalid-name
         (name, _locals[name])
         for name, obj in _locals.items()
         if isinstance(obj, type) and issubclass(obj, SpotifyBase)

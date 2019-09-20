@@ -7,33 +7,33 @@ Offset = Union[int, str, Track]
 SomeDevice = Union[Device, str]
 
 
-class Player(SpotifyBase):
+class Player(SpotifyBase):  # pylint: disable=too-many-instance-attributes
     """A Spotify Users current playback.
 
     Attributes
     ----------
-    device : Device
+    device : :class:`spotify.Device`
         The device that is currently active.
-    repeat_state : str
+    repeat_state : :class:`str`
         "off", "track", "context"
-    shuffle_state : bool
+    shuffle_state : :class:`bool`
         If shuffle is on or off.
-    context : spotify.Context
+    context : :class:`spotify.Context`
         The context of the current player.
-    timestamp : int
+    timestamp : :class:`int`
         Unix Millisecond Timestamp when data was fetched.
-    progress_ms : int
+    progress_ms : :class:`int`
         Progress into the currently playing track.
         Can be None (e.g. If private session is enabled this will be None).
-    is_playing : bool
+    is_playing : :class:`bool`
         If something is currently playing.
-    item : Track
+    item : :class:`spotify.Track`
         The currently playing track.
         Can be None (e.g. If private session is enabled this will be None).
-    currently_playing_type : str
+    currently_playing_type : :class:`str`
         The object type of the currently playing item. #
         Can be one of "track", "episode", "ad" or "unknown".
-    actions : List[str]
+    actions : List[:class:`str`]
         A list of disallowed actions.
     """
 
@@ -195,14 +195,14 @@ class Player(SpotifyBase):
         if device is not None:
             if not isinstance(device, (Device, str)):
                 raise TypeError(
-                    "Expected `device` to either be a spotify.Device or a string. got {type(0)!r}".format(
-                        device
-                    )
+                    f"Expected `device` to either be a spotify.Device or a string. got {type(device)!r}"
                 )
-            else:
-                device = str(device)
 
-        await self.user.http.play_playback(context_uri, offset=offset, device_id=device)
+            device_id = str(device)
+
+        await self.user.http.play_playback(
+            context_uri, offset=offset, device_id=device_id
+        )
 
     async def shuffle(
         self, state: Optional[bool] = None, *, device: Optional[SomeDevice] = None
@@ -218,7 +218,7 @@ class Player(SpotifyBase):
             The Device object or id of the device this command is targeting.
             If not supplied, the user’s currently active device is the target.
         """
-        await self.user.http.shuffle_playback(state)
+        await self.user.http.shuffle_playback(state, device_id=str(device))
 
     async def transfer(self, device: SomeDevice, ensure_playback: bool = False):
         """Transfer playback to a new device and determine if it should start playing.

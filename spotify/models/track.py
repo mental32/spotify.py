@@ -5,7 +5,7 @@ import datetime
 from . import URIBase, Image, Artist
 
 
-class Track(URIBase):
+class Track(URIBase):  # pylint: disable=too-many-instance-attributes
     """A Spotify Track object.
 
     Attribtues
@@ -56,7 +56,7 @@ class Track(URIBase):
         album = data.pop("album", None)
         self.album = Album(client, album) if album is not None else None
 
-        self.id = data.pop("id", None)
+        self.id = data.pop("id", None)  # pylint: disable=invalid-name
         self.name = data.pop("name", None)
         self.href = data.pop("href", None)
         self.uri = data.pop("uri", None)
@@ -83,7 +83,7 @@ class Track(URIBase):
         return self.__client.http.track_audio_features(self.id)
 
 
-class PlaylistTrack(Track):
+class PlaylistTrack(Track, URIBase):
     """A Track on a Playlist.
 
     Like a regular :class:`Track` but has some additional attributes.

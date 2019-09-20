@@ -9,19 +9,33 @@
 
 An API library for the spotify client and the Spotify Web API written in Python.
 
-Spotify.py is an, primarily, asyncronous library (everything down to the HTTP client is asyncio friendly). 
-
-#### Sync' support
-
-The library also supports **syncronous** usage with `spotify.sync`
+Spotify.py is an asyncronous API library for Spotify. While maintaining an
+emphasis on being purely asyncronous the library provides syncronous
+functionality with the `spotify.sync` module.
 
 ```python
 import spotify.sync as spotify  # Nothing requires async/await now!
 ```
 
-## example
+## Index
 
- - Sorting a playlist by popularity
+ - [Installing](#Installing)
+ - [Examples](#Examples)
+ - [Resources](#Resources)
+
+## Installing
+
+To install the library simply clone it and run setup.py
+- `git clone https://github.com/mental32/spotify.py`
+- `python3 setup.py install`
+
+or use pypi
+
+- `pip3 install spotify` (latest stable)
+- `pip3 install -U git+https://github.com/mental32/spotify.py` (nightly)
+
+## Examples
+### Sorting a playlist by popularity
 
 ```py
 import sys
@@ -38,32 +52,67 @@ client = spotify.Client(client_id, secret)
 async def main():
     user = await spotify.User.from_token(client, token)
 
+    playlists = filter((lambda playlist: playlist.uri == playlist_uri), await user.get_playlists())
+
     try:
-        playlist = next(playlist for playlist in (await user.get_playlists()) if playlist.uri == playlist_uri)
+        playlist = next(playlists)
     except StopIteration:
         print('No playlists were found!', file=sys.stderr)
         return
     else:
-        tracks = await playlist.get_all_tracks()
-
-    sorted_tracks = sorted(tracks, reverse=True, key=(lambda track: track.popularity))
-
-    await user.replace_tracks(playlist, sorted_tracks)
+        await playlist.sort(reverse=True, key=(lambda track: track.popularity))
 
 if __name__ == '__main__':
     client.loop.run_until_complete(main())
 ```
 
-## Installing
+### Usage with flask
 
-To install the library simply clone it and run setup.py
-- `git clone https://github.com/mental32/spotify.py`
-- `python3 setup.py install`
+```py
+import flask
+import spotify.sync as spotify
 
-or use pypi
+SPOTIFY_CLIENT = spotify.Client.from_envvar('SPOTIFY_CLIENT_ID', 'SPOTIFY_CLIENT_SECRET')
 
-- `pip3 install spotify` (latest stable)
-- `pip3 install -U git+https://github.com/mental32/spotify.py` (nightly)
+APP = flask.Flask(__name__)
+APP.config.from_mapping({'spotify_client': SPOTIFY_CLIENT})
+
+REDIRECT_URI: str = 'http://localhost:8888/spotify/callback'
+OAUTH2: spotify.OAuth2 = spotify.OAuth2(SPOTIFY_CLIENT.id, REDIRECT_URI, scope='user-modify-playback-state,user-read-currently-playing,user-read-playback-state')
+
+
+@APP.route('/spotify/callback')
+def spotify_callback():
+    try:
+        code = flask.request.args['code']
+    except KeyError:
+        return flask.redirect('/spotify/failed')
+    else:
+        flask.session['spotify_user'] = spotify.User.from_code(
+            SPOTIFY_CLIENT,
+            code,
+            redirect_uri=REDIRECT_URI,
+            refresh=True
+        )
+
+    return flask.redirect('/')
+
+@APP.route('spotify/failed')
+def spotify_failed():
+    flask.session.pop('spotify_user', None)
+    return 'Failed to authenticate with Spotify.'
+
+@APP.route('/')
+@APP.route('/index')
+def index():
+    try:
+        return repr(flask.session['spotify_user'])
+    except KeyError:
+        return flask.redirect(OAUTH2.url)
+
+if __name__ == '__main__':
+    APP.run('127.0.0.1', port=8888, debug=False)
+```
 
 ## Resources
 

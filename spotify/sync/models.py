@@ -1,7 +1,6 @@
 import inspect
 import functools
 
-from .. import SpotifyBase  # noqa
 from . import Client as _Client
 from .thread import SyncExecution
 
@@ -18,13 +17,15 @@ class SyncMeta(type):
         if base_name in ("HTTPClient", "HTTPUserClient"):
 
             def __init__(self, *args, **kwargs):
-                super(type(self), self).__init__(*args, **kwargs)
-                self.__client_thread__ = kwargs["loop"]._thread
+                super().__init__(*args, **kwargs)
+                self.__client_thread__ = kwargs[
+                    "loop"
+                ]._thread  # pylint: disable=protected-access
 
         elif base_name != "Client":
 
             def __init__(self, client, *args, **kwargs):
-                super(type(self), self).__init__(client, *args, **kwargs)
+                super().__init__(client, *args, **kwargs)
                 self.__client_thread__ = client.__client_thread__
 
         try:
@@ -32,36 +33,41 @@ class SyncMeta(type):
         except NameError:
             pass
 
-        for name, func in inspect.getmembers(base):
+        for ident, func in inspect.getmembers(base):
 
             if inspect.iscoroutinefunction(func):
-                _func = getattr(base, name)
+                _func = getattr(base, ident)
 
-                def wrap(f):
-                    if isinstance(f, classmethod):
+                def wrap(func):
+                    if isinstance(func, classmethod):
 
                         @classmethod
-                        @functools.wraps(f)
-                        def wrapper(cls, client, *args, **kwargs):
+                        @functools.wraps(func)
+                        def wrapper(
+                            cls, client, *args, **kwargs
+                        ):  # pylint: disable=unused-argument
                             assert isinstance(
                                 client, _Client
                             ), "First argument of classmethod was not a `spotify.Client` instance"
                             client.__client_thread__.run_coro(
-                                f, client, *args, **kwargs
+                                func,
+                                client,
+                                *args,
+                                **kwargs  # TODO: investigate if this is correct.
                             )
 
                     else:
 
-                        @functools.wraps(f)
+                        @functools.wraps(func)
                         def wrapper(self, *args, **kwargs):
                             return self.__client_thread__.run_coro(
-                                f(self, *args, **kwargs)
+                                func(self, *args, **kwargs)
                             )
 
                     return wrapper
 
-                setattr(klass, name, wrap(_func))
-            del name
+                setattr(klass, ident, wrap(_func))
+            del ident
         return klass
 
 
@@ -70,7 +76,7 @@ class Client(_Client, metaclass=SyncMeta):
         thread = SyncExecution()
         thread.start()
 
-        kwargs["loop"] = thread._loop
+        kwargs["loop"] = thread._loop  # pylint: disable=protected-access
 
         super().__init__(*args, **kwargs)
         self.__thread = self.__client_thread__ = thread
@@ -79,7 +85,7 @@ class Client(_Client, metaclass=SyncMeta):
 def _install(_types):
     for name, obj in _types.items():
 
-        class Mock(obj, metaclass=SyncMeta):
+        class Mock(obj, metaclass=SyncMeta):  # pylint: disable=too-few-public-methods
             __slots__ = ("__client_thread__",)
 
         Mock.__name__ = obj.__name__
