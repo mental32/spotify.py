@@ -466,7 +466,7 @@ class User(URIBase):  # pylint: disable=too-many-instance-attributes
         playlists : List[Playlist]
             A list of the users playlists.
         """
-        data = await http.get_playlists(self.id, limit=limit, offset=offset)
+        data = await self.http.get_playlists(self.id, limit=limit, offset=offset)
 
         return [
             Playlist(self.__client, playlist_data, http=self.http)
