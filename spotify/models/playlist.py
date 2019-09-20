@@ -5,52 +5,6 @@ from typing import List, Optional, Union
 from . import SpotifyBase, URIBase, Track, PlaylistTrack, Image
 
 
-class PartialTracks(SpotifyBase):
-    """A partial track object which contains information about the tracks but not the tracks itself.
-
-    Attributes
-    ----------
-    total : int
-        The total amount of tracks.
-    """
-
-    __slots__ = ("total", "__func", "__iter", "__client")
-
-    def __init__(self, client, data):
-        self.total = data["total"]
-        self.__client = client
-        self.__func = partial(client.http.request, ("GET", data["href"]))
-        self.__iter = None
-
-    def __repr__(self):
-        return f"<spotify.PartialTracks: total={self.total!r}>"
-
-    def __aiter__(self):
-        return self
-
-    async def __anext__(self):
-        if self.__iter is None:
-            self.__iter = iter((await self.__func())["items"])
-
-        try:
-            track = next(self.__iter)
-        except StopIteration:
-            raise StopAsyncIteration
-        else:
-            return PlaylistTrack(self.__client, track)
-
-    async def build(self) -> List[PlaylistTrack]:
-        """get the track object for each link in the partial tracks data.
-
-        Returns
-        -------
-        tracks : List[PlaylistTrack]
-            The tracks
-        """
-        data = await self.__func()
-        return list(PlaylistTrack(self.__client, track) for track in data["items"])
-
-
 class Playlist(URIBase):  # pylint: disable=too-many-instance-attributes
     """A Spotify Playlist.
 
