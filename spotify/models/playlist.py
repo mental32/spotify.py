@@ -238,6 +238,15 @@ class Playlist(URIBase):  # pylint: disable=too-many-instance-attributes
         if not isinstance(tracks, (list, tuple)):
             tracks = list(*tracks)
 
+        bucket = []
+        for track in tracks:
+            if not isinstance(track, (str, Track)):
+                raise TypeError(f"tracks must be a iterable of strings or Track instances. Got {type(track)!r}")
+
+            bucket.append(str(track))
+
+        tracks = tuple(bucket)
+
         if len(tracks) <= 100:
             head, tracks = tracks, []
         else:
