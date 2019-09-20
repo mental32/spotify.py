@@ -54,8 +54,11 @@ class Playlist(URIBase):  # pylint: disable=too-many-instance-attributes
         "name",
         "owner",
         "uri",
-        "tracks",
         "total_tracks",
+
+        "__client",
+        "__http",
+        "__tracks",
     )
 
     def __init__(
