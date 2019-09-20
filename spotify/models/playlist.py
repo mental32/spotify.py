@@ -114,7 +114,7 @@ class Playlist(URIBase):  # pylint: disable=too-many-instance-attributes
             else None
         )
 
-        self.total_tracks = len(tracks)
+        self.total_tracks = len(tracks) if tracks is not None else 0
 
     @asynccontextmanager
     async def __mutate_tracks(self):
