@@ -83,7 +83,7 @@ class Track(URIBase):  # pylint: disable=too-many-instance-attributes
         return self.__client.http.track_audio_features(self.id)
 
 
-class PlaylistTrack(Track):
+class PlaylistTrack(Track, URIBase):
     """A Track on a Playlist.
 
     Like a regular :class:`Track` but has some additional attributes.
