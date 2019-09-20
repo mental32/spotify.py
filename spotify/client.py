@@ -47,13 +47,15 @@ class Client:
         loop: Optional[asyncio.AbstractEventLoop] = None,
     ) -> None:
         if not isinstance(client_id, str):
-            raise TypeError('client_id must be a string.')
+            raise TypeError("client_id must be a string.")
 
         if not isinstance(client_secret, str):
-            raise TypeError('client_secret must be a string.')
+            raise TypeError("client_secret must be a string.")
 
         if loop is not None and not isinstance(loop, asyncio.AbstractEventLoop):
-            raise TypeError('loop argument must be None or an instance of asyncio.AbstractEventLoop.')
+            raise TypeError(
+                "loop argument must be None or an instance of asyncio.AbstractEventLoop."
+            )
 
         self.loop = loop = loop or asyncio.get_event_loop()
         self.http = self._default_http_client(client_id, client_secret, loop=loop)
