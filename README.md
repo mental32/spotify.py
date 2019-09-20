@@ -60,11 +60,7 @@ async def main():
         print('No playlists were found!', file=sys.stderr)
         return
     else:
-        tracks = await playlist.get_all_tracks()
-
-    sorted_tracks = sorted(tracks, reverse=True, key=(lambda track: track.popularity))
-
-    await user.replace_tracks(playlist, sorted_tracks)
+        await playlist.sort(reverse=True, key=(lambda track: track.popularity))
 
 if __name__ == '__main__':
     client.loop.run_until_complete(main())
