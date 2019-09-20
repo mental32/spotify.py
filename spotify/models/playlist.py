@@ -239,12 +239,12 @@ class Playlist(URIBase):  # pylint: disable=too-many-instance-attributes
             tracks = list(*tracks)
 
         if len(tracks) <= 100:
-            head = tracks
+            head, tracks = tracks, []
         else:
             head, tracks = tracks[:100], tracks[100:]
 
         await self.__http.replace_playlist_tracks(
-            self.id, tracks=(str(track) for track in head)
+            self.id, tracks=head
         )
 
         while tracks:
