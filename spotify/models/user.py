@@ -450,6 +450,7 @@ class User(URIBase):  # pylint: disable=too-many-instance-attributes
         playlist_data = await self.http.create_playlist(self.id, **data)
         return Playlist(self.__client, playlist_data, http=self.http)
 
+    @ensure_http
     async def get_playlists(self, *, limit=20, offset=0):
         """get the users playlists from spotify.
 
@@ -465,14 +466,10 @@ class User(URIBase):  # pylint: disable=too-many-instance-attributes
         playlists : List[Playlist]
             A list of the users playlists.
         """
-        if hasattr(self, "http"):
-            http = self.http
-        else:
-            http = self.__client.http
-
         data = await http.get_playlists(self.id, limit=limit, offset=offset)
+
         return [
-            Playlist(self.__client, playlist_data, http=http)
+            Playlist(self.__client, playlist_data, http=self.http)
             for playlist_data in data["items"]
         ]
 
