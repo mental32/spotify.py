@@ -85,6 +85,9 @@ class URIBase(SpotifyBase):
      - Casting to a string will return the uri of the object.
     """
 
+    def __hash__(self):
+        return hash(self.uri)  # pylint: disable=no-member
+
     def __eq__(self, other):
         return (
             type(self) is type(other) and self.uri == other.uri
