@@ -12,28 +12,28 @@ class Player(SpotifyBase):  # pylint: disable=too-many-instance-attributes
 
     Attributes
     ----------
-    device : Device
+    device : :class:`spotify.Device`
         The device that is currently active.
-    repeat_state : str
+    repeat_state : :class:`str`
         "off", "track", "context"
-    shuffle_state : bool
+    shuffle_state : :class:`bool`
         If shuffle is on or off.
-    context : spotify.Context
+    context : :class:`spotify.Context`
         The context of the current player.
-    timestamp : int
+    timestamp : :class:`int`
         Unix Millisecond Timestamp when data was fetched.
-    progress_ms : int
+    progress_ms : :class:`int`
         Progress into the currently playing track.
         Can be None (e.g. If private session is enabled this will be None).
-    is_playing : bool
+    is_playing : :class:`bool`
         If something is currently playing.
-    item : Track
+    item : :class:`spotify.Track`
         The currently playing track.
         Can be None (e.g. If private session is enabled this will be None).
-    currently_playing_type : str
+    currently_playing_type : :class:`str`
         The object type of the currently playing item. #
         Can be one of "track", "episode", "ad" or "unknown".
-    actions : List[str]
+    actions : List[:class:`str`]
         A list of disallowed actions.
     """
 
