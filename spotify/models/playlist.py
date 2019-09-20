@@ -131,7 +131,7 @@ class Playlist(URIBase):  # pylint: disable=too-many-instance-attributes
             # skip the api call.
             return
 
-        await self.replace_tracks(tracks)
+        await self.replace_tracks(*tracks)
         self.__tracks = tuple(tracks)
 
     # Properties
