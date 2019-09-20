@@ -72,7 +72,7 @@ if __name__ == '__main__':
 import flask
 import spotify.sync as spotify
 
-SPOTIFY_CLIENT = spotify.Client.from_envvar('SPOTIFY_CLIENT_ID', 'SPOTIFY_CLIENT_SECRET')
+SPOTIFY_CLIENT = spotify.Client('SPOTIFY_CLIENT_ID', 'SPOTIFY_CLIENT_SECRET')
 
 APP = flask.Flask(__name__)
 APP.config.from_mapping({'spotify_client': SPOTIFY_CLIENT})
