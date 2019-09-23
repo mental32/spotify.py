@@ -13,7 +13,6 @@ from .errors import HTTPException, Forbidden, NotFound, SpotifyException, Bearer
 __all__ = ("HTTPClient", "HTTPUserClient")
 
 _GET_BEARER_ARG_ERR = "{name} was `None` when getting a bearer token."
-_GET_BEARER_ERR = "Server responded with \"{code}\" ({description}) when getting a bearer token."
 _PYTHON_VERSION = ".".join(str(_) for _ in sys.version_info[:3])
 _AIOHTTP_VERSION = aiohttp.__version__
 
@@ -56,8 +55,8 @@ class HTTPClient:
 
     def __init__(
         self,
-        client_id: Optional[str],
-        client_secret: Optional[str],
+        client_id: str,
+        client_secret: str,
         loop=None
     ):
         self.loop = loop or asyncio.get_event_loop()
@@ -133,8 +132,15 @@ class HTTPClient:
 
         session = session or self._session
 
-        async with session.post(**kwargs) as resp:
-            return json.loads(await resp.text(encoding="utf-8"))
+        async with session.post(**kwargs) as response:
+            bearer_info = json.loads(await response.text(encoding="utf-8"))
+            if "error" in bearer_info.keys():
+                raise BearerTokenError(
+                    response=response,
+                    message=bearer_info,
+                )
+
+        return bearer_info
 
     async def request(self, route, **kwargs):
         r"""Make a request to the spotify API with the current bearer credentials.
@@ -153,13 +159,6 @@ class HTTPClient:
 
         if self.bearer_info is None:
             self.bearer_info = bearer_info = await self.get_bearer_info()
-            if "error" in bearer_info.keys():
-                raise BearerTokenError(
-                    _GET_BEARER_ERR.format(
-                        code=bearer_info["error"],
-                        description=bearer_info.get("error_description", "No description provided")
-                    )
-                )
             access_token = bearer_info["access_token"]
         else:
             access_token = self.bearer_info["access_token"]
@@ -218,8 +217,7 @@ class HTTPClient:
 
     async def close(self):
         """Close the underlying HTTP session."""
-        if not self._session.closed:
-            await self._session.close()
+        await self._session.close()
 
     # Methods are defined in the order that they are listed in
     # the api docs (https://developer.spotify.com/documentation/web-api/reference/)
@@ -1678,7 +1676,7 @@ class HTTPClient:
         if market:
             payload["market"] = market
 
-        if include_external:
+        if include_external is not None:
             payload["include_external"] = include_external
 
         return self.request(route, params=payload)

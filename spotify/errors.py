@@ -33,5 +33,5 @@ class NotFound(HTTPException):
     """An exception that's thrown when status code 404 occurs."""
 
 
-class BearerTokenError(SpotifyException):
+class BearerTokenError(HTTPException):
     """An exception that's thrown when Spotify could not provide a valid Bearer Token"""

@@ -69,9 +69,6 @@ class Client:
     async def __aexit__(self, exc_type, exc_value, traceback) -> None:
         await self.close()
 
-    def __del__(self):
-        self.loop.run_until_complete(self.close())
-
     # Properties
 
     @property

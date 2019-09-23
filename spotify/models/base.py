@@ -7,9 +7,9 @@ class SpotifyBase:
     This base class is used to transparently construct spotify
     models based on the :class:`spotify,Client` type.
 
-    Currently it is used to detect whether a Client is a syncronous
+    Currently it is used to detect whether a Client is a synchronous
     client and, if as such, construct and return the appropriate
-    syncronous model.
+    synchronous model.
     """
 
     __slots__ = ()
@@ -17,7 +17,7 @@ class SpotifyBase:
     def __new__(cls, client, *_, **__):
         if not isinstance(client, spotify.Client):
             raise TypeError(
-                f"{cls!r}: expected client argument to be an instance of spotify.Client. instead got {type(client)}"
+                f"{cls!r}: expected client argument to be an instance of `spotify.Client`. Instead got {type(client)}"
             )
 
         if hasattr(client, "__client_thread__"):
