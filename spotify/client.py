@@ -102,7 +102,8 @@ class Client:
         scope : Optional[:class:`str`]
             Space seperated spotify scopes for different levels of access.
         state : Optional[:class:`str`]
-            Using a state value can increase your assurance that an incoming connection is the result of an authentication request.
+            Using a state value can increase your assurance that an incoming connection is the result of an
+            authentication request.
 
         Returns
         -------
@@ -251,6 +252,7 @@ class Client:
         limit: Optional[int] = 20,
         offset: Optional[int] = 0,
         market: Optional[str] = None,
+        include_external: bool = False,
     ) -> Dict[str, List[Union[Track, Playlist, Artist, Album]]]:
         """Access the spotify search functionality.
 
@@ -274,6 +276,9 @@ class Client:
             The offset from where the api should start from in the search results.
         market : Optional[:class:`str`]
             An ISO 3166-1 alpha-2 country code. Provide this parameter if you want to apply Track Relinking.
+        include_external : :class:`bool`
+            If `True` is specified, the response will include any relevant audio content
+            that is hosted externally. By default external content is filtered out from responses.
 
         Returns
         -------
@@ -291,7 +296,7 @@ class Client:
             raise TypeError("types must be an iterable.")
 
         if not isinstance(types, list):
-            types = list(item for item in types)
+            types = list(types)
 
         types_ = set(types)
 
@@ -300,11 +305,14 @@ class Client:
 
         kwargs = {
             "q": q,
-            "queary_type": ",".join(tp.strip() for tp in types),
+            "query_type": ",".join(tp.strip() for tp in types),
             "market": market,
             "limit": limit,
             "offset": offset,
         }
+
+        if include_external:
+            kwargs["include_external"] = "audio"
 
         data = await self.http.search(**kwargs)
 
