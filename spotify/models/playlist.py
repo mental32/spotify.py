@@ -55,7 +55,6 @@ class Playlist(URIBase):  # pylint: disable=too-many-instance-attributes
         "owner",
         "uri",
         "total_tracks",
-
         "__client",
         "__http",
         "__tracks",
@@ -114,7 +113,9 @@ class Playlist(URIBase):  # pylint: disable=too-many-instance-attributes
             else None
         )
 
-        self.total_tracks = len(tracks) if tracks is not None else data["tracks"]["total"]
+        self.total_tracks = (
+            len(tracks) if tracks is not None else data["tracks"]["total"]
+        )
 
     @asynccontextmanager
     async def __mutate_tracks(self):
@@ -160,9 +161,7 @@ class Playlist(URIBase):  # pylint: disable=too-many-instance-attributes
             The tracks of the playlist.
         """
         data = self.__http.get_playlist_tracks(self.id, limit=limit, offset=offset)
-        return tuple(
-            PlaylistTrack(self.__client, item) for item in data["items"]
-        )
+        return tuple(PlaylistTrack(self.__client, item) for item in data["items"])
 
     async def get_all_tracks(self) -> Tuple[PlaylistTrack]:
         """Get all playlist tracks from the playlist.
@@ -241,7 +240,9 @@ class Playlist(URIBase):  # pylint: disable=too-many-instance-attributes
         bucket = []
         for track in tracks:
             if not isinstance(track, (str, Track)):
-                raise TypeError(f"tracks must be a iterable of strings or Track instances. Got {type(track)!r}")
+                raise TypeError(
+                    f"tracks must be a iterable of strings or Track instances. Got {type(track)!r}"
+                )
 
             bucket.append(str(track))
 
@@ -252,9 +253,7 @@ class Playlist(URIBase):  # pylint: disable=too-many-instance-attributes
         else:
             head, tracks = tracks[:100], tracks[100:]
 
-        await self.__http.replace_playlist_tracks(
-            self.id, tracks=head
-        )
+        await self.__http.replace_playlist_tracks(self.id, tracks=head)
 
         while tracks:
             head, tracks = tracks[:100], tracks[100:]
@@ -307,9 +306,7 @@ class Playlist(URIBase):  # pylint: disable=too-many-instance-attributes
         """
         await self.__http.replace_playlist_tracks(self.id, tracks=[])
 
-    async def extend(
-        self, tracks: Union["Playlist", List[Union[Track, str]]]
-    ):
+    async def extend(self, tracks: Union["Playlist", List[Union[Track, str]]]):
         """Extend a playlists tracks with that of another playlist or a list of Track/Track URIs.
 
         .. note::
