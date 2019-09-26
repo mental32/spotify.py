@@ -17,7 +17,7 @@ class SyncMeta(type):
         if base_name in ("HTTPClient", "HTTPUserClient"):
 
             def __init__(self, *args, **kwargs):
-                super().__init__(*args, **kwargs)
+                base.__init__(self, *args, **kwargs)
                 self.__client_thread__ = kwargs[
                     "loop"
                 ]._thread  # pylint: disable=protected-access
@@ -93,3 +93,4 @@ def _install(_types):
         Mock.__doc__ = obj.__doc__
 
         yield name, Mock
+
