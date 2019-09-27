@@ -131,8 +131,8 @@ class OAuth2:
 
     @property
     def scopes(self):
-        """:class:`types.MappingProxyType` - A proxy mapping of the current scopes"""
-        return MappingProxyType(self.__scopes)
+        """:class:`frozenset` - A proxy mapping of the current scopes"""
+        return frozenset(self.__scopes)
 
     @property
     def attributes(self):
@@ -175,5 +175,5 @@ class OAuth2:
         """
         for scope_name, state in scopes.items():
             scope = Scope(scope_name)
-            method = self.scopes.add if bool(state) else self.scopes.remove
+            method = self.__scopes.add if bool(state) else self.__scopes.remove
             method(scope)

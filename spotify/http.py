@@ -8,11 +8,11 @@ from urllib.parse import quote
 import aiohttp
 
 from . import __version__
-from .errors import HTTPException, Forbidden, NotFound, SpotifyException
+from .errors import HTTPException, Forbidden, NotFound, SpotifyException, BearerTokenError
 
 __all__ = ("HTTPClient", "HTTPUserClient")
 
-_GET_BEARER_ERR = "%s was `None` when getting a bearer token."
+_GET_BEARER_ARG_ERR = "{name} was `None` when getting a bearer token."
 _PYTHON_VERSION = ".".join(str(_) for _ in sys.version_info[:3])
 _AIOHTTP_VERSION = aiohttp.__version__
 
@@ -53,7 +53,12 @@ class HTTPClient:
         user_agent
     ) = f"Application (https://github.com/mental32/spotify.py {__version__}) Python/{_PYTHON_VERSION} aiohttp/{_AIOHTTP_VERSION}"
 
-    def __init__(self, client_id, client_secret, loop=None):
+    def __init__(
+        self,
+        client_id: str,
+        client_secret: str,
+        loop=None
+    ):
         self.loop = loop or asyncio.get_event_loop()
         self._session = aiohttp.ClientSession(loop=self.loop)
 
@@ -75,7 +80,7 @@ class HTTPClient:
         path : str
             A path to be formatted.
         kwargs : Any
-            The arguments to used to format the path.
+            The arguments used to format the path.
 
         Returns
         -------
@@ -112,10 +117,10 @@ class HTTPClient:
         client_secret = client_secret or self.client_secret
 
         if client_id is None:
-            raise SpotifyException(_GET_BEARER_ERR % "client_id")
+            raise SpotifyException(_GET_BEARER_ARG_ERR.format(name="client_id"))
 
         if client_secret is None:
-            raise SpotifyException(_GET_BEARER_ERR % "client_secret")
+            raise SpotifyException(_GET_BEARER_ARG_ERR.format(name="client_secret"))
 
         token = b64encode(":".join((client_id, client_secret)).encode())
 
@@ -127,8 +132,15 @@ class HTTPClient:
 
         session = session or self._session
 
-        async with session.post(**kwargs) as resp:
-            return json.loads(await resp.text(encoding="utf-8"))
+        async with session.post(**kwargs) as response:
+            bearer_info = json.loads(await response.text(encoding="utf-8"))
+            if "error" in bearer_info.keys():
+                raise BearerTokenError(
+                    response=response,
+                    message=bearer_info,
+                )
+
+        return bearer_info
 
     async def request(self, route, **kwargs):
         r"""Make a request to the spotify API with the current bearer credentials.
@@ -1611,11 +1623,11 @@ class HTTPClient:
     def search(  # pylint: disable=invalid-name
         self,
         q: str,
-        queary_type: Optional[str] = "track,playlist,artist,album",
+        query_type: Optional[str] = "track,playlist,artist,album",
         market: Optional[str] = "US",
         limit: Optional[int] = 20,
         offset: Optional[int] = 0,
-        include_external: Optional[str] = "audio",
+        include_external: Optional[str] = None,
     ) -> Awaitable:
         """Get Spotify Catalog information about artists, albums, tracks or playlists that match a keyword string.
 
@@ -1633,8 +1645,10 @@ class HTTPClient:
 
             .. note::
                 - Playlist results are not affected by the market parameter.
-                - If market is set to "from_token", and a valid access token is specified in the request header, only content playable in the country associated with the user account, is returned.
-                - Users can view the country that is associated with their account in the account settings. A user must grant access to the user-read-private scope prior to when the access token is issued.
+                - If market is set to "from_token", and a valid access token is specified in the request header, only
+                    content playable in the country associated with the user account, is returned.
+                - Users can view the country that is associated with their account in the account settings. A user must
+                    grant access to the user-read-private scope prior to when the access token is issued.
         limit : Optional[:class:`int`]
             Maximum number of results to return. (Default: 20, Minimum: 1, Maximum: 50)
 
@@ -1646,18 +1660,24 @@ class HTTPClient:
             Default: 0 (the first result).
             Maximum offset (including limit): 10,000.
             Use with limit to get the next page of search results.
-        include_external : :class:`str`
+        include_external : Optional[:class:`str`]
             Possible values: `audio`
             If `include_external=audio` is specified the response will include any relevant audio content that is hosted externally.
             By default external content is filtered out from responses.
         """
         route = self.route("GET", "/search")
-        payload = {"q": quote(q), "type": queary_type, "limit": limit, "offset": offset}
+        payload = {
+            "q": quote(q),
+            "type": query_type,
+            "limit": limit,
+            "offset": offset,
+        }
 
         if market:
             payload["market"] = market
 
-        # TODO: support 'include_external'
+        if include_external is not None:
+            payload["include_external"] = include_external
 
         return self.request(route, params=payload)
 
@@ -1666,7 +1686,7 @@ class HTTPUserClient(HTTPClient):
     """HTTPClient for access to user endpoints."""
 
     def __init__(self, token, loop=None):
-        super().__init__(None, None, loop)
+        super().__init__(client_id=None, client_secret=None, loop=loop)
         self.bearer_info = {"access_token": token}
         self.token = token
 
