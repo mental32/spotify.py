@@ -8,7 +8,13 @@ from urllib.parse import quote
 import aiohttp
 
 from . import __version__
-from .errors import HTTPException, Forbidden, NotFound, SpotifyException, BearerTokenError
+from .errors import (
+    HTTPException,
+    Forbidden,
+    NotFound,
+    SpotifyException,
+    BearerTokenError,
+)
 
 __all__ = ("HTTPClient", "HTTPUserClient")
 
@@ -53,12 +59,7 @@ class HTTPClient:
         user_agent
     ) = f"Application (https://github.com/mental32/spotify.py {__version__}) Python/{_PYTHON_VERSION} aiohttp/{_AIOHTTP_VERSION}"
 
-    def __init__(
-        self,
-        client_id: str,
-        client_secret: str,
-        loop=None
-    ):
+    def __init__(self, client_id: str, client_secret: str, loop=None):
         self.loop = loop or asyncio.get_event_loop()
         self._session = aiohttp.ClientSession(loop=self.loop)
 
@@ -135,10 +136,7 @@ class HTTPClient:
         async with session.post(**kwargs) as response:
             bearer_info = json.loads(await response.text(encoding="utf-8"))
             if "error" in bearer_info.keys():
-                raise BearerTokenError(
-                    response=response,
-                    message=bearer_info,
-                )
+                raise BearerTokenError(response=response, message=bearer_info)
 
         return bearer_info
 
@@ -1666,12 +1664,7 @@ class HTTPClient:
             By default external content is filtered out from responses.
         """
         route = self.route("GET", "/search")
-        payload = {
-            "q": quote(q),
-            "type": query_type,
-            "limit": limit,
-            "offset": offset,
-        }
+        payload = {"q": quote(q), "type": query_type, "limit": limit, "offset": offset}
 
         if market:
             payload["market"] = market

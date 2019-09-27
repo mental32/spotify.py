@@ -93,4 +93,3 @@ def _install(_types):
         Mock.__doc__ = obj.__doc__
 
         yield name, Mock
-
