@@ -77,7 +77,7 @@ class User(URIBase):  # pylint: disable=too-many-instance-attributes
     def __repr__(self):
         return f"<spotify.User: {(self.display_name or self.id)!r}>"
 
-    def __getattribute__(self, attr):
+    def __getattr__(self, attr):
         value = object.__getattribute__(self, attr)
 
         if hasattr(value, "__ensure_http__") and not hasattr(self, "http"):
