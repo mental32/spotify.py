@@ -25,7 +25,7 @@ class SyncMeta(type):
         elif base_name != "Client":
 
             def __init__(self, client, *args, **kwargs):
-                super().__init__(client, *args, **kwargs)
+                base.__init__(self, client, *args, **kwargs)
                 self.__client_thread__ = client.__client_thread__
 
         try:
