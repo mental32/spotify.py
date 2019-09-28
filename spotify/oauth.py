@@ -140,7 +140,7 @@ class OAuth2:
         data = {"client_id": self.client_id, "redirect_uri": quote(self.redirect_uri)}
 
         if self.scopes:
-            data["scope"] = quote([scope.value for scope in self.scopes])
+            data["scope"] = " ".join(quote([scope.value for scope in self.scopes]))
 
         if self.state is not None:
             data["state"] = self.state
