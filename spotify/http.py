@@ -568,7 +568,7 @@ class HTTPClient:
         if filters:
             payload.update(filters)
 
-        return self.request(route, param=payload)
+        return self.request(route, params=payload)
 
     # Follow related endpoints.
 
