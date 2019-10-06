@@ -131,7 +131,7 @@ class OAuth2:
 
     @property
     def scopes(self):
-        """:class:`frozenset` - A proxy mapping of the current scopes"""
+        """:class:`frozenset` - A frozenset of the current scopes"""
         return frozenset(self.__scopes)
 
     @property
@@ -140,7 +140,7 @@ class OAuth2:
         data = {"client_id": self.client_id, "redirect_uri": quote(self.redirect_uri)}
 
         if self.scopes:
-            data["scope"] = " ".join(quote([scope.value for scope in self.scopes]))
+            data["scope"] = quote(" ".join([scope.value for scope in self.scopes]))
 
         if self.state is not None:
             data["state"] = self.state
