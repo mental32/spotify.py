@@ -131,7 +131,7 @@ class OAuth2:
 
     @property
     def scopes(self):
-        """:class:`frozenset` - A proxy mapping of the current scopes"""
+        """:class:`frozenset` - A frozenset of the current scopes"""
         return frozenset(self.__scopes)
 
     @property
