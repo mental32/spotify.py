@@ -100,7 +100,7 @@ class Playlist(URIBase):  # pylint: disable=too-many-instance-attributes
         self.images = tuple(Image(**image) for image in data.pop("images", []))
         self.owner = User(client, data=data.pop("owner"))
 
-        self.public = data["public"]
+        self.public = data.pop("public")
         self.collaborative = data.pop("collaborative")
         self.description = data.pop("description", None)
         self.followers = data.pop("followers", {}).get("total", None)

@@ -1268,7 +1268,7 @@ class HTTPClient:
         return self.request(route, json=payload)
 
     def follow_playlist(
-        self, playlist_id: str, public: Optional[bool] = True
+        self, playlist_id: str, *, public: Optional[bool] = True
     ) -> Awaitable:
         """follow a playlist
 
