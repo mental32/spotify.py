@@ -451,6 +451,20 @@ class User(URIBase):  # pylint: disable=too-many-instance-attributes
         return Playlist(self.__client, playlist_data, http=self.http)
 
     @ensure_http
+    async def follow_playlist(self, playlist, public=True):
+        """follow a playlist
+
+        Parameters
+        ----------
+        playlist : Union[:class:`str`, Playlist]
+            The playlist to modify
+        public : Optional[bool]
+            The public/private status of the playlist.
+            `True` for public, `False` for private.
+        """
+        await self.http.follow_playlist(playlist.id, public)
+
+    @ensure_http
     async def get_playlists(self, *, limit=20, offset=0):
         """get the users playlists from spotify.
 

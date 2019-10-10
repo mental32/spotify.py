@@ -1267,6 +1267,25 @@ class HTTPClient:
 
         return self.request(route, json=payload)
 
+    def follow_playlist(
+        self, playlist_id: str, public: Optional[bool] = True
+    ) -> Awaitable:
+        """follow a playlist
+
+        Parameters
+        ----------
+        public : Optional[bool]
+            The public/private status of the playlist.
+            `True` for public, `False` for private.
+        """
+        route = self.route("PUT", "/playlists/{playlist_id}/followers", playlist_id=playlist_id)
+
+        payload = {
+            "public": public
+        }
+
+        return self.request(route, json=payload)
+
     def current_playlists(
         self, *, limit: Optional[int] = 20, offset: Optional[int] = 0
     ) -> Awaitable:
