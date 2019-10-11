@@ -212,6 +212,28 @@ class User(URIBase):  # pylint: disable=too-many-instance-attributes
 
         return self
 
+    @classmethod
+    async def from_refresh_token(
+            cls,
+            client: "spotify.Client",
+            refresh_token: str,
+            *args
+    ):
+        client_id = client.http.client_id
+        client_secret = client.http.client_secret
+
+        headers = {
+            "Authorization": f"Basic {b64encode(':'.join((client_id, client_secret)).encode()).decode()}",
+            "Content-Type": "application/x-www-form-urlencoded",
+        }
+        route = ("POST", REFRESH_TOKEN_URL.format(refresh_token=refresh_token))
+        data = await client.http.request(route, headers=headers)
+
+        expires = data["expires_in"]
+        token = data["access_token"]
+
+        return await cls.from_token(client, token=token, refresh=(expires, refresh_token))
+
     ### Attributes
 
     @property
