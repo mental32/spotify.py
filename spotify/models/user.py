@@ -49,6 +49,7 @@ class User(URIBase):  # pylint: disable=too-many-instance-attributes
     """
 
     def __init__(self, client: "spotify.Client", data: dict, **kwargs):
+        self.refresh_token = kwargs.pop('refresh_token', None)
         self._refresh_task = None
         self.__client = self.client = client
 
@@ -204,6 +205,7 @@ class User(URIBase):  # pylint: disable=too-many-instance-attributes
 
         if refresh is not None:
             expires_in, refresh_token, = refresh
+            self.refresh_token = refresh_token
             self._refresh_task = self.client.loop.create_task(  # pylint: disable=protected-access
                 self._refreshing_token(
                     expires_in, refresh_token
@@ -217,8 +219,23 @@ class User(URIBase):  # pylint: disable=too-many-instance-attributes
             cls,
             client: "spotify.Client",
             refresh_token: str,
+            refresh: bool = False,
             *args
     ):
+        """Create a :class:`User` object from a refresh token.
+        It will poll the spotify API for a new access token and
+        use that to initialize the spotify user.
+
+        Parameters
+        ----------
+        client : :class:`spotify.Client`
+            The spotify client to associate the user with.
+        refresh_token: str
+            Refresh token to be used for retrieval of the initial
+            access token.
+        refresh : bool
+            Wether to keep the http session authorized.
+        """
         client_id = client.http.client_id
         client_secret = client.http.client_secret
 
@@ -232,7 +249,12 @@ class User(URIBase):  # pylint: disable=too-many-instance-attributes
         expires = data["expires_in"]
         token = data["access_token"]
 
-        return await cls.from_token(client, token=token, refresh=(expires, refresh_token))
+        if refresh:
+            refresh_task = (expires, refresh_token)
+        else:
+            refresh_task = None
+
+        return await cls.from_token(client, token=token, refresh=refresh_task)
 
     ### Attributes
 
