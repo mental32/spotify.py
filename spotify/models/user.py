@@ -110,10 +110,16 @@ class User(URIBase):  # pylint: disable=too-many-instance-attributes
         while True:
             await asyncio.sleep(expires - 1)
 
+            client_id = self.client.http.client_id
+            client_secret = self.client.http.client_secret
+
+            headers = {
+                "Authorization": f"Basic {b64encode(':'.join((client_id, client_secret)).encode()).decode()}",
+                "Content-Type": "application/x-www-form-urlencoded",
+            }
+
             route = ("POST", REFRESH_TOKEN_URL.format(refresh_token=token))
-            data = await self.client.http.request(
-                route, content_type="application/x-www-form-urlencoded"
-            )
+            data = await self.client.http.request(route, headers=headers)
 
             expires = data["expires_in"]
             self.http.token = data["access_token"]
