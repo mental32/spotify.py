@@ -538,6 +538,38 @@ class User(URIBase):  # pylint: disable=too-many-instance-attributes
         ]
 
     @ensure_http
+    async def get_all_playlists(self) -> List[Playlist]:
+        """Get all of the users playlists from spotify.
+
+        Returns
+        -------
+        playlists : List[:class:`Playlist`]
+            A list of the users playlists.
+        """
+        playlists = []
+        total = None
+        offset = 0
+
+        while True:
+            data = await self.http.get_playlists(
+                self.id, limit=50, offset=offset
+            )
+
+            if total is None:
+                total = data["total"]
+
+            offset += 50
+            playlists += [
+                Playlist(self.__client, playlist_data, http=self.http)
+                for playlist_data in data["items"]
+            ]
+
+            if len(playlists) >= total:
+                break
+
+        return playlists
+
+    @ensure_http
     async def top_artists(self, **data) -> List[Artist]:
         """Get the current user’s top artists based on calculated affinity.
 
