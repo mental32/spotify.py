@@ -1278,11 +1278,11 @@ class HTTPClient:
             The public/private status of the playlist.
             `True` for public, `False` for private.
         """
-        route = self.route("PUT", "/playlists/{playlist_id}/followers", playlist_id=playlist_id)
+        route = self.route(
+            "PUT", "/playlists/{playlist_id}/followers", playlist_id=playlist_id
+        )
 
-        payload = {
-            "public": public
-        }
+        payload = {"public": public}
 
         return self.request(route, json=payload)
 

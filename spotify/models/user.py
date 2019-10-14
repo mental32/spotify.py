@@ -49,7 +49,7 @@ class User(URIBase):  # pylint: disable=too-many-instance-attributes
     """
 
     def __init__(self, client: "spotify.Client", data: dict, **kwargs):
-        self.refresh_token = kwargs.pop('refresh_token', None)
+        self.refresh_token = kwargs.pop("refresh_token", None)
         self._refresh_task = None
         self.__client = self.client = client
 
@@ -222,11 +222,7 @@ class User(URIBase):  # pylint: disable=too-many-instance-attributes
 
     @classmethod
     async def from_refresh_token(
-            cls,
-            client: "spotify.Client",
-            refresh_token: str,
-            refresh: bool = False,
-            *args
+        cls, client: "spotify.Client", refresh_token: str, refresh: bool = False, *args
     ):
         """Create a :class:`User` object from a refresh token.
         It will poll the spotify API for a new access token and
@@ -501,7 +497,7 @@ class User(URIBase):  # pylint: disable=too-many-instance-attributes
         return Playlist(self.__client, playlist_data, http=self.http)
 
     @ensure_http
-    async def follow_playlist(self, playlist: Union[str, Playlist], *, public=True):
+    async def follow_playlist(self, playlist: Union[str, Playlist], *, public: bool = True) -> None:
         """follow a playlist
 
         Parameters
@@ -515,7 +511,7 @@ class User(URIBase):  # pylint: disable=too-many-instance-attributes
         await self.http.follow_playlist(to_id(str(playlist)), public=public)
 
     @ensure_http
-    async def get_playlists(self, *, limit=20, offset=0):
+    async def get_playlists(self, *, limit: int = 20, offset: int = 0) -> List[Playlist]:
         """get the users playlists from spotify.
 
         Parameters
