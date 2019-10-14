@@ -76,9 +76,7 @@ class Library(SpotifyBase):
         offset = 0
 
         while True:
-            data = await self.user.http.saved_tracks(
-                limit=50, offset=offset
-            )
+            data = await self.user.http.saved_tracks(limit=50, offset=offset)
 
             if total is None:
                 total = data["total"]
@@ -120,9 +118,7 @@ class Library(SpotifyBase):
         offset = 0
 
         while True:
-            data = await self.user.http.saved_albums(
-                limit=50, offset=offset
-            )
+            data = await self.user.http.saved_albums(limit=50, offset=offset)
 
             if total is None:
                 total = data["total"]

@@ -14,6 +14,7 @@ _SEARCH_TYPE_ERR = (
     'Bad queary type! got "%s" expected any of: track, playlist, artist, album'
 )
 
+
 class SearchResults(NamedTuple):
     """A namedtuple of search results.
 
@@ -28,6 +29,7 @@ class SearchResults(NamedTuple):
     tracks : List[:class:`Track`]
         The tracks of the search.
     """
+
     artists: List[Artist] = None
     playlists: List[Playlist] = None
     albums: List[Album] = None

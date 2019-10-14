@@ -497,7 +497,9 @@ class User(URIBase):  # pylint: disable=too-many-instance-attributes
         return Playlist(self.__client, playlist_data, http=self.http)
 
     @ensure_http
-    async def follow_playlist(self, playlist: Union[str, Playlist], *, public: bool = True) -> None:
+    async def follow_playlist(
+        self, playlist: Union[str, Playlist], *, public: bool = True
+    ) -> None:
         """follow a playlist
 
         Parameters
@@ -511,7 +513,9 @@ class User(URIBase):  # pylint: disable=too-many-instance-attributes
         await self.http.follow_playlist(to_id(str(playlist)), public=public)
 
     @ensure_http
-    async def get_playlists(self, *, limit: int = 20, offset: int = 0) -> List[Playlist]:
+    async def get_playlists(
+        self, *, limit: int = 20, offset: int = 0
+    ) -> List[Playlist]:
         """get the users playlists from spotify.
 
         Parameters
@@ -547,9 +551,7 @@ class User(URIBase):  # pylint: disable=too-many-instance-attributes
         offset = 0
 
         while True:
-            data = await self.http.get_playlists(
-                self.id, limit=50, offset=offset
-            )
+            data = await self.http.get_playlists(self.id, limit=50, offset=offset)
 
             if total is None:
                 total = data["total"]
