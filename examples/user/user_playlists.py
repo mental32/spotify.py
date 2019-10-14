@@ -13,5 +13,9 @@ async def main():
     # returns a list of spotify.Playlist objects
     playlists = await user.get_playlists()
 
+    # Or if you want to target all playlists
+    all_playlists = await user.get_all_playlists()
+
+
 if __name__ == '__main__':
     asyncio.get_event_loop().run_until_complete(main())

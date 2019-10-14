@@ -10,18 +10,19 @@ from spotify import OAuth2
 # OAuth2.url_ has an identical signature to creating
 # a regular OAuth2 object, it simply skips creating
 # the object and returns a 'valid' url quickly
-oauth_url = OAuth2.url_('clientid', 'redirect://uri', scope='some-scope another-scope', state='cryptographically-random-state')
-
+#
 # Since v0.2.0 `OAuth2.url_` has an alias `OAuth2.url_only`
+oauth_url = OAuth2.url_only('clientid', 'redirect://uri', scope=['some-scope', 'another-scope'], state='cryptographically-random-state')
+
 
 # the only required arguments are the client_id and the redirect_uri
 oauth = OAuth2('clientid', 'redirect://uri')
 
 # requiring scopes is simply instantiating an OAuth2 object
-# with `scopes='some-scope another-scope'`or if you prefer
+# with `['some-scope', 'another-scope']'`or if you prefer
 # dynamically assigning the scope after the object init
 # for instance:
-oauth.scope = 'some-scope another-scope'
+oauth.set_scopes(some_scope=True, another_scope=True)
 
 # A spotify.OAuth2 object has only three properties
 # attrs, parameters and url.

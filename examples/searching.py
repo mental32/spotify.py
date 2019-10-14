@@ -6,16 +6,18 @@ client = spotify.Client('someid', 'somesecret')
 async def main():
     results = await client.search('drake')
 
-    # spotify.Client.search returns a dict
-    # the keys are the result types
-    # the values are the items returned from the query for that type
+    # spotify.Client.search returns a namedtuple
+    # there are four fields: artists, albums, playlists and tracks
+    # the field values are the items returned from the query for that type
     #
-    # {
-    #     'artists': [spotify.Artist, ...],
-    #     'albums': [spotify.Album, ...],
-    #     'playlists': [spotify.Playlist, ...],
-    #     'tracks': [spotify.Track, ...]
-    # }
+    # SearchResults(
+    #     artists=[spotify.Artist, ...],
+    #     albums=[spotify.Album, ...],
+    #     playlists=[spotify.Playlist, ...],
+    #     tracks=[spotify.Track, ...]
+    # )
+    #
+    # If a field is ommited in the results `None` is used instead.
 
     # Filtering search types
     # if a filter is unspecified all result types are returned.

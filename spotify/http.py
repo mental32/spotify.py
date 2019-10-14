@@ -163,7 +163,7 @@ class HTTPClient:
 
         headers = {
             "Authorization": "Bearer " + access_token,
-            "Content-Type": kwargs.get("content_type", "application/json"),
+            "Content-Type": kwargs.pop("content_type", "application/json"),
             "User-Agent": self.user_agent,
             **kwargs.pop("headers", {}),
         }
@@ -1264,6 +1264,25 @@ class HTTPClient:
             "collaborative": collaborative,
             "description": description,
         }
+
+        return self.request(route, json=payload)
+
+    def follow_playlist(
+        self, playlist_id: str, *, public: Optional[bool] = True
+    ) -> Awaitable:
+        """follow a playlist
+
+        Parameters
+        ----------
+        public : Optional[bool]
+            The public/private status of the playlist.
+            `True` for public, `False` for private.
+        """
+        route = self.route(
+            "PUT", "/playlists/{playlist_id}/followers", playlist_id=playlist_id
+        )
+
+        payload = {"public": public}
 
         return self.request(route, json=payload)
 

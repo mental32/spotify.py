@@ -84,6 +84,7 @@ class URIBase(SpotifyBase):
      - Two objects are equal if **They are strictly the same type and have the same uri**
      - Casting to a string will return the uri of the object.
     """
+
     uri = repr(None)
 
     def __hash__(self):

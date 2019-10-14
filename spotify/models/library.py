@@ -63,6 +63,36 @@ class Library(SpotifyBase):
 
         return [Track(self.__client, item["track"]) for item in data["items"]]
 
+    async def get_all_tracks(self) -> List[Track]:
+        """Get a list of all the songs saved in the current Spotify user’s ‘Your Music’ library.
+
+        Returns
+        -------
+        tracks : List[:class:`Track`]
+            The tracks of the artist.
+        """
+        tracks = []
+        total = None
+        offset = 0
+
+        while True:
+            data = await self.user.http.saved_tracks(
+                limit=50, offset=offset
+            )
+
+            if total is None:
+                total = data["total"]
+
+            offset += 50
+            tracks += list(
+                Track(self.__client, item["track"]) for item in data["items"]
+            )
+
+            if len(tracks) >= total:
+                break
+
+        return tracks
+
     async def get_albums(self, *, limit=20, offset=0) -> List[Album]:
         """Get a list of the albums saved in the current Spotify user’s ‘Your Music’ library.
 
@@ -76,6 +106,36 @@ class Library(SpotifyBase):
         data = await self.user.http.saved_albums(limit=limit, offset=offset)
 
         return [Album(self.__client, item["album"]) for item in data["items"]]
+
+    async def get_all_albums(self) -> List[Album]:
+        """Get a list of the albums saved in the current Spotify user’s ‘Your Music’ library.
+
+        Returns
+        -------
+        albums : List[:class:`Album`]
+            The albums.
+        """
+        albums = []
+        total = None
+        offset = 0
+
+        while True:
+            data = await self.user.http.saved_albums(
+                limit=50, offset=offset
+            )
+
+            if total is None:
+                total = data["total"]
+
+            offset += 50
+            albums += list(
+                Album(self.__client, item["album"]) for item in data["items"]
+            )
+
+            if len(albums) >= total:
+                break
+
+        return albums
 
     async def remove_albums(self, *albums):
         """Remove one or more albums from the current user’s ‘Your Music’ library.

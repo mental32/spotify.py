@@ -49,6 +49,7 @@ class User(URIBase):  # pylint: disable=too-many-instance-attributes
     """
 
     def __init__(self, client: "spotify.Client", data: dict, **kwargs):
+        self.refresh_token = kwargs.pop("refresh_token", None)
         self._refresh_task = None
         self.__client = self.client = client
 
@@ -109,10 +110,16 @@ class User(URIBase):  # pylint: disable=too-many-instance-attributes
         while True:
             await asyncio.sleep(expires - 1)
 
+            client_id = self.client.http.client_id
+            client_secret = self.client.http.client_secret
+
+            headers = {
+                "Authorization": f"Basic {b64encode(':'.join((client_id, client_secret)).encode()).decode()}",
+                "Content-Type": "application/x-www-form-urlencoded",
+            }
+
             route = ("POST", REFRESH_TOKEN_URL.format(refresh_token=token))
-            data = await self.client.http.request(
-                route, content_type="application/x-www-form-urlencoded"
-            )
+            data = await self.client.http.request(route, headers=headers)
 
             expires = data["expires_in"]
             self.http.token = data["access_token"]
@@ -204,6 +211,7 @@ class User(URIBase):  # pylint: disable=too-many-instance-attributes
 
         if refresh is not None:
             expires_in, refresh_token, = refresh
+            self.refresh_token = refresh_token
             self._refresh_task = self.client.loop.create_task(  # pylint: disable=protected-access
                 self._refreshing_token(
                     expires_in, refresh_token
@@ -211,6 +219,44 @@ class User(URIBase):  # pylint: disable=too-many-instance-attributes
             )
 
         return self
+
+    @classmethod
+    async def from_refresh_token(
+        cls, client: "spotify.Client", refresh_token: str, refresh: bool = False, *args
+    ):
+        """Create a :class:`User` object from a refresh token.
+        It will poll the spotify API for a new access token and
+        use that to initialize the spotify user.
+
+        Parameters
+        ----------
+        client : :class:`spotify.Client`
+            The spotify client to associate the user with.
+        refresh_token: str
+            Refresh token to be used for retrieval of the initial
+            access token.
+        refresh : bool
+            Wether to keep the http session authorized.
+        """
+        client_id = client.http.client_id
+        client_secret = client.http.client_secret
+
+        headers = {
+            "Authorization": f"Basic {b64encode(':'.join((client_id, client_secret)).encode()).decode()}",
+            "Content-Type": "application/x-www-form-urlencoded",
+        }
+        route = ("POST", REFRESH_TOKEN_URL.format(refresh_token=refresh_token))
+        data = await client.http.request(route, headers=headers)
+
+        expires = data["expires_in"]
+        token = data["access_token"]
+
+        if refresh:
+            refresh_task = (expires, refresh_token)
+        else:
+            refresh_task = None
+
+        return await cls.from_token(client, token=token, refresh=refresh_task)
 
     ### Attributes
 
@@ -451,7 +497,21 @@ class User(URIBase):  # pylint: disable=too-many-instance-attributes
         return Playlist(self.__client, playlist_data, http=self.http)
 
     @ensure_http
-    async def get_playlists(self, *, limit=20, offset=0):
+    async def follow_playlist(self, playlist: Union[str, Playlist], *, public: bool = True) -> None:
+        """follow a playlist
+
+        Parameters
+        ----------
+        playlist : Union[:class:`str`, Playlist]
+            The playlist to modify
+        public : Optional[bool]
+            The public/private status of the playlist.
+            `True` for public, `False` for private.
+        """
+        await self.http.follow_playlist(to_id(str(playlist)), public=public)
+
+    @ensure_http
+    async def get_playlists(self, *, limit: int = 20, offset: int = 0) -> List[Playlist]:
         """get the users playlists from spotify.
 
         Parameters
@@ -472,6 +532,38 @@ class User(URIBase):  # pylint: disable=too-many-instance-attributes
             Playlist(self.__client, playlist_data, http=self.http)
             for playlist_data in data["items"]
         ]
+
+    @ensure_http
+    async def get_all_playlists(self) -> List[Playlist]:
+        """Get all of the users playlists from spotify.
+
+        Returns
+        -------
+        playlists : List[:class:`Playlist`]
+            A list of the users playlists.
+        """
+        playlists = []
+        total = None
+        offset = 0
+
+        while True:
+            data = await self.http.get_playlists(
+                self.id, limit=50, offset=offset
+            )
+
+            if total is None:
+                total = data["total"]
+
+            offset += 50
+            playlists += [
+                Playlist(self.__client, playlist_data, http=self.http)
+                for playlist_data in data["items"]
+            ]
+
+            if len(playlists) >= total:
+                break
+
+        return playlists
 
     @ensure_http
     async def top_artists(self, **data) -> List[Artist]:
