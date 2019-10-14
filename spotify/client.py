@@ -1,9 +1,11 @@
 import asyncio
-from typing import Optional, List, Iterable, Dict, Union
+from typing import Optional, List, Iterable, Dict, Union, NamedTuple
 
 from .http import HTTPClient
 from .utils import to_id
 from . import OAuth2, Artist, Album, Track, User, Playlist
+
+__all__ = ("Client", "SearchResults")
 
 _TYPES = {"artist": Artist, "album": Album, "playlist": Playlist, "track": Track}
 
@@ -11,6 +13,25 @@ _SEARCH_TYPES = {"track", "playlist", "artist", "album"}
 _SEARCH_TYPE_ERR = (
     'Bad queary type! got "%s" expected any of: track, playlist, artist, album'
 )
+
+class SearchResults(NamedTuple):
+    """A namedtuple of search results.
+
+    Attributes
+    ----------
+    artists : List[:class:`Artist`]
+        The artists of the search.
+    playlists : List[:class:`Playlist`]
+        The playlists of the search.
+    albums : List[:class:`Album`]
+        The albums of the search.
+    tracks : List[:class:`Track`]
+        The tracks of the search.
+    """
+    artists: List[Artist] = None
+    playlists: List[Playlist] = None
+    albums: List[Album] = None
+    tracks: List[Track] = None
 
 
 class Client:
@@ -253,7 +274,7 @@ class Client:
         offset: Optional[int] = 0,
         market: Optional[str] = None,
         include_external: bool = False,
-    ) -> Dict[str, List[Union[Track, Playlist, Artist, Album]]]:
+    ) -> SearchResults:
         """Access the spotify search functionality.
 
         >>> results = client.search('Cadet', types=['artist'])
@@ -282,7 +303,7 @@ class Client:
 
         Returns
         -------
-        results : Dict[str, List[Union[Track, Playlist, Artist, Album]]]
+        results : :class:`SearchResults`
             The results of the search.
 
         Raises
@@ -316,7 +337,9 @@ class Client:
 
         data = await self.http.search(**kwargs)
 
-        return {
-            key: [_TYPES[obj["type"]](self, obj) for obj in value["items"]]
-            for key, value in data.items()
-        }
+        return SearchResults(
+            **{
+                key: [_TYPES[obj["type"]](self, obj) for obj in value["items"]]
+                for key, value in data.items()
+            }
+        )

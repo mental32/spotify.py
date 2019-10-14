@@ -5,7 +5,7 @@ __version__ = "0.7.0"  # noqa
 
 from .errors import *
 from .models import *
-from .client import Client
+from .client import *
 from .models import SpotifyBase
 from .http import HTTPClient, HTTPUserClient
 
