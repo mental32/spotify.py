@@ -633,26 +633,6 @@ class HTTPClient:
 
         return self.request(route, params=payload)
 
-    def follow_playlist(
-        self, playlist_id: str, *, public: Optional[bool] = True
-    ) -> Awaitable:
-        """Add the current user as a follower of a playlist.
-
-        Parameters
-        ----------
-        playlist_id : :class:`str`
-            The Spotify ID of the playlist. Any playlist can be followed, regardless of its public/private status, as long as you know its playlist ID.
-        public : Optional[:class:`bool`]
-            Defaults to true. If true the playlist will be included in user’s public playlists, if false it will remain private.
-        """
-        route = self.route(
-            "PUT", "/playlists/{playlist_id}/followers", playlist_id=playlist_id
-        )
-
-        content = json.dumps({"public": public})
-
-        return self.request(route, content=content)
-
     def followed_artists(
         self, *, limit: Optional[int] = 20, after: Optional[str] = None
     ) -> Awaitable:
