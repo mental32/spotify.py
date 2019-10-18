@@ -58,7 +58,7 @@ class SyncExecution(threading.Thread):
         # only for scheduling the coroutine
         # to run and getting back the task object.
         with self.__lock:
-            output = queue.Queue(maxsize=1)
+            output: queue.Queue = queue.Queue(maxsize=1)
             self.channel.put((coro, output))
             task = output.get()
 

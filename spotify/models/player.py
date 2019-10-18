@@ -1,4 +1,4 @@
-from typing import Union, Optional
+from typing import Union, Optional, List
 
 from . import SpotifyBase, Context, Device, Track
 from .typing import SomeURIs
@@ -185,9 +185,11 @@ class Player(SpotifyBase):  # pylint: disable=too-many-instance-attributes
             The Device object or id of the device this command is targeting.
             If not supplied, the user’s currently active device is the target.
         """
+        context_uri: Union[List[str], str]
+
         if len(uris) > 1:
             # Regular uris paramter
-            context_uri = (str(uri) for uri in uris)
+            context_uri = [str(uri) for uri in uris]
         else:
             # Treat it as a context URI
             context_uri = str(uris[0])

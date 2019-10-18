@@ -1,5 +1,5 @@
 import asyncio
-from typing import Optional, List, Iterable, Dict, Union, NamedTuple
+from typing import Optional, List, Iterable, Dict, Union, NamedTuple, Type
 
 from .http import HTTPClient
 from .utils import to_id
@@ -30,10 +30,10 @@ class SearchResults(NamedTuple):
         The tracks of the search.
     """
 
-    artists: List[Artist] = None
-    playlists: List[Playlist] = None
-    albums: List[Album] = None
-    tracks: List[Track] = None
+    artists: Optional[List[Artist]] = None
+    playlists: Optional[List[Playlist]] = None
+    albums: Optional[List[Album]] = None
+    tracks: Optional[List[Track]] = None
 
 
 class Client:
@@ -60,7 +60,7 @@ class Client:
         The event loop the client is running on.
     """
 
-    _default_http_client: HTTPClient = HTTPClient
+    _default_http_client: Type[HTTPClient] = HTTPClient
 
     def __init__(
         self,
@@ -231,7 +231,7 @@ class Client:
 
     # Get multiple objects
 
-    async def get_albums(self, *ids: List[str], market: str = "US") -> List[Album]:
+    async def get_albums(self, *ids: str, market: str = "US") -> List[Album]:
         """Retrive multiple albums with a list of spotify IDs.
 
         Parameters
@@ -251,7 +251,7 @@ class Client:
         )
         return list(Album(self, album) for album in data["albums"])
 
-    async def get_artists(self, *ids: List[str]) -> List[Artist]:
+    async def get_artists(self, *ids: str) -> List[Artist]:
         """Retrive multiple artists with a list of spotify IDs.
 
         Parameters
@@ -271,11 +271,11 @@ class Client:
         self,
         q: str,
         *,
-        types: Optional[Iterable[str]] = ("track", "playlist", "artist", "album"),
-        limit: Optional[int] = 20,
-        offset: Optional[int] = 0,
-        market: Optional[str] = None,
-        include_external: bool = False,
+        types: Iterable[str] = ("track", "playlist", "artist", "album"),
+        limit: int = 20,
+        offset: int = 0,
+        market: str = "US",
+        should_include_external: bool = False,
     ) -> SearchResults:
         """Access the spotify search functionality.
 
@@ -299,7 +299,7 @@ class Client:
             The offset from where the api should start from in the search results.
         market : Optional[:class:`str`]
             An ISO 3166-1 alpha-2 country code. Provide this parameter if you want to apply Track Relinking.
-        include_external : :class:`bool`
+        should_include_external : :class:`bool`
             If `True` is specified, the response will include any relevant audio content
             that is hosted externally. By default external content is filtered out from responses.
 
@@ -318,26 +318,31 @@ class Client:
         if not hasattr(types, "__iter__"):
             raise TypeError("types must be an iterable.")
 
-        if not isinstance(types, list):
-            types = list(types)
-
         types_ = set(types)
 
         if not types_.issubset(_SEARCH_TYPES):
             raise ValueError(_SEARCH_TYPE_ERR % types_.difference(_SEARCH_TYPES).pop())
 
-        kwargs = {
-            "q": q,
-            "query_type": ",".join(tp.strip() for tp in types),
-            "market": market,
-            "limit": limit,
-            "offset": offset,
-        }
+        q = q
+        query_type = ",".join(tp.strip() for tp in types)
+        market = market
+        limit = limit
+        offset = offset
 
-        if include_external:
-            kwargs["include_external"] = "audio"
+        include_external: Optional[str]
+        if should_include_external:
+            include_external = "audio"
+        else:
+            include_external = None
 
-        data = await self.http.search(**kwargs)
+        data = await self.http.search(
+            q=q,
+            query_type=query_type,
+            market=market,
+            limit=limit,
+            offset=offset,
+            include_external=include_external,
+        )
 
         return SearchResults(
             **{

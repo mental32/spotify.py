@@ -1,6 +1,9 @@
-from typing import Optional, List
+from typing import Optional, List, TYPE_CHECKING
 
 from . import URIBase, Image
+
+if TYPE_CHECKING:
+    import spotify
 
 
 class Artist(URIBase):  # pylint: disable=too-many-instance-attributes
@@ -57,7 +60,7 @@ class Artist(URIBase):  # pylint: disable=too-many-instance-attributes
         offset: Optional[int] = 0,
         include_groups=None,
         market: Optional[str] = None,
-    ) -> List["Album"]:
+    ) -> List["spotify.Album"]:
         """Get the albums of a Spotify artist.
 
         Parameters
@@ -87,7 +90,7 @@ class Artist(URIBase):  # pylint: disable=too-many-instance-attributes
         )
         return list(Album(self.__client, item) for item in data["items"])
 
-    async def get_all_albums(self, *, market="US") -> List["Album"]:
+    async def get_all_albums(self, *, market="US") -> List["spotify.Album"]:
         """loads all of the artists albums, depending on how many the artist has this may be a long operation.
 
         Parameters
@@ -102,7 +105,7 @@ class Artist(URIBase):  # pylint: disable=too-many-instance-attributes
         """
         from .album import Album
 
-        albums = []
+        albums: List[Album] = []
         offset = 0
         total = await self.total_albums(market=market)
 
@@ -134,7 +137,7 @@ class Artist(URIBase):  # pylint: disable=too-many-instance-attributes
         )
         return data["total"]
 
-    async def top_tracks(self, country: str = "US") -> List["Track"]:
+    async def top_tracks(self, country: str = "US") -> List["spotify.Track"]:
         """Get Spotify catalog information about an artist’s top tracks by country.
 
         Parameters

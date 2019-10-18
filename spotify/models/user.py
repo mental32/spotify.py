@@ -3,11 +3,27 @@
 import asyncio
 import functools
 from base64 import b64encode
-from typing import Optional, Dict, Union, List, Tuple, Type, Union
+from typing import (
+    Optional,
+    Dict,
+    Union,
+    List,
+    Tuple,
+    Type,
+    TypeVar,
+    Union,
+    Coroutine,
+    TYPE_CHECKING,
+)
 
 from ..utils import to_id
 from ..http import HTTPUserClient
 from . import URIBase, Image, Device, Context, Player, Playlist, Track, Artist, Library
+
+if TYPE_CHECKING:
+    import spotify
+
+T = TypeVar("T", Artist, Track)
 
 REFRESH_TOKEN_URL = "https://accounts.spotify.com/api/token?grant_type=refresh_token&refresh_token={refresh_token}"
 
@@ -47,6 +63,8 @@ class User(URIBase):  # pylint: disable=too-many-instance-attributes
         The user’s Spotify subscription level: “premium”, “free”, etc.
         (The subscription level “open” can be considered the same as “free”.)
     """
+
+    _refresh_task: Optional[asyncio.Task]
 
     def __init__(self, client: "spotify.Client", data: dict, **kwargs):
         self.refresh_token = kwargs.pop("refresh_token", None)
@@ -92,9 +110,7 @@ class User(URIBase):  # pylint: disable=too-many-instance-attributes
             return _raise
         return value
 
-    async def _get_top(
-        self, klass: Type[Union[Track, Artist]], kwargs: dict
-    ) -> List[Union[Track, Artist]]:
+    async def _get_top(self, klass: Type[T], kwargs: dict) -> List[T]:
         target = {Artist: "artists", Track: "tracks"}[klass]
         data = {
             key: value
@@ -133,7 +149,7 @@ class User(URIBase):  # pylint: disable=too-many-instance-attributes
         code: str,
         *,
         redirect_uri: str,
-        refresh: Optional[bool] = False,
+        refresh: bool = False,
     ):
         """Create a :class:`User` object from an authorization code.
 
@@ -145,7 +161,7 @@ class User(URIBase):  # pylint: disable=too-many-instance-attributes
             The authorization code to use to further authenticate the user.
         redirect_uri : :class:`str`
             The rediriect URI to use in tandem with the authorization code.
-        refresh : Optional[:class:`bool`]
+        refresh : :class:`bool`
             Wether to keep the http session authorized.
         """
         route = ("POST", "https://accounts.spotify.com/api/token")
@@ -167,12 +183,13 @@ class User(URIBase):  # pylint: disable=too-many-instance-attributes
 
         token = raw["access_token"]
 
+        refresh_: Optional[Tuple[int, str]]
         if refresh:
-            refresh = (raw["expires_in"], raw["refresh_token"])
+            refresh_ = (raw["expires_in"], raw["refresh_token"])
         else:
-            refresh = None
+            refresh_ = None
 
-        return await cls.from_token(client, token, refresh=refresh)
+        return await cls.from_token(client, token, refresh=refresh_)
 
     @classmethod
     async def from_token(
@@ -212,11 +229,14 @@ class User(URIBase):  # pylint: disable=too-many-instance-attributes
         if refresh is not None:
             expires_in, refresh_token, = refresh
             self.refresh_token = refresh_token
-            self._refresh_task = self.client.loop.create_task(  # pylint: disable=protected-access
-                self._refreshing_token(
-                    expires_in, refresh_token
-                )  # pylint: disable=protected-access
-            )
+
+            coroutine: Coroutine = self._refreshing_token(
+                expires_in, refresh_token
+            )  # pylint: disable=protected-access
+
+            self._refresh_task = self.client.loop.create_task(
+                coroutine
+            )  # pylint: disable=protected-access
 
         return self
 
@@ -251,6 +271,7 @@ class User(URIBase):  # pylint: disable=too-many-instance-attributes
         expires = data["expires_in"]
         token = data["access_token"]
 
+        refresh_task: Optional[Tuple[int, str]]
         if refresh:
             refresh_task = (expires, refresh_token)
         else:
@@ -361,7 +382,7 @@ class User(URIBase):  # pylint: disable=too-many-instance-attributes
         return data["snapshot_id"]
 
     @ensure_http
-    async def replace_tracks(self, playlist, *tracks) -> str:
+    async def replace_tracks(self, playlist, *tracks) -> None:
         """Replace all the tracks in a playlist, overwriting its existing tracks.
 
         This powerful request can be useful for replacing tracks, re-ordering existing tracks, or clearing the playlist.
@@ -546,7 +567,7 @@ class User(URIBase):  # pylint: disable=too-many-instance-attributes
         playlists : List[:class:`Playlist`]
             A list of the users playlists.
         """
-        playlists = []
+        playlists: List[Playlist] = []
         total = None
         offset = 0
 

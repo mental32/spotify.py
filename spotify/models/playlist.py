@@ -1,9 +1,12 @@
 from contextlib import asynccontextmanager
 from itertools import islice
-from typing import List, Optional, Union, Callable, Tuple
+from typing import List, Optional, Union, Callable, Tuple, Iterable, TYPE_CHECKING
 
-from ..http import HTTPUserClient
+from ..http import HTTPUserClient, HTTPClient
 from . import URIBase, Track, PlaylistTrack, Image
+
+if TYPE_CHECKING:
+    import spotify
 
 
 class Playlist(URIBase):  # pylint: disable=too-many-instance-attributes
@@ -61,15 +64,22 @@ class Playlist(URIBase):  # pylint: disable=too-many-instance-attributes
         "__tracks",
     )
 
+    __tracks: Optional[Tuple[PlaylistTrack, ...]]
+    __http: Union[HTTPUserClient, HTTPClient]
+    total_tracks: Optional[int]
+
     def __init__(
         self,
         client: "spotify.Client",
         data: Union[dict, "Playlist"],
         *,
-        http: Optional[HTTPUserClient] = None,
+        http: Optional[HTTPClient] = None,
     ):
         self.__client = client
-        self.__http = http
+        self.__http = http or client.http
+
+        assert self.__http is not None
+
         self.__tracks = None
         self.total_tracks = None
 
@@ -109,11 +119,13 @@ class Playlist(URIBase):  # pylint: disable=too-many-instance-attributes
         self.url = data.pop("external_urls").get("spotify", None)
         self.uri = data.pop("uri")
 
-        self.__tracks = tracks = (
+        tracks: Optional[Tuple[PlaylistTrack, ...]] = (
             tuple(PlaylistTrack(client, item) for item in data["tracks"]["items"])
             if "items" in data["tracks"]
             else None
         )
+
+        self.__tracks = tracks
 
         self.total_tracks = (
             len(tracks) if tracks is not None else data["tracks"]["total"]
@@ -147,7 +159,7 @@ class Playlist(URIBase):  # pylint: disable=too-many-instance-attributes
 
     async def get_tracks(
         self, *, limit: Optional[int] = 20, offset: Optional[int] = 0
-    ) -> Tuple[PlaylistTrack]:
+    ) -> Tuple[PlaylistTrack, ...]:
         """Get a fraction of a playlists tracks.
 
         Parameters
@@ -162,10 +174,12 @@ class Playlist(URIBase):  # pylint: disable=too-many-instance-attributes
         tracks : Tuple[PlaylistTrack]
             The tracks of the playlist.
         """
-        data = self.__http.get_playlist_tracks(self.id, limit=limit, offset=offset)
+        data = await self.__http.get_playlist_tracks(
+            self.id, limit=limit, offset=offset
+        )
         return tuple(PlaylistTrack(self.__client, item) for item in data["items"])
 
-    async def get_all_tracks(self) -> Tuple[PlaylistTrack]:
+    async def get_all_tracks(self) -> Tuple[PlaylistTrack, ...]:
         """Get all playlist tracks from the playlist.
 
         Returns
@@ -173,18 +187,24 @@ class Playlist(URIBase):  # pylint: disable=too-many-instance-attributes
         tracks : Tuple[:class:`PlaylistTrack`]
             The playlists tracks.
         """
-        _tracks = []
+        tracks: List[PlaylistTrack] = []
         offset = 0
-        while len(_tracks) < self.total_tracks:
+
+        if self.total_tracks is None:
+            self.total_tracks = (
+                await self.__http.get_playlist_tracks(self.id, limit=1, offset=0)
+            )["total"]
+
+        while len(tracks) < self.total_tracks:
             data = await self.__http.get_playlist_tracks(
                 self.id, limit=50, offset=offset
             )
 
-            _tracks += [PlaylistTrack(self.__client, item) for item in data["items"]]
+            tracks += [PlaylistTrack(self.__client, item) for item in data["items"]]
             offset += 50
 
-        self.total_tracks = len(_tracks)
-        return tuple(_tracks)
+        self.total_tracks = len(tracks)
+        return tuple(tracks)
 
     # Playlist structure modification
 
@@ -226,7 +246,7 @@ class Playlist(URIBase):  # pylint: disable=too-many-instance-attributes
         )
         return data["snapshot_id"]
 
-    async def replace_tracks(self, *tracks) -> str:
+    async def replace_tracks(self, *tracks: Union[Track, PlaylistTrack, str]) -> None:
         """Replace all the tracks in a playlist, overwriting its existing tracks.
 
         This powerful request can be useful for replacing tracks, re-ordering existing tracks, or clearing the playlist.
@@ -236,10 +256,7 @@ class Playlist(URIBase):  # pylint: disable=too-many-instance-attributes
         tracks : Iterable[Union[:class:`str`, :class:`Track`]]
             Tracks to place in the playlist
         """
-        if not isinstance(tracks, (list, tuple)):
-            tracks = list(*tracks)
-
-        bucket = []
+        bucket: List[str] = []
         for track in tracks:
             if not isinstance(track, (str, Track)):
                 raise TypeError(
@@ -248,12 +265,11 @@ class Playlist(URIBase):  # pylint: disable=too-many-instance-attributes
 
             bucket.append(str(track))
 
-        tracks = tuple(bucket)
+        body: Tuple[str, ...] = tuple(bucket)
 
-        if len(tracks) <= 100:
-            head, tracks = tracks, []
-        else:
-            head, tracks = tracks[:100], tracks[100:]
+        head: Tuple[str, ...]
+        tail: Tuple[str, ...]
+        head, tracks = body[:100], body[100:]
 
         await self.__http.replace_playlist_tracks(self.id, tracks=head)
 
@@ -308,7 +324,7 @@ class Playlist(URIBase):  # pylint: disable=too-many-instance-attributes
         """
         await self.__http.replace_playlist_tracks(self.id, tracks=[])
 
-    async def extend(self, tracks: Union["Playlist", List[Union[Track, str]]]):
+    async def extend(self, tracks: Union["Playlist", Iterable[Union[Track, str]]]):
         """Extend a playlists tracks with that of another playlist or a list of Track/Track URIs.
 
         .. note::
@@ -328,18 +344,23 @@ class Playlist(URIBase):  # pylint: disable=too-many-instance-attributes
         snapshot_id : str
             The snapshot id of the playlist.
         """
-        if isinstance(tracks, Playlist):
-            tracks = await tracks.get_all_tracks()
+        bucket: Iterable[Union[Track, str]]
 
-        elif not isinstance(tracks, (list, tuple)):
+        if isinstance(tracks, Playlist):
+            bucket = await tracks.get_all_tracks()
+
+        elif not hasattr(tracks, "__iter__"):
             raise TypeError(
-                f"`tracks` was an invalid type, expected any of: Playlist, List[Union[Track, str]], instead got {type(tracks)}"
+                f"`tracks` was an invalid type, expected any of: Playlist, Iterable[Union[Track, str]], instead got {type(tracks)}"
             )
 
-        tracks = (str(track) for track in tracks)
+        else:
+            bucket = list(tracks)
+
+        gen: Iterable[str] = (str(track) for track in bucket)
 
         while True:
-            head = list(islice(tracks, 0, 100))
+            head: List[str] = list(islice(gen, 0, 100))
 
             if not head:
                 break
