@@ -1,5 +1,5 @@
 from spotify import *
-from spotify import __all__, _types
+from spotify import __all__, _types, Client
 from spotify.utils import clean as _clean_namespace
 
 from . import models

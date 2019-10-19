@@ -103,10 +103,10 @@ class Album(URIBase):  # pylint: disable=too-many-instance-attributes
 
         Returns
         -------
-        tracks : List[Track]
+        tracks : List[:class:`spotify.Track`]
             The tracks of the artist.
         """
-        tracks = []
+        tracks: List[Track] = []
         offset = 0
         total = self.total_tracks or None
 

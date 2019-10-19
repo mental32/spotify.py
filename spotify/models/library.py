@@ -35,7 +35,7 @@ class Library(SpotifyBase):
         albums : Union[Album, str]
             A sequence of artist objects or spotify IDs
         """
-        _albums = [(obj if isinstance(obj, str) else obj.id) for obj in albums]
+        _albums = [str(obj) for obj in albums]
         return await self.user.http.is_saved_album(_albums)
 
     async def contains_tracks(self, *tracks: Sequence[Union[str, Track]]) -> List[bool]:
@@ -46,7 +46,7 @@ class Library(SpotifyBase):
         tracks : Union[Track, str]
             A sequence of track objects or spotify IDs
         """
-        _tracks = [(obj if isinstance(obj, str) else obj.id) for obj in tracks]
+        _tracks = [str(obj) for obj in tracks]
         return await self.user.http.is_saved_track(_tracks)
 
     async def get_tracks(self, *, limit=20, offset=0) -> List[Track]:
@@ -71,7 +71,7 @@ class Library(SpotifyBase):
         tracks : List[:class:`Track`]
             The tracks of the artist.
         """
-        tracks = []
+        tracks: List[Track] = []
         total = None
         offset = 0
 
@@ -113,7 +113,7 @@ class Library(SpotifyBase):
         albums : List[:class:`Album`]
             The albums.
         """
-        albums = []
+        albums: List[Album] = []
         total = None
         offset = 0
 
