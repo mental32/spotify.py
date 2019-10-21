@@ -39,17 +39,18 @@ or use pypi
 
 ```py
 import sys
+import getpass
 
 import spotify
 
-playlist_uri =   # Playlist uri here
-client_id =      # App client id here
-secret =         # App secret here
-token =          # User token here
-
-client = spotify.Client(client_id, secret)
-
 async def main():
+    client = spotify.Client(client_id, secret)
+
+    playlist_uri = input("playlist_id: ")
+    client_id = input("client_id: ")
+    secret = getpass.getpass("application secret:")
+    token = getpass.getpass("user token:")
+
     user = await spotify.User.from_token(client, token)
 
     for playlist in await user.get_playlists():
