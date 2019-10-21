@@ -5,11 +5,11 @@ FORMATTER := black
 
 .PHONY: install pypi test lint clean format
 
-clean:
-	@rm -rf dist spotify.egg*
-
 install:
 	$(PYTHON) setup.py install --user
+
+clean:
+	@rm -rf dist spotify.egg* build .mypy_*
 
 test:
 	$(PYTHON) -m unittest discover -s test
