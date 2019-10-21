@@ -2,7 +2,7 @@ import re
 from dataclasses import dataclass
 from urllib.parse import quote_plus as quote
 from types import MappingProxyType
-from typing import Optional, Dict, Iterable, Union
+from typing import Optional, Dict, Iterable, Union, Set
 
 _RE_SCOPE = re.compile(r"")
 
@@ -95,7 +95,7 @@ class OAuth2:
         self.client_id = client_id
         self.redirect_uri = redirect_uri
         self.state = state
-        self.__scopes = set()
+        self.__scopes: Set[Scope] = set()
 
         if scopes is not None:
             if not isinstance(scopes, dict) and hasattr(scopes, "__iter__"):
