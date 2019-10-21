@@ -2,7 +2,11 @@
 
 import asyncio
 import functools
+import json
+import time
 from base64 import b64encode
+from collections import namedtuple
+from pathlib import Path
 from typing import Optional, Dict, Union, List, Tuple, Type, Union
 
 from ..utils import to_id
@@ -10,6 +14,28 @@ from ..http import HTTPUserClient
 from . import URIBase, Image, Device, Context, Player, Playlist, Track, Artist, Library
 
 REFRESH_TOKEN_URL = "https://accounts.spotify.com/api/token?grant_type=refresh_token&refresh_token={refresh_token}"
+
+
+TokenInfo = namedtuple(
+    'TokenInfo',
+    ('access_token', 'expires_in', 'expires_at', 'token_type', 'refresh_token', 'scope'),
+    defaults=(None,) * 6
+)
+
+
+async def _refresh_token(client: "spotify.Client", refresh_token: str) -> TokenInfo:
+    client_id = client.http.client_id
+    client_secret = client.http.client_secret
+
+    headers = {
+        "Authorization": f"Basic {b64encode(':'.join((client_id, client_secret)).encode()).decode()}",
+        "Content-Type": "application/x-www-form-urlencoded",
+    }
+
+    route = ("POST", REFRESH_TOKEN_URL.format(refresh_token=refresh_token))
+    data = await client.http.request(route, headers=headers)
+
+    return TokenInfo(**data)
 
 
 def ensure_http(func):
@@ -48,8 +74,14 @@ class User(URIBase):  # pylint: disable=too-many-instance-attributes
         (The subscription level “open” can be considered the same as “free”.)
     """
 
-    def __init__(self, client: "spotify.Client", data: dict, **kwargs):
-        self.refresh_token = kwargs.pop("refresh_token", None)
+    def __init__(
+            self,
+            client: "spotify.Client",
+            data: dict,
+            token_info: Optional[TokenInfo] = None,
+            refresh: bool = False,
+            **kwargs
+    ):
         self._refresh_task = None
         self.__client = self.client = client
 
@@ -59,6 +91,22 @@ class User(URIBase):  # pylint: disable=too-many-instance-attributes
             pass  # TODO: Failing silently here, we should take some action.
         else:
             self.library = Library(client, self)
+
+        self._cache_path: Optional[Path] = kwargs.pop("cache_path", None)
+        if self._cache_path:  # make sure the file and folders exist
+            if not self._cache_path.exists():
+                self._cache_path.parent.mkdir(parents=True, exist_ok=True)
+                self._cache_path.touch(exist_ok=True)
+
+        self.token_info = token_info or TokenInfo()
+
+        if refresh and token_info.refresh_token and token_info.expires_in:
+            self.refresh_token = token_info.refresh_token
+            self._refresh_task = self.client.loop.create_task(  # pylint: disable=protected-access
+                self._refreshing_token(
+                    token_info.expires_in, token_info.refresh_token
+                )  # pylint: disable=protected-access
+            )
 
         # Public user object attributes
         self.id = data.pop("id")  # pylint: disable=invalid-name
@@ -106,23 +154,27 @@ class User(URIBase):  # pylint: disable=too-many-instance-attributes
 
         return [klass(self.__client, item) for item in resp["items"]]
 
-    async def _refreshing_token(self, expires: int, token: str):
+    async def _refreshing_token(self, expires: int, token: str) -> None:
         while True:
             await asyncio.sleep(expires - 1)
 
-            client_id = self.client.http.client_id
-            client_secret = self.client.http.client_secret
+            self.token_info = await _refresh_token(self.client, token)
 
-            headers = {
-                "Authorization": f"Basic {b64encode(':'.join((client_id, client_secret)).encode()).decode()}",
-                "Content-Type": "application/x-www-form-urlencoded",
-            }
+            await self._save_to_cache(self.token_info)
 
-            route = ("POST", REFRESH_TOKEN_URL.format(refresh_token=token))
-            data = await self.client.http.request(route, headers=headers)
+            expires = self.token_info.expires_in
+            self.http.token = self.token_info.access_token
 
-            expires = data["expires_in"]
-            self.http.token = data["access_token"]
+    async def _save_to_cache(self, token_info: TokenInfo) -> bool:
+        if not self._cache_path or not self._cache_path.exists():
+            return True
+
+        try:
+            self._cache_path.write_text(json.dumps(dict(token_info)))
+        except IOError:
+            return False
+
+        return True
 
     ### Alternate constructors
 
@@ -180,6 +232,7 @@ class User(URIBase):  # pylint: disable=too-many-instance-attributes
         client: "spotify.Client",
         token: str,
         *,
+        cache_path: Optional[Union[Path, str]] = None,
         refresh: Optional[Tuple[int, str]] = None,
     ):
         """Create a :class:`User` object from an access token.
@@ -190,14 +243,15 @@ class User(URIBase):  # pylint: disable=too-many-instance-attributes
             The spotify client to associate the user with.
         token : :class:`str`
             The access token to use for http requests.
-        refresh: Optional[Tuple[:class:`int`, :class:`str`]
+        cache_path: Optional[Union[:class:`Path`, :class:`str`]]
+            Optional path to a cache file where tokens and refresh
+            tokens will be saved.
+        refresh : Optional[Tuple[:class:`int`, :class:`str`]]
             When provided the refresh argument must be a tuple
             of an integer representing the number of seconds until
             the access token expires and a string representing the
             refresh token to use to generate a new access token.
         """
-        http = HTTPUserClient(token)
-
         if refresh is not None:
             if not isinstance(refresh, tuple):
                 raise ValueError(f"refresh must be a tuple of an int and str.")
@@ -205,58 +259,55 @@ class User(URIBase):  # pylint: disable=too-many-instance-attributes
             if not len(refresh) == 2:
                 raise ValueError(f"refresh must have exactly two elements.")
 
-        data = await http.current_user()
+        if refresh:
+            token_info = TokenInfo(access_token=token, expires_in=refresh[0], refresh_token=refresh[1])
+        else:
+            token_info = TokenInfo(access_token=token)
 
-        self = cls(client, data=data, http=http, token=token)
-
-        if refresh is not None:
-            expires_in, refresh_token, = refresh
-            self.refresh_token = refresh_token
-            self._refresh_task = self.client.loop.create_task(  # pylint: disable=protected-access
-                self._refreshing_token(
-                    expires_in, refresh_token
-                )  # pylint: disable=protected-access
-            )
-
-        return self
+        return cls.from_token_info(client, token_info, cache_path, refresh=bool(refresh))
 
     @classmethod
-    async def from_refresh_token(
-        cls, client: "spotify.Client", refresh_token: str, refresh: bool = False, *args
-    ):
-        """Create a :class:`User` object from a refresh token.
-        It will poll the spotify API for a new access token and
-        use that to initialize the spotify user.
+    async def from_token_info(
+            cls,
+            client: "spotify.Client",
+            token_info: TokenInfo,
+            cache_path: Optional[Union[Path, str]] = None,
+            refresh: bool = False
+    ) -> "spotify.User":
+        if cache_path and isinstance(cache_path, str):
+            cache_path = Path(cache_path)
 
-        Parameters
-        ----------
-        client : :class:`spotify.Client`
-            The spotify client to associate the user with.
-        refresh_token: str
-            Refresh token to be used for retrieval of the initial
-            access token.
-        refresh : bool
-            Wether to keep the http session authorized.
-        """
-        client_id = client.http.client_id
-        client_secret = client.http.client_secret
+        if token_info.access_token and token_info.expires_at and token_info.expires_at < time.time():
+            # expired access token, need to use refresh token
+            if not token_info.refresh_token:
+                raise Exception("Invalid access token and no refresh token provided")
 
-        headers = {
-            "Authorization": f"Basic {b64encode(':'.join((client_id, client_secret)).encode()).decode()}",
-            "Content-Type": "application/x-www-form-urlencoded",
-        }
-        route = ("POST", REFRESH_TOKEN_URL.format(refresh_token=refresh_token))
-        data = await client.http.request(route, headers=headers)
+            headers = {
+                "Authorization": f"Basic {b64encode(':'.join((client.http.client_id, client.httpclient_secret)).encode()).decode()}",
+                "Content-Type": "application/x-www-form-urlencoded",
+            }
+            route = ("POST", REFRESH_TOKEN_URL.format(refresh_token=token_info.refresh_token))
+            token_info = TokenInfo(**await client.http.request(route, headers=headers))
 
-        expires = data["expires_in"]
-        token = data["access_token"]
+        http = HTTPUserClient(token_info.access_token)
 
-        if refresh:
-            refresh_task = (expires, refresh_token)
-        else:
-            refresh_task = None
+        data = await http.current_user()
 
-        return await cls.from_token(client, token=token, refresh=refresh_task)
+        return cls(client, data=data, http=http, token=token_info.access_token, refresh=refresh, cache_path=cache_path)
+
+    @classmethod
+    async def from_cache(
+            cls,
+            client: "spotify.Client",
+            cache_path: Optional[Union[Path, str]] = None,
+            refresh: bool = False
+    ) -> "spotify.User":
+        if not cache_path.exists():
+            raise FileNotFoundError("Cache file does not exist.")
+
+        token_info = TokenInfo(**json.load(cache_path.read_text()))
+
+        return cls.from_token_info(client, token_info, cache_path, refresh=refresh)
 
     ### Attributes
 
