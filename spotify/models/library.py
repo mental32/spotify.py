@@ -1,5 +1,6 @@
 from typing import Sequence, Union, List
 
+from ..oauth import set_required_scopes
 from . import SpotifyBase
 from .track import Track
 from .album import Album
@@ -27,6 +28,7 @@ class Library(SpotifyBase):
     def __ne__(self, other):
         return not self.__eq__(other)
 
+    @set_required_scopes("user-library-read")
     async def contains_albums(self, *albums: Sequence[Union[str, Album]]) -> List[bool]:
         """Check if one or more albums is already saved in the current Spotify user’s ‘Your Music’ library.
 
@@ -38,6 +40,7 @@ class Library(SpotifyBase):
         _albums = [str(obj) for obj in albums]
         return await self.user.http.is_saved_album(_albums)
 
+    @set_required_scopes("user-library-read")
     async def contains_tracks(self, *tracks: Sequence[Union[str, Track]]) -> List[bool]:
         """Check if one or more tracks is already saved in the current Spotify user’s ‘Your Music’ library.
 
@@ -49,6 +52,7 @@ class Library(SpotifyBase):
         _tracks = [str(obj) for obj in tracks]
         return await self.user.http.is_saved_track(_tracks)
 
+    @set_required_scopes("user-library-read")
     async def get_tracks(self, *, limit=20, offset=0) -> List[Track]:
         """Get a list of the songs saved in the current Spotify user’s ‘Your Music’ library.
 
@@ -63,6 +67,7 @@ class Library(SpotifyBase):
 
         return [Track(self.__client, item["track"]) for item in data["items"]]
 
+    @set_required_scopes("user-library-read")
     async def get_all_tracks(self) -> List[Track]:
         """Get a list of all the songs saved in the current Spotify user’s ‘Your Music’ library.
 
@@ -91,6 +96,7 @@ class Library(SpotifyBase):
 
         return tracks
 
+    @set_required_scopes("user-library-read")
     async def get_albums(self, *, limit=20, offset=0) -> List[Album]:
         """Get a list of the albums saved in the current Spotify user’s ‘Your Music’ library.
 
@@ -105,6 +111,7 @@ class Library(SpotifyBase):
 
         return [Album(self.__client, item["album"]) for item in data["items"]]
 
+    @set_required_scopes("user-library-read")
     async def get_all_albums(self) -> List[Album]:
         """Get a list of the albums saved in the current Spotify user’s ‘Your Music’ library.
 
@@ -133,6 +140,7 @@ class Library(SpotifyBase):
 
         return albums
 
+    @set_required_scopes("user-library-modify")
     async def remove_albums(self, *albums):
         """Remove one or more albums from the current user’s ‘Your Music’ library.
 
@@ -144,6 +152,7 @@ class Library(SpotifyBase):
         _albums = [(obj if isinstance(obj, str) else obj.id) for obj in albums]
         await self.user.http.delete_saved_albums(",".join(_albums))
 
+    @set_required_scopes("user-library-modify")
     async def remove_tracks(self, *tracks):
         """Remove one or more tracks from the current user’s ‘Your Music’ library.
 
@@ -155,6 +164,7 @@ class Library(SpotifyBase):
         _tracks = [(obj if isinstance(obj, str) else obj.id) for obj in tracks]
         await self.user.http.delete_saved_tracks(",".join(_tracks))
 
+    @set_required_scopes("user-library-modify")
     async def save_albums(self, *albums):
         """Save one or more albums to the current user’s ‘Your Music’ library.
 
@@ -166,6 +176,7 @@ class Library(SpotifyBase):
         _albums = [(obj if isinstance(obj, str) else obj.id) for obj in albums]
         await self.user.http.save_albums(",".join(_albums))
 
+    @set_required_scopes("user-library-modify")
     async def save_tracks(self, *tracks):
         """Save one or more tracks to the current user’s ‘Your Music’ library.
 

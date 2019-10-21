@@ -1,5 +1,6 @@
 from typing import Optional, List
 
+from ..oauth import set_required_scopes
 from . import URIBase, Image, Artist, Track
 
 
@@ -71,6 +72,7 @@ class Album(URIBase):  # pylint: disable=too-many-instance-attributes
     def __repr__(self):
         return f"<spotify.Album: {(self.name or self.id or self.uri)!r}>"
 
+    @set_required_scopes(None)
     async def get_tracks(
         self, *, limit: Optional[int] = 20, offset: Optional[int] = 0
     ) -> List[Track]:
@@ -93,6 +95,7 @@ class Album(URIBase):  # pylint: disable=too-many-instance-attributes
         )
         return list(Track(self.__client, item) for item in data["items"])
 
+    @set_required_scopes(None)
     async def get_all_tracks(self, *, market: Optional[str] = "US") -> List[Track]:
         """loads all of the albums tracks, depending on how many the album has this may be a long operation.
 

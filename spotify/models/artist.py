@@ -1,5 +1,6 @@
 from typing import Optional, List, TYPE_CHECKING
 
+from ..oauth import set_required_scopes
 from . import URIBase, Image
 
 if TYPE_CHECKING:
@@ -53,6 +54,7 @@ class Artist(URIBase):  # pylint: disable=too-many-instance-attributes
     def __repr__(self):
         return f"<spotify.Artist: {self.name!r}>"
 
+    @set_required_scopes(None)
     async def get_albums(
         self,
         *,
@@ -90,6 +92,7 @@ class Artist(URIBase):  # pylint: disable=too-many-instance-attributes
         )
         return list(Album(self.__client, item) for item in data["items"])
 
+    @set_required_scopes(None)
     async def get_all_albums(self, *, market="US") -> List["spotify.Album"]:
         """loads all of the artists albums, depending on how many the artist has this may be a long operation.
 
@@ -119,6 +122,7 @@ class Artist(URIBase):  # pylint: disable=too-many-instance-attributes
 
         return albums
 
+    @set_required_scopes(None)
     async def total_albums(self, *, market: str = None) -> int:
         """get the total amout of tracks in the album.
 
@@ -137,6 +141,7 @@ class Artist(URIBase):  # pylint: disable=too-many-instance-attributes
         )
         return data["total"]
 
+    @set_required_scopes(None)
     async def top_tracks(self, country: str = "US") -> List["spotify.Track"]:
         """Get Spotify catalog information about an artist’s top tracks by country.
 
@@ -155,6 +160,7 @@ class Artist(URIBase):  # pylint: disable=too-many-instance-attributes
         top = await self.__client.http.artist_top_tracks(self.id, country=country)
         return list(Track(self.__client, item) for item in top["tracks"])
 
+    @set_required_scopes(None)
     async def related_artists(self) -> List["Artist"]:
         """Get Spotify catalog information about artists similar to a given artist.
 
