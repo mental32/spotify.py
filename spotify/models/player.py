@@ -81,7 +81,12 @@ class Player(SpotifyBase):  # pylint: disable=too-many-instance-attributes
             The Device object or id of the device this command is targeting.
             If not supplied, the user’s currently active device is the target.
         """
-        await self.user.http.pause_playback(device_id=str(device))
+        device_id: Optional[str]
+        if device is not None:
+            device_id = str(device)
+        else:
+            device_id = None
+        await self.user.http.pause_playback(device_id=device_id)
 
     @set_required_scopes("user-modify-playback-state")
     async def resume(self, *, device: Optional[SomeDevice] = None):
@@ -93,7 +98,12 @@ class Player(SpotifyBase):  # pylint: disable=too-many-instance-attributes
             The Device object or id of the device this command is targeting.
             If not supplied, the user’s currently active device is the target.
         """
-        await self.user.http.play_playback(None, device_id=str(device))
+        device_id: Optional[str]
+        if device is not None:
+            device_id = str(device)
+        else:
+            device_id = None
+        await self.user.http.play_playback(None, device_id=device_id)
 
     @set_required_scopes("user-modify-playback-state")
     async def seek(self, pos, *, device: Optional[SomeDevice] = None):
@@ -109,7 +119,12 @@ class Player(SpotifyBase):  # pylint: disable=too-many-instance-attributes
             The Device object or id of the device this command is targeting.
             If not supplied, the user’s currently active device is the target.
         """
-        await self.user.http.seek_playback(pos, device_id=str(device))
+        device_id: Optional[str]
+        if device is not None:
+            device_id = str(device)
+        else:
+            device_id = None
+        await self.user.http.seek_playback(pos, device_id=device_id)
 
     @set_required_scopes("user-modify-playback-state")
     async def set_repeat(self, state, *, device: Optional[SomeDevice] = None):
@@ -123,7 +138,12 @@ class Player(SpotifyBase):  # pylint: disable=too-many-instance-attributes
             The Device object or id of the device this command is targeting.
             If not supplied, the user’s currently active device is the target.
         """
-        await self.user.http.repeat_playback(state, device_id=str(device))
+        device_id: Optional[str]
+        if device is not None:
+            device_id = str(device)
+        else:
+            device_id = None
+        await self.user.http.repeat_playback(state, device_id=device_id)
 
     @set_required_scopes("user-modify-playback-state")
     async def set_volume(self, volume: int, *, device: Optional[SomeDevice] = None):
@@ -137,7 +157,12 @@ class Player(SpotifyBase):  # pylint: disable=too-many-instance-attributes
             The Device object or id of the device this command is targeting.
             If not supplied, the user’s currently active device is the target.
         """
-        await self.user.http.set_playback_volume(volume, device_id=str(device))
+        device_id: Optional[str]
+        if device is not None:
+            device_id = str(device)
+        else:
+            device_id = None
+        await self.user.http.set_playback_volume(volume, device_id=device_id)
 
     @set_required_scopes("user-modify-playback-state")
     async def next(self, *, device: Optional[SomeDevice] = None):
@@ -149,7 +174,12 @@ class Player(SpotifyBase):  # pylint: disable=too-many-instance-attributes
             The Device object or id of the device this command is targeting.
             If not supplied, the user’s currently active device is the target.
         """
-        await self.user.http.skip_next(device_id=str(device))
+        device_id: Optional[str]
+        if device is not None:
+            device_id = str(device)
+        else:
+            device_id = None
+        await self.user.http.skip_next(device_id=device_id)
 
     @set_required_scopes("user-modify-playback-state")
     async def previous(self, *, device: Optional[SomeDevice] = None):
@@ -164,7 +194,12 @@ class Player(SpotifyBase):  # pylint: disable=too-many-instance-attributes
             The Device object or id of the device this command is targeting.
             If not supplied, the user’s currently active device is the target.
         """
-        return await self.user.http.skip_previous(device_id=str(device))
+        device_id: Optional[str]
+        if device is not None:
+            device_id = str(device)
+        else:
+            device_id = None
+        return await self.user.http.skip_previous(device_id=device_id)
 
     @set_required_scopes("user-modify-playback-state")
     async def play(
@@ -233,7 +268,13 @@ class Player(SpotifyBase):  # pylint: disable=too-many-instance-attributes
             The Device object or id of the device this command is targeting.
             If not supplied, the user’s currently active device is the target.
         """
-        await self.user.http.shuffle_playback(state, device_id=str(device))
+        device_id: Optional[str]
+        if device is not None:
+            device_id = str(device)
+        else:
+            device_id = None
+
+        await self.user.http.shuffle_playback(state, device_id=device_id)
 
     @set_required_scopes("user-modify-playback-state")
     async def transfer(self, device: SomeDevice, ensure_playback: bool = False):
@@ -247,4 +288,9 @@ class Player(SpotifyBase):  # pylint: disable=too-many-instance-attributes
             if `True` ensure playback happens on new device.
             else keep the current playback state.
         """
-        await self.user.http.transfer_player(str(device), play=ensure_playback)
+        device_id: Optional[str]
+        if device is not None:
+            device_id = str(device)
+        else:
+            device_id = None
+        await self.user.http.transfer_player(device_id=device_id, play=ensure_playback)
