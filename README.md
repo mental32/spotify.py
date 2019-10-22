@@ -27,12 +27,12 @@ import spotify.sync as spotify  # Nothing requires async/await now!
 
 To install the library simply clone it and run setup.py
 - `git clone https://github.com/mental32/spotify.py`
-- `python3 setup.py install`
+- `pip3 -U install .`
 
 or use pypi
 
-- `pip3 install spotify` (latest stable)
-- `pip3 install -U git+https://github.com/mental32/spotify.py` (nightly)
+- `pip3 install -U spotify` (latest stable)
+- `pip3 install -U git+https://github.com/mental32/spotify.py#egg=spotify` (nightly)
 
 ## Examples
 ### Sorting a playlist by popularity
