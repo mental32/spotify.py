@@ -2,7 +2,7 @@ import re
 from dataclasses import dataclass
 from urllib.parse import quote_plus as quote
 from types import MappingProxyType
-from typing import Optional, Dict, Iterable, Union, Set, Callable, Tuple
+from typing import Optional, Dict, Iterable, Union, Set, Callable, Tuple, Any
 
 _RE_SCOPE = re.compile(r"")
 
@@ -62,14 +62,26 @@ def set_required_scopes(*scopes: Optional[str]) -> Callable:
         The decorator that sets the scope metadata.
     """
     def decorate(func) -> Callable:
-        func.__requires_spotify_scopes__ = tuple(Scope(value) for value in scopes)
+        func.__requires_spotify_scopes__ = tuple(scopes)
         return func
     return decorate
 
-def get_required_scopes(func: Callable) -> Tuple[Scope, ...]:
-    """Get the required scopes for a function."""
-    assert hasattr(func, '__requires_spotify_scopes__'), 'Scope metadata has not been set for this object!'
-    return func.__requires_spotify_scopes__  # pylint: disable=protected-access
+def get_required_scopes(func: Callable[..., Any]) -> Tuple[str, ...]:
+    """Get the required scopes for a function.
+
+    Parameters
+    ----------
+    func : Callable[..., Any]
+        The function to inspect.
+
+    Returns
+    -------
+    scopes : Tuple[:class:`str`, ...]
+        A tuple of scopes required for a call to succeed.
+    """
+    if not hasattr(func, '__requires_spotify_scopes__'):
+        raise AttributeError('Scope metadata has not been set for this object!')
+    return func.__requires_spotify_scopes__  # type: ignore
 
 
 class OAuth2:

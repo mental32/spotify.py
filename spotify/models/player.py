@@ -203,6 +203,7 @@ class Player(SpotifyBase):  # pylint: disable=too-many-instance-attributes
             # Treat it as a context URI
             context_uri = str(uris[0])
 
+        device_id: Optional[str]
         if device is not None:
             if not isinstance(device, (Device, str)):
                 raise TypeError(
