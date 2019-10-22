@@ -1125,9 +1125,8 @@ class HTTPClient:
         device_id : Optional[:class:`str`]
             The id of the device this command is targeting. If not supplied, the user’s currently active device is the target.
         """
-        route = self.route("PUT", "/me/player/seek")
+        route = self.route("PUT", "/me/player/shuffle")
         payload: Dict[str, Any] = {"state": state}
-
         if device_id is not None:
             payload["device_id"] = device_id
 
