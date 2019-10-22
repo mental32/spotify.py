@@ -27,29 +27,30 @@ import spotify.sync as spotify  # Nothing requires async/await now!
 
 To install the library simply clone it and run setup.py
 - `git clone https://github.com/mental32/spotify.py`
-- `python3 setup.py install`
+- `pip3 -U install .`
 
 or use pypi
 
-- `pip3 install spotify` (latest stable)
-- `pip3 install -U git+https://github.com/mental32/spotify.py` (nightly)
+- `pip3 install -U spotify` (latest stable)
+- `pip3 install -U git+https://github.com/mental32/spotify.py#egg=spotify` (nightly)
 
 ## Examples
 ### Sorting a playlist by popularity
 
 ```py
 import sys
+import getpass
 
 import spotify
 
-playlist_uri =   # Playlist uri here
-client_id =      # App client id here
-secret =         # App secret here
-token =          # User token here
-
-client = spotify.Client(client_id, secret)
-
 async def main():
+    client = spotify.Client(client_id, secret)
+
+    playlist_uri = input("playlist_id: ")
+    client_id = input("client_id: ")
+    secret = getpass.getpass("application secret:")
+    token = getpass.getpass("user token:")
+
     user = await spotify.User.from_token(client, token)
 
     for playlist in await user.get_playlists():
@@ -61,6 +62,19 @@ async def main():
 
 if __name__ == '__main__':
     client.loop.run_until_complete(main())
+```
+
+### Required oauth scopes for methods
+
+```py
+import spotify
+from spotify.utils import get_scope_metadata
+
+# In order to call this method sucessfully the "user-modify-playback-state" scope is required.
+print(get_scope_metadata(spotify.Player.play))  # => ["user-modify-playback-state"]
+
+# Some methods have no oauth scope requirements, so `None` will be returned instead.
+print(get_scope_metadata(spotify.Playlist.get_tracks))  # => None
 ```
 
 ### Usage with flask

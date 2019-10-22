@@ -3,16 +3,22 @@ LINTER := flake8
 
 FORMATTER := black
 
-.PHONY: install pypi test lint clean format
-
-clean:
-	@rm -rf dist spotify.egg*
+.PHONY: install pypi test lint clean format doc mypy
 
 install:
 	$(PYTHON) setup.py install --user
 
+clean:
+	@rm -rf dist spotify.egg* build .mypy_*
+
+mypy:
+	mypy spotify
+
+doc:
+	cd docs && make html
+
 test:
-	$(PYTHON) -m unittest discover -s test
+	$(PYTHON) -m unittest discover -s tests
 
 format:
 	$(FORMATTER) spotify

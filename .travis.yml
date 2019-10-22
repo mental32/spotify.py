@@ -8,8 +8,13 @@ python:
 branches:
   only:
     - "master"
+    - /v.*$/
+
+install: ./.travis.install.sh
 
 script:
-  - python3.7 -m flake8
+  - make doc
+  - make mypy
+  - make test
 
 cache: pip
