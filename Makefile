@@ -11,6 +11,12 @@ install:
 clean:
 	@rm -rf dist spotify.egg* build .mypy_*
 
+mypy:
+	mypy spotify
+
+docs:
+	cd docs && make html
+
 test:
 	$(PYTHON) -m unittest discover -s test
 
