@@ -18,7 +18,7 @@ doc:
 	cd docs && make html
 
 test:
-	$(PYTHON) -m unittest discover -s test
+	$(PYTHON) -m unittest discover -s tests
 
 format:
 	$(FORMATTER) spotify
