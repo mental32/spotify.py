@@ -1,10 +1,6 @@
-import re
-from dataclasses import dataclass
 from urllib.parse import quote_plus as quote
 from types import MappingProxyType
 from typing import Optional, Dict, Iterable, Union, Set, Callable, Tuple, Any
-
-_RE_SCOPE = re.compile(r"")
 
 VALID_SCOPES = (
     # Playlists
@@ -32,20 +28,6 @@ VALID_SCOPES = (
     "streaming"
     "app-remote-control"
 )
-
-
-@dataclass(frozen=True)
-class Scope:
-    value: str
-
-    @classmethod
-    def from_raw_scope(cls, raw_scope: str) -> "Scope":
-        real_scope = raw_scope.replace("_", "-")
-
-        if real_scope not in VALID_SCOPES:
-            raise ValueError(f"{raw_scope!r} is not a valid scope!")
-
-        return cls(value=real_scope)
 
 
 def set_required_scopes(*scopes: Optional[str]) -> Callable:
@@ -131,7 +113,7 @@ class OAuth2:
         self.client_id = client_id
         self.redirect_uri = redirect_uri
         self.state = state
-        self.__scopes: Set[Scope] = set()
+        self.__scopes: Set[str] = set()
 
         if scopes is not None:
             if not isinstance(scopes, dict) and hasattr(scopes, "__iter__"):
@@ -176,7 +158,7 @@ class OAuth2:
         data = {"client_id": self.client_id, "redirect_uri": quote(self.redirect_uri)}
 
         if self.scopes:
-            data["scope"] = quote(" ".join([scope.value for scope in self.scopes]))
+            data["scope"] = quote(" ".join(self.scopes))
 
         if self.state is not None:
             data["state"] = self.state
@@ -210,6 +192,7 @@ class OAuth2:
             The scopes to enable or disable.
         """
         for scope_name, state in scopes.items():
-            scope = Scope(scope_name)
-            method = self.__scopes.add if bool(state) else self.__scopes.remove
-            method(scope)
+            if state:
+                self.__scopes.add(scope_name)
+            else:
+                self.__scopes.remove(scope_name)
