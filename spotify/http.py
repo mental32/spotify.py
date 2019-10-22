@@ -1127,7 +1127,6 @@ class HTTPClient:
         """
         route = self.route("PUT", "/me/player/shuffle")
         payload: Dict[str, Any] = {"state": state}
-
         if device_id is not None:
             payload["device_id"] = device_id
 
