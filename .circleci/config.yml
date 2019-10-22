@@ -1,0 +1,19 @@
+version: 2
+jobs:
+  build:
+    docker:
+      - image: circleci/python:3.8.0
+    steps:
+      - checkout
+      - run:
+          name: dependencies
+          command: sudo pip install sphinx mypy
+      - run:
+          name: sphinx
+          command: make docs
+      - run:
+          name: mypy
+          command: make mypy
+      - run:
+          name: unittest
+          command: make test
