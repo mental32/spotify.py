@@ -4,22 +4,41 @@ Quickstart
 Writing a Query - Guidelines
 ----------------------------
 
-Encode spaces with the hex code %20 or +.
+Keyword matching
+----------------
 
-Keyword matching: Matching of search keywords is not case-sensitive. Operators, however, should be specified in uppercase. Unless surrounded by double quotation marks, keywords are matched in any order. For example: q=roadhouse&20blues matches both “Blues Roadhouse” and “Roadhouse of the Blues”. q="roadhouse&20blues" matches “My Roadhouse Blues” but not “Roadhouse of the Blues”.
+Matching of search keywords is not case-sensitive. Operators, however, should
+be specified in uppercase. Unless surrounded by double quotation marks,
+keywords are matched in any order.
+
+For example: q=roadhouse&20blues matches both “Blues Roadhouse” and “Roadhouse of the Blues”. q="roadhouse&20blues" matches “My Roadhouse Blues” but not “Roadhouse of the Blues”.
+
+Searching
+---------
 
 Searching for playlists returns results where the query keyword(s) match any part of the playlist’s name or description. Only popular public playlists are returned.
 
-Operator: The operator NOT can be used to exclude results.
+Operators
+---------
 
-For example: q=roadhouse%20NOT%20blues returns items that match “roadhouse” but excludes those that also contain the keyword “blues”.
+.. note::
 
-Similarly, the OR operator can be used to broaden the search: q=roadhouse%20OR%20blues returns all the results that include either of the terms. Only one OR operator can be used in a query.
+    Operators must be specified in uppercase. Otherwise, they are handled as normal keywords to be matched.
 
-Note: Operators must be specified in uppercase. Otherwise, they are handled as normal keywords to be matched.
+The operator `NOT` can be used to exclude results.
 
-Wildcards: The asterisk (*) character can, with some limitations, be used as a wildcard (maximum: 2 per query). It matches a variable number of non-white-space characters. It cannot be used:
+For example: `q="roadhouse NOT blues"` returns items that match “roadhouse” but excludes those that also contain the keyword “blues”.
 
+Similarly, the `OR` operator can be used to broaden the search: `q="roadhouse OR blues"` returns all the results that include either of the terms. Only one `OR` operator can be used in a query.
+
+Wildcards
+---------
+
+The asterisk (*) character can, with some limitations, be used as a wildcard
+(maximum: 2 per query). It matches a variable number of non-white-space
+characters.
+
+It cannot be used:
  - in a quoted phrase
  - in a field filter
  - when there is a dash (“-“) in the query
