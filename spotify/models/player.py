@@ -210,6 +210,8 @@ class Player(SpotifyBase):  # pylint: disable=too-many-instance-attributes
                 )
 
             device_id = str(device)
+        else:
+            device_id = None
 
         await self.user.http.play_playback(
             context_uri, offset=offset, device_id=device_id

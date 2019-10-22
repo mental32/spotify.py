@@ -1068,10 +1068,10 @@ class HTTPClient:
         payload: Dict[str, Any] = {"position_ms": position_ms}
 
         if isinstance(context_uri, str):
-            payload["context_uri"] = {"context_uri": context_uri}
+            payload["context_uri"] = context_uri
 
         elif hasattr(context_uri, "__iter__"):
-            payload["uris"] = {"uris": list(*context_uri)}
+            payload["uris"] = list(*context_uri)
 
         elif context_uri is None:
             pass  # Do nothing, context_uri == None is allowed and intended for resume's
@@ -1082,8 +1082,8 @@ class HTTPClient:
             )
 
         can_set_offset = context_uri is not None and (
-            "uris" in payload
-            or any(string in payload["context_uri"] for string in ("playlist", "album"))
+            ("playlist" in payload["context_uri"] or "album" in payload["context_uri"])
+            or "uris" in payload
         )
 
         if offset is not None:
