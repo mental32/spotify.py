@@ -7,10 +7,10 @@ jobs:
       - checkout
       - run:
           name: dependencies
-          command: sudo pip install sphinx mypy
+          command: sudo pip install --progress-bar off sphinx mypy
       - run:
           name: sphinx
-          command: make docs
+          command: make doc
       - run:
           name: mypy
           command: make mypy

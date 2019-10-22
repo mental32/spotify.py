@@ -3,7 +3,7 @@ LINTER := flake8
 
 FORMATTER := black
 
-.PHONY: install pypi test lint clean format
+.PHONY: install pypi test lint clean format doc mypy
 
 install:
 	$(PYTHON) setup.py install --user
@@ -14,7 +14,7 @@ clean:
 mypy:
 	mypy spotify
 
-docs:
+doc:
 	cd docs && make html
 
 test:
