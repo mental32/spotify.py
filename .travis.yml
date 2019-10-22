@@ -10,10 +10,7 @@ branches:
     - "master"
     - /v.*$/
 
-install:
-  - sudo pip3 install --progress-bar off  .
-  - sudo pip3 install --progress-bar off mypy
-  - sudo pip3 install --progress-bar off sphinx
+install: ./.travis.install.sh
 
 script:
   - make doc
