@@ -11,9 +11,9 @@ branches:
     - /v.*$/
 
 install:
-  - sudo pip install --progress-bar off  .
-  - sudo pip install --progress-bar off mypy
-  - sudo pip install --progress-bar off sphinx
+  - sudo pip3 install --progress-bar off  .
+  - sudo pip3 install --progress-bar off mypy
+  - sudo pip3 install --progress-bar off sphinx
 
 script:
   - make doc
