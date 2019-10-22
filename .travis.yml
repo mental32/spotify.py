@@ -8,6 +8,7 @@ python:
 branches:
   only:
     - "master"
+    - /v.*$/
 
 install:
   - sudo pip install --progress-bar off  .
