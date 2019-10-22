@@ -1,4 +1,3 @@
-from contextlib import asynccontextmanager
 from itertools import islice
 from typing import List, Optional, Union, Callable, Tuple, Iterable, TYPE_CHECKING
 
@@ -8,6 +7,47 @@ from . import URIBase, Track, PlaylistTrack, Image
 
 if TYPE_CHECKING:
     import spotify
+
+
+class MutableTracks:
+    __slots__ = (
+        "playlist",
+        "tracks",
+        "was_empty",
+        "is_empty",
+        "replace_tracks",
+        "get_all_tracks",
+    )
+
+    def __init__(self, playlist: "Playlist") -> None:
+        self.playlist = playlist
+        self.tracks = tracks = playlist.tracks
+
+        if tracks is not None:
+            self.was_empty = self.is_empty = not len(tracks)
+
+        self.replace_tracks = playlist.replace_tracks
+        self.get_all_tracks = playlist.get_all_tracks
+
+    async def __aenter__(self):
+        if self.tracks is None:
+            self.tracks = tracks = list(await self.get_all_tracks())
+            self.was_empty = self.is_empty = not len(tracks)
+        else:
+            tracks = list(self.tracks)
+
+        return tracks
+
+    async def __aexit__(self, typ, value, traceback):
+        if self.was_empty and self.is_empty:
+            # the tracks were empty and is still empty.
+            # skip the api call.
+            return
+
+        tracks = self.tracks
+
+        await self.replace_tracks(*tracks)
+        setattr(self.playlist, "_Playlist__tracks", tuple(self.tracks))
 
 
 class Playlist(URIBase):  # pylint: disable=too-many-instance-attributes
@@ -131,24 +171,6 @@ class Playlist(URIBase):  # pylint: disable=too-many-instance-attributes
         self.total_tracks = (
             len(tracks) if tracks is not None else data["tracks"]["total"]
         )
-
-    @asynccontextmanager
-    async def __mutate_tracks(self):
-        if self.tracks is None:
-            self.__tracks = await self.get_all_tracks()
-
-        tracks = list(self.tracks)
-        prev_len = len(tracks)
-
-        yield tracks
-
-        if not prev_len and not len(tracks):
-            # the tracks were empty and is still empty.
-            # skip the api call.
-            return
-
-        await self.replace_tracks(*tracks)
-        self.__tracks = tuple(tracks)
 
     # Properties
 
@@ -390,7 +412,7 @@ class Playlist(URIBase):  # pylint: disable=too-many-instance-attributes
                 f"Expected a PlaylistTrack or Track object instead got {obj!r}"
             )
 
-        async with self.__mutate_tracks() as tracks:
+        async with MutableTracks(self) as tracks:
             tracks.insert(index, obj)
 
     @set_required_scopes("playlist-modify-public", "playlist-modify-private")
@@ -412,7 +434,7 @@ class Playlist(URIBase):  # pylint: disable=too-many-instance-attributes
         IndexError
             If there are no tracks or the index is out of range.
         """
-        async with self.__mutate_tracks() as tracks:
+        async with MutableTracks(self) as tracks:
             return tracks.pop(index)
 
     @set_required_scopes("playlist-modify-public", "playlist-modify-private")
@@ -429,7 +451,7 @@ class Playlist(URIBase):  # pylint: disable=too-many-instance-attributes
             This method will mutate the current
             playlist object, and the spotify Playlist.
         """
-        async with self.__mutate_tracks() as tracks:
+        async with MutableTracks(self) as tracks:
             tracks.sort(key=key, reverse=reverse)
 
     @set_required_scopes("playlist-modify-public", "playlist-modify-private")
@@ -446,7 +468,7 @@ class Playlist(URIBase):  # pylint: disable=too-many-instance-attributes
         ValueError
             If the value is not present.
         """
-        async with self.__mutate_tracks() as tracks:
+        async with MutableTracks(self) as tracks:
             tracks.remove(value)
 
     @set_required_scopes("playlist-modify-public", "playlist-modify-private")
@@ -469,5 +491,5 @@ class Playlist(URIBase):  # pylint: disable=too-many-instance-attributes
             This method will mutate the current
             playlist object, and the spotify Playlist.
         """
-        async with self.__mutate_tracks() as tracks:
+        async with MutableTracks(self) as tracks:
             tracks.reverse()
