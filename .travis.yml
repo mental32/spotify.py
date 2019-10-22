@@ -9,7 +9,14 @@ branches:
   only:
     - "master"
 
+install:
+  - sudo pip install --progress-bar off  .
+  - sudo pip install --progress-bar off mypy
+  - sudo pip install --progress-bar off sphinx
+
 script:
-  - python3.7 -m flake8
+  - make doc
+  - make mypy
+  - make test
 
 cache: pip
