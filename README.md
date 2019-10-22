@@ -1,4 +1,4 @@
-![logo](/docs/source/images/logo.png)
+![logo](/docs/source/_static/images/logo.png)
 
 
 ![Version info](https://img.shields.io/pypi/v/spotify.svg)
