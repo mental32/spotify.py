@@ -4,5 +4,5 @@ deps=( "." "mypy" "sphinx")
 
 for pkg in "${deps[@]}"
 do
-    pip3 install --user -U --progress-bar off $pkg
+    pip3 install -U --progress-bar off $pkg
 done
