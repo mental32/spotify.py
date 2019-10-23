@@ -16,7 +16,7 @@ from typing import (
     Union,
     Coroutine,
     TYPE_CHECKING,
-)
+    Any)
 
 from ..utils import to_id
 from ..http import HTTPUserClient
@@ -64,7 +64,7 @@ class TokenInfo:
 
     @classmethod
     def from_file(cls, file_path: Path):
-        data = {}
+        data: Dict[str, Any] = {}
         try:
             data = json.loads(file_path.read_text())
         except (IOError, json.JSONDecodeError):
@@ -143,7 +143,7 @@ class User(URIBase):  # pylint: disable=too-many-instance-attributes
         else:
             self.library = Library(client, self)
 
-        self.token_info = token_info or TokenInfo()
+        self.token_info: TokenInfo = token_info or TokenInfo()
 
         self._cache_path: Optional[Path] = kwargs.pop("cache_path", None)
         if self._cache_path and not self._cache_path.exists():  # make sure the file and folders exist
@@ -151,9 +151,9 @@ class User(URIBase):  # pylint: disable=too-many-instance-attributes
             self._cache_path.touch(exist_ok=True)
         self._save_to_cache(self.token_info)
 
-        if refresh and token_info.refresh_token and token_info.expires_in:
+        if refresh and self.token_info.refresh_token and self.token_info.expires_in:
             coroutine: Coroutine = self._refreshing_token(
-                token_info.expires_in, token_info.refresh_token
+                self.token_info.expires_in, self.token_info.refresh_token
             )  # pylint: disable=protected-access
 
             self._refresh_task = self.client.loop.create_task(
@@ -211,7 +211,7 @@ class User(URIBase):  # pylint: disable=too-many-instance-attributes
 
             self._save_to_cache(self.token_info)
 
-            expires = self.token_info.expires_in
+            expires = self.token_info.expires_in or expires
             self.http.token = self.token_info.access_token
 
     def _save_to_cache(self, token_info: TokenInfo) -> bool:
@@ -307,7 +307,10 @@ class User(URIBase):  # pylint: disable=too-many-instance-attributes
             if not len(refresh) == 2:
                 raise ValueError(f"refresh must have exactly two elements.")
 
-        token_info = TokenInfo(access_token=token, expires_in=refresh[0], refresh_token=refresh[1])
+        if refresh:
+            token_info = TokenInfo(access_token=token, expires_in=refresh[0], refresh_token=refresh[1])
+        else:
+            token_info = TokenInfo(access_token=token)
 
         return await cls.from_token_info(client, token_info, cache_path, refresh=bool(refresh))
 
