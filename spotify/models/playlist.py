@@ -1,12 +1,53 @@
-from contextlib import asynccontextmanager
 from itertools import islice
 from typing import List, Optional, Union, Callable, Tuple, Iterable, TYPE_CHECKING
 
+from ..oauth import set_required_scopes
 from ..http import HTTPUserClient, HTTPClient
 from . import URIBase, Track, PlaylistTrack, Image
 
 if TYPE_CHECKING:
     import spotify
+
+
+class MutableTracks:
+    __slots__ = (
+        "playlist",
+        "tracks",
+        "was_empty",
+        "is_empty",
+        "replace_tracks",
+        "get_all_tracks",
+    )
+
+    def __init__(self, playlist: "Playlist") -> None:
+        self.playlist = playlist
+        self.tracks = tracks = playlist.tracks
+
+        if tracks is not None:
+            self.was_empty = self.is_empty = not len(tracks)
+
+        self.replace_tracks = playlist.replace_tracks
+        self.get_all_tracks = playlist.get_all_tracks
+
+    async def __aenter__(self):
+        if self.tracks is None:
+            self.tracks = tracks = list(await self.get_all_tracks())
+            self.was_empty = self.is_empty = not len(tracks)
+        else:
+            tracks = list(self.tracks)
+
+        return tracks
+
+    async def __aexit__(self, typ, value, traceback):
+        if self.was_empty and self.is_empty:
+            # the tracks were empty and is still empty.
+            # skip the api call.
+            return
+
+        tracks = self.tracks
+
+        await self.replace_tracks(*tracks)
+        setattr(self.playlist, "_Playlist__tracks", tuple(self.tracks))
 
 
 class Playlist(URIBase):  # pylint: disable=too-many-instance-attributes
@@ -131,24 +172,6 @@ class Playlist(URIBase):  # pylint: disable=too-many-instance-attributes
             len(tracks) if tracks is not None else data["tracks"]["total"]
         )
 
-    @asynccontextmanager
-    async def __mutate_tracks(self):
-        if self.tracks is None:
-            self.__tracks = await self.get_all_tracks()
-
-        tracks = list(self.tracks)
-        prev_len = len(tracks)
-
-        yield tracks
-
-        if not prev_len and not len(tracks):
-            # the tracks were empty and is still empty.
-            # skip the api call.
-            return
-
-        await self.replace_tracks(*tracks)
-        self.__tracks = tuple(tracks)
-
     # Properties
 
     @property
@@ -157,6 +180,7 @@ class Playlist(URIBase):  # pylint: disable=too-many-instance-attributes
 
     # Track retrieval
 
+    @set_required_scopes(None)
     async def get_tracks(
         self, *, limit: Optional[int] = 20, offset: Optional[int] = 0
     ) -> Tuple[PlaylistTrack, ...]:
@@ -179,6 +203,7 @@ class Playlist(URIBase):  # pylint: disable=too-many-instance-attributes
         )
         return tuple(PlaylistTrack(self.__client, item) for item in data["items"])
 
+    @set_required_scopes(None)
     async def get_all_tracks(self) -> Tuple[PlaylistTrack, ...]:
         """Get all playlist tracks from the playlist.
 
@@ -210,6 +235,7 @@ class Playlist(URIBase):  # pylint: disable=too-many-instance-attributes
 
     # Basic api wrapping
 
+    @set_required_scopes("playlist-modify-public", "playlist-modify-private")
     async def add_tracks(self, *tracks) -> str:
         """Add one or more tracks to a user’s playlist.
 
@@ -228,6 +254,7 @@ class Playlist(URIBase):  # pylint: disable=too-many-instance-attributes
         )
         return data["snapshot_id"]
 
+    @set_required_scopes("playlist-modify-public", "playlist-modify-private")
     async def remove_tracks(self, *tracks):
         """Remove one or more tracks from a user’s playlist.
 
@@ -246,6 +273,7 @@ class Playlist(URIBase):  # pylint: disable=too-many-instance-attributes
         )
         return data["snapshot_id"]
 
+    @set_required_scopes("playlist-modify-public", "playlist-modify-private")
     async def replace_tracks(self, *tracks: Union[Track, PlaylistTrack, str]) -> None:
         """Replace all the tracks in a playlist, overwriting its existing tracks.
 
@@ -277,6 +305,7 @@ class Playlist(URIBase):  # pylint: disable=too-many-instance-attributes
             head, tracks = tracks[:100], tracks[100:]
             await self.extend(head)
 
+    @set_required_scopes("playlist-modify-public", "playlist-modify-private")
     async def reorder_tracks(
         self,
         start: int,
@@ -310,6 +339,7 @@ class Playlist(URIBase):  # pylint: disable=too-many-instance-attributes
 
     # Library functionality.
 
+    @set_required_scopes("playlist-modify-public", "playlist-modify-private")
     async def clear(self):
         """Clear the playlists tracks.
 
@@ -324,6 +354,7 @@ class Playlist(URIBase):  # pylint: disable=too-many-instance-attributes
         """
         await self.__http.replace_playlist_tracks(self.id, tracks=[])
 
+    @set_required_scopes("playlist-modify-public", "playlist-modify-private")
     async def extend(self, tracks: Union["Playlist", Iterable[Union[Track, str]]]):
         """Extend a playlists tracks with that of another playlist or a list of Track/Track URIs.
 
@@ -367,6 +398,7 @@ class Playlist(URIBase):  # pylint: disable=too-many-instance-attributes
 
             await self.__http.add_playlist_tracks(self.id, tracks=head)
 
+    @set_required_scopes("playlist-modify-public", "playlist-modify-private")
     async def insert(self, index, obj: Union[PlaylistTrack, Track]) -> None:
         """Insert an object before the index.
 
@@ -380,9 +412,10 @@ class Playlist(URIBase):  # pylint: disable=too-many-instance-attributes
                 f"Expected a PlaylistTrack or Track object instead got {obj!r}"
             )
 
-        async with self.__mutate_tracks() as tracks:
+        async with MutableTracks(self) as tracks:
             tracks.insert(index, obj)
 
+    @set_required_scopes("playlist-modify-public", "playlist-modify-private")
     async def pop(self, index: int = -1) -> PlaylistTrack:
         """Remove and return the track at the specified index.
 
@@ -401,9 +434,10 @@ class Playlist(URIBase):  # pylint: disable=too-many-instance-attributes
         IndexError
             If there are no tracks or the index is out of range.
         """
-        async with self.__mutate_tracks() as tracks:
+        async with MutableTracks(self) as tracks:
             return tracks.pop(index)
 
+    @set_required_scopes("playlist-modify-public", "playlist-modify-private")
     async def sort(
         self,
         *,
@@ -417,9 +451,10 @@ class Playlist(URIBase):  # pylint: disable=too-many-instance-attributes
             This method will mutate the current
             playlist object, and the spotify Playlist.
         """
-        async with self.__mutate_tracks() as tracks:
+        async with MutableTracks(self) as tracks:
             tracks.sort(key=key, reverse=reverse)
 
+    @set_required_scopes("playlist-modify-public", "playlist-modify-private")
     async def remove(self, value: Union[PlaylistTrack, Track]) -> None:
         """Remove the first occurence of the value.
 
@@ -433,9 +468,10 @@ class Playlist(URIBase):  # pylint: disable=too-many-instance-attributes
         ValueError
             If the value is not present.
         """
-        async with self.__mutate_tracks() as tracks:
+        async with MutableTracks(self) as tracks:
             tracks.remove(value)
 
+    @set_required_scopes("playlist-modify-public", "playlist-modify-private")
     async def copy(self) -> "Playlist":
         """Return a shallow copy of the playlist object.
 
@@ -446,6 +482,7 @@ class Playlist(URIBase):  # pylint: disable=too-many-instance-attributes
         """
         return Playlist(client=self.__client, data=self, http=self.__http)
 
+    @set_required_scopes("playlist-modify-public", "playlist-modify-private")
     async def reverse(self) -> None:
         """Reverse the playlist in place.
 
@@ -454,5 +491,5 @@ class Playlist(URIBase):  # pylint: disable=too-many-instance-attributes
             This method will mutate the current
             playlist object, and the spotify Playlist.
         """
-        async with self.__mutate_tracks() as tracks:
+        async with MutableTracks(self) as tracks:
             tracks.reverse()

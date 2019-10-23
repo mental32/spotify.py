@@ -2,6 +2,7 @@
 
 import datetime
 
+from ..oauth import set_required_scopes
 from . import URIBase, Image, Artist
 
 
@@ -74,10 +75,12 @@ class Track(URIBase):  # pylint: disable=too-many-instance-attributes
     def __repr__(self):
         return f"<spotify.Track: {self.name!r}>"
 
+    @set_required_scopes(None)
     def audio_analysis(self):
         """Get a detailed audio analysis for the track."""
         return self.__client.http.track_audio_analysis(self.id)
 
+    @set_required_scopes(None)
     def audio_features(self):
         """Get audio feature information for the track."""
         return self.__client.http.track_audio_features(self.id)

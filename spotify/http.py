@@ -638,8 +638,8 @@ class HTTPClient:
     ) -> Awaitable:
         """Get the current user’s followed artists.
 
-        Paramters
-        ---------
+        Parameters
+        ----------
         limit : Optional[:class:`int`]
             The maximum number of items to return. Default: 20. Minimum: 1. Maximum: 50.
         after : Optional[:class:`str`]
@@ -834,9 +834,9 @@ class HTTPClient:
         time_range : Optional[:class:`str`]
             Over what time frame the affinities are computed.
             Valid values:
-             - "long_term" (calculated from several years of data and including all new data as it becomes available)
-             - "medium_term" (approximately last 6 months)
-             - "short_term" (approximately last 4 weeks). Default: medium_term.
+            - "long_term" (calculated from several years of data and including all new data as it becomes available)
+            - "medium_term" (approximately last 6 months)
+            - "short_term" (approximately last 4 weeks). Default: medium_term.
         """
         route = self.route("GET", "/me/top/{type_}", type_=type_)
         payload: Dict[str, Any] = {"limit": limit, "offset": offset}
@@ -886,8 +886,8 @@ class HTTPClient:
         Follow the next field with the before parameter to move back in time, or use the after parameter to move forward in time.
         If you supply no before or after parameter, the endpoint will return the most recently played songs, and the next link will page back in time.
 
-        Parameter
-        ---------
+        Parameters
+        ----------
         limit : Optional[:class:`int`]
             The maximum number of items to return. Default: 20. Minimum: 1. Maximum: 50.
         after : Optional[:class:`str`]
@@ -1066,12 +1066,13 @@ class HTTPClient:
         """
         route = self.route("PUT", "/me/player/play")
         payload: Dict[str, Any] = {"position_ms": position_ms}
+        params: Dict[str, Any] = {}       
 
         if isinstance(context_uri, str):
-            payload["context_uri"] = {"context_uri": context_uri}
+            payload["context_uri"] = context_uri
 
         elif hasattr(context_uri, "__iter__"):
-            payload["uris"] = {"uris": list(*context_uri)}
+            payload["uris"] = list(*context_uri)
 
         elif context_uri is None:
             pass  # Do nothing, context_uri == None is allowed and intended for resume's
@@ -1082,8 +1083,8 @@ class HTTPClient:
             )
 
         can_set_offset = context_uri is not None and (
-            "uris" in payload
-            or any(string in payload["context_uri"] for string in ("playlist", "album"))
+            ("playlist" in payload["context_uri"] or "album" in payload["context_uri"])
+            or "uris" in payload
         )
 
         if offset is not None:
@@ -1108,10 +1109,9 @@ class HTTPClient:
                 )
 
         if device_id is not None:
-            payload["device_id"] = device_id
+            params["device_id"] = device_id
 
-        return self.request(route, json=payload)
-
+        return self.request(route, params=params, json=payload)
     def shuffle_playback(
         self, state: bool, *, device_id: Optional[str] = None
     ) -> Awaitable:
@@ -1125,9 +1125,8 @@ class HTTPClient:
         device_id : Optional[:class:`str`]
             The id of the device this command is targeting. If not supplied, the user’s currently active device is the target.
         """
-        route = self.route("PUT", "/me/player/seek")
-        payload: Dict[str, Any] = {"state": state}
-
+        route = self.route("PUT", "/me/player/shuffle")
+        payload: Dict[str, Any] = {"state": f"{bool(state)}".lower()}
         if device_id is not None:
             payload["device_id"] = device_id
 
@@ -1205,6 +1204,7 @@ class HTTPClient:
             Defaults to true . If true the playlist will be public, if false it will be private
         collaborative : Optional[:class:`bool`]
             Defaults to false . If true the playlist will be collaborative.
+
             .. note::
                 to create a collaborative playlist you must also set public to false
         description : Optional[:class:`str`]
@@ -1242,6 +1242,7 @@ class HTTPClient:
             Defaults to true . If true the playlist will be public, if false it will be private
         collaborative : Optional[:class:`bool`]
             Defaults to false . If true the playlist will be collaborative.
+
             .. note::
                 to create a collaborative playlist you must also set public to false
         description : Optional[:class:`str`]
@@ -1345,7 +1346,7 @@ class HTTPClient:
 
             Use multiple parentheses to drill down into nested objects, for example: `fields=items(track(name,href,album(name,href)))`
 
-            Fields can be excluded by prefixing them with an exclamation mark, for example: `fields=items.track.album(!external_urls,images)
+            Fields can be excluded by prefixing them with an exclamation mark, for example: `fields=items.track.album(!external_urls,images)`
         market : Optional[:class:`str`]
             An ISO 3166-1 alpha-2 country code or the string "from_token".
             Provide this parameter if you want to apply Track Relinking.
@@ -1385,7 +1386,7 @@ class HTTPClient:
 
             Use multiple parentheses to drill down into nested objects, for example: `fields=items(track(name,href,album(name,href)))`
 
-            Fields can be excluded by prefixing them with an exclamation mark, for example: `fields=items.track.album(!external_urls,images)
+            Fields can be excluded by prefixing them with an exclamation mark, for example: `fields=items.track.album(!external_urls,images)`
         limit : Optional[:class:`str`]
             The maximum number of tracks to return. Default: 100. Minimum: 1. Maximum: 100.
         offset : Optional[:class:`str`]
@@ -1646,11 +1647,13 @@ class HTTPClient:
         ----------
         q : :class:`str`
             Search query keywords and optional field filters and operators. e.g. `roadhouse blues.`
+
         query_type : Optional[:class:`str`]
             A comma-separated list of item types to search across. (default: "track,playlist,artist,album")
-            Valid types are: album , artist, playlist, and track.
+            Valid types are: album, artist, playlist, and track.
             Search results include hits from all the specified item types.
-        market Optional[:class:`str`]
+
+        market : Optional[:class:`str`]
             An ISO 3166-1 alpha-2 country code or the string "from_token". (default: "US")
             If a country code is specified, only artists, albums, and tracks with content that is playable in that market is returned.
 
@@ -1660,21 +1663,25 @@ class HTTPClient:
                     content playable in the country associated with the user account, is returned.
                 - Users can view the country that is associated with their account in the account settings. A user must
                     grant access to the user-read-private scope prior to when the access token is issued.
+
         limit : Optional[:class:`int`]
             Maximum number of results to return. (Default: 20, Minimum: 1, Maximum: 50)
 
             .. note::
                 The limit is applied within each type, not on the total response.
                 For example, if the limit value is 3 and the type is artist,album, the response contains 3 artists and 3 albums.
+
         offset : Optional[:class:`int`]
             The index of the first result to return.
             Default: 0 (the first result).
             Maximum offset (including limit): 10,000.
             Use with limit to get the next page of search results.
+
         include_external : Optional[:class:`str`]
             Possible values: `audio`
             If `include_external=audio` is specified the response will include any relevant audio content that is hosted externally.
             By default external content is filtered out from responses.
+
         """
         route = self.route("GET", "/search")
         payload: Dict[str, Any] = {
