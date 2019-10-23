@@ -43,10 +43,13 @@ def set_required_scopes(*scopes: Optional[str]) -> Callable:
     decorator : :class:`typing.Callable`
         The decorator that sets the scope metadata.
     """
+
     def decorate(func) -> Callable:
         func.__requires_spotify_scopes__ = tuple(scopes)
         return func
+
     return decorate
+
 
 def get_required_scopes(func: Callable[..., Any]) -> Tuple[str, ...]:
     """Get the required scopes for a function.
@@ -61,8 +64,8 @@ def get_required_scopes(func: Callable[..., Any]) -> Tuple[str, ...]:
     scopes : Tuple[:class:`str`, ...]
         A tuple of scopes required for a call to succeed.
     """
-    if not hasattr(func, '__requires_spotify_scopes__'):
-        raise AttributeError('Scope metadata has not been set for this object!')
+    if not hasattr(func, "__requires_spotify_scopes__"):
+        raise AttributeError("Scope metadata has not been set for this object!")
     return func.__requires_spotify_scopes__  # type: ignore
 
 

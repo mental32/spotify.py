@@ -1066,7 +1066,7 @@ class HTTPClient:
         """
         route = self.route("PUT", "/me/player/play")
         payload: Dict[str, Any] = {"position_ms": position_ms}
-        params: Dict[str, Any] = {}       
+        params: Dict[str, Any] = {}
 
         if isinstance(context_uri, str):
             payload["context_uri"] = context_uri
@@ -1112,6 +1112,7 @@ class HTTPClient:
             params["device_id"] = device_id
 
         return self.request(route, params=params, json=payload)
+
     def shuffle_playback(
         self, state: bool, *, device_id: Optional[str] = None
     ) -> Awaitable:
