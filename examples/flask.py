@@ -13,7 +13,7 @@ APP.config.from_mapping({'spotify_client': SPOTIFY_CLIENT})
 REDIRECT_URI: str = 'http://localhost:8888/spotify/callback'
 
 OAUTH2_SCOPES: Tuple[str] = ('user-modify-playback-state', 'user-read-currently-playing', 'user-read-playback-state')
-OAUTH2: spotify.OAuth2 = spotify.OAuth2(SPOTIFY_CLIENT.id, REDIRECT_URI, scope=OAUTH2_SCOPES)
+OAUTH2: spotify.OAuth2 = spotify.OAuth2(SPOTIFY_CLIENT.id, REDIRECT_URI, scopes=OAUTH2_SCOPES)
 
 SPOTIFY_USERS: Dict[str, spotify.User] = {}
 
@@ -37,7 +37,7 @@ def spotify_callback():
 
     return flask.redirect('/')
 
-@APP.route('spotify/failed')
+@APP.route('/spotify/failed')
 def spotify_failed():
     flask.session.pop('spotify_user_id', None)
     return 'Failed to authenticate with Spotify.'
