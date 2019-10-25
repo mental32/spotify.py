@@ -69,13 +69,13 @@ if __name__ == '__main__':
 
 ```py
 import spotify
-from spotify.utils import get_scope_metadata
+from spotify.oauth import get_required_scopes
 
 # In order to call this method sucessfully the "user-modify-playback-state" scope is required.
-print(get_scope_metadata(spotify.Player.play))  # => ["user-modify-playback-state"]
+print(get_required_scopes(spotify.Player.play))  # => ["user-modify-playback-state"]
 
 # Some methods have no oauth scope requirements, so `None` will be returned instead.
-print(get_scope_metadata(spotify.Playlist.get_tracks))  # => None
+print(get_required_scopes(spotify.Playlist.get_tracks))  # => None
 ```
 
 ### Usage with flask
