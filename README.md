@@ -1,12 +1,14 @@
 ![logo](/docs/source/_static/images/logo.png)
 
+<div align=center>
 
-![Version info](https://img.shields.io/pypi/v/spotify.svg)
-[![GitHub stars](https://img.shields.io/github/stars/mental32/spotify.py.svg)](https://github.com/mental32/spotify.py/stargazers)
-![Discord](https://img.shields.io/discord/438465139197607939.svg?style=flat-square)
-![Travis](https://api.travis-ci.org/mental32/spotify.py.svg?branch=master)
+<h1 align=center>spotify.py</h1>
 
-# spotify.py
+![Version info](https://img.shields.io/pypi/v/spotify.svg?style=for-the-badge)![Github Issues](https://img.shields.io/github/issues/mental32/spotify.py?style=for-the-badge)![Github forks](https://img.shields.io/github/forks/mental32/spotify.py?style=for-the-badge)[![GitHub stars](https://img.shields.io/github/stars/mental32/spotify.py?style=for-the-badge)](https://github.com/mental32/spotify.py/stargazers)![License](https://img.shields.io/github/license/mental32/spotify.py?style=for-the-badge)![Discord](https://img.shields.io/discord/438465139197607939.svg?style=for-the-badge)![Travis](https://img.shields.io/travis/mental32/spotify.py?style=for-the-badge)
+
+<hr>
+
+</div>
 
 An API library for the spotify client and the Spotify Web API written in Python.
 
