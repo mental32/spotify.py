@@ -49,8 +49,8 @@ import spotify
 async def main():
     playlist_uri = input("playlist_uri: ")
     client_id = input("client_id: ")
-    secret = getpass.getpass("application secret:")
-    token = getpass.getpass("user token:")
+    secret = getpass.getpass("application secret: ")
+    token = getpass.getpass("user token: ")
 
     async with spotify.Client(client_id, secret) as client:
         user = await spotify.User.from_token(client, token)
