@@ -45,21 +45,20 @@ import getpass
 import spotify
 
 async def main():
-    client = spotify.Client(client_id, secret)
-
-    playlist_uri = input("playlist_id: ")
+    playlist_uri = input("playlist_uri: ")
     client_id = input("client_id: ")
     secret = getpass.getpass("application secret:")
     token = getpass.getpass("user token:")
 
-    user = await spotify.User.from_token(client, token)
+    async with spotify.Client(client_id, secret) as client:
+        user = await spotify.User.from_token(client, token)
 
-    for playlist in await user.get_playlists():
-        if playlist.uri == playlist_uri:
-            await playlist.sort(reverse=True, key=(lambda track: track.popularity))
-            break
-    else:
-        print('No playlists were found!', file=sys.stderr)
+        for playlist in await user.get_playlists():
+            if playlist.uri == playlist_uri:
+                await playlist.sort(reverse=True, key=(lambda track: track.popularity))
+                break
+        else:
+            print('No playlists were found!', file=sys.stderr)
 
 if __name__ == '__main__':
     client.loop.run_until_complete(main())
