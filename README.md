@@ -1,10 +1,12 @@
+<div align=center>
+
 ![logo](/docs/source/_static/images/logo.png)
 
+![Version info](https://img.shields.io/pypi/v/spotify.svg?style=for-the-badge)![Github Issues](https://img.shields.io/github/issues/mental32/spotify.py?style=for-the-badge)![Github forks](https://img.shields.io/github/forks/mental32/spotify.py?style=for-the-badge)[![GitHub stars](https://img.shields.io/github/stars/mental32/spotify.py?style=for-the-badge)](https://github.com/mental32/spotify.py/stargazers)![License](https://img.shields.io/github/license/mental32/spotify.py?style=for-the-badge)![Discord](https://img.shields.io/discord/438465139197607939.svg?style=for-the-badge)![Travis](https://img.shields.io/travis/mental32/spotify.py?style=for-the-badge)
 
-![Version info](https://img.shields.io/pypi/v/spotify.svg)
-[![GitHub stars](https://img.shields.io/github/stars/mental32/spotify.py.svg)](https://github.com/mental32/spotify.py/stargazers)
-![Discord](https://img.shields.io/discord/438465139197607939.svg?style=flat-square)
-![Travis](https://api.travis-ci.org/mental32/spotify.py.svg?branch=master)
+<hr>
+
+</div>
 
 # spotify.py
 
@@ -47,8 +49,8 @@ import spotify
 async def main():
     playlist_uri = input("playlist_uri: ")
     client_id = input("client_id: ")
-    secret = getpass.getpass("application secret:")
-    token = getpass.getpass("user token:")
+    secret = getpass.getpass("application secret: ")
+    token = getpass.getpass("user token: ")
 
     async with spotify.Client(client_id, secret) as client:
         user = await spotify.User.from_token(client, token)
