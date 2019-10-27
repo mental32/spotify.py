@@ -2,7 +2,7 @@ from .. import _clean_namespace
 from . import typing
 
 from .base import SpotifyBase, URIBase
-from .common import Device, Context, Image
+from .common import Device, Context, Image, TokenInfo
 from .artist import Artist
 from .track import Track, PlaylistTrack
 from .player import Player
@@ -23,4 +23,5 @@ __all__ = (
     "Device",
     "Context",
     "Image",
+    "TokenInfo",
 )

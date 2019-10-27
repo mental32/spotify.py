@@ -1,3 +1,9 @@
+import json
+import time
+from pathlib import Path
+from typing import Optional, Any, Dict
+
+
 class Image:
     """An object representing a Spotify image resource.
 
@@ -107,3 +113,100 @@ class Device:
 
     def __str__(self):
         return self.id
+
+
+class TokenInfo:
+    """An object holding a users authentication tokens and corresponding information.
+
+    Attributes
+    ----------
+    access_token : :class:`str`
+        The authentication token
+    expires_in : :class:`int`
+        Time in seconds until the authentication token expires
+    refresh_token : Optional[:class:`str`]
+        Refresh token used to re-fetch new access tokens once they expire
+    token_type : Optional[:class:`str`]
+        Type of the token, typically 'Bearer'
+    scope : Optional[:class:`str`]
+        Oauth2 scopes the access token is valid for. Space separated list of individual scopes.
+    expires_at : :class:`float`
+        Time at which the access token expires as a unix timestamp in seconds.
+        Computed from expires_in and the current time at object instantiation.
+    """
+
+    __slots__ = (
+        "access_token",
+        "expires_in",
+        "refresh_token",
+        "token_type",
+        "scope",
+        "expires_at",
+    )
+
+    def __init__(
+        self,
+        access_token: str,
+        expires_in: int,
+        refresh_token: Optional[str] = None,
+        token_type: Optional[str] = None,
+        scope: Optional[str] = None,
+        expires_at: Optional[float] = None,
+    ):
+        self.access_token = access_token
+        self.expires_in = expires_in
+        self.refresh_token = refresh_token
+        self.token_type = token_type
+        self.scope = scope
+        self.expires_at = expires_at or time.time() + self.expires_in
+
+    @property
+    def valid(self) -> bool:
+        return self.expires_at > time.time()
+
+    def serialize(self):
+        return {
+            "access_token": self.access_token,
+            "expires_in": self.expires_in,
+            "expires_at": self.expires_at,
+            "scope": self.scope,
+            "refresh_token": self.refresh_token,
+            "token_type": self.token_type,
+        }
+
+    @classmethod
+    def from_file(cls, file_path: Path):
+        """Load token information from a json file.
+
+        Parameters
+        ----------
+        file_path : :class `Path`
+            Path a json file to load token info from.
+        """
+        data = json.loads(file_path.read_text())
+
+        if not all(k in data for k in ("access_token", "expires_in", "refresh_token")):
+            raise KeyError("Cache file is missing information")
+
+        return cls(**data)
+
+    def save_to_file(self, file_path: Path) -> bool:
+        """Save token information to specified file path as a json file.
+        The file must exist for the operation to be successful.
+        Will return True if the operation was successful, False if
+        an error occurred or the file does not exist.
+
+        Parameters
+        ----------
+        file_path : :class `Path`
+            File path to store the token information.
+        """
+        if not file_path.exists():
+            return False
+
+        try:
+            file_path.write_text(json.dumps(self.serialize()))
+        except IOError:
+            return False
+
+        return True

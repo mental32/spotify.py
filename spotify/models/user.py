@@ -2,8 +2,6 @@
 
 import asyncio
 import functools
-import json
-import time
 from base64 import b64encode
 from pathlib import Path
 from typing import (
@@ -16,12 +14,22 @@ from typing import (
     Union,
     Coroutine,
     TYPE_CHECKING,
-    Any,
 )
 
 from ..utils import to_id
 from ..http import HTTPUserClient
-from . import URIBase, Image, Device, Context, Player, Playlist, Track, Artist, Library
+from . import (
+    URIBase,
+    Image,
+    Device,
+    Context,
+    Player,
+    Playlist,
+    Track,
+    Artist,
+    Library,
+    TokenInfo,
+)
 
 if TYPE_CHECKING:
     import spotify
@@ -29,48 +37,6 @@ if TYPE_CHECKING:
 T = TypeVar("T", Artist, Track)
 
 REFRESH_TOKEN_URL = "https://accounts.spotify.com/api/token?grant_type=refresh_token&refresh_token={refresh_token}"
-
-
-class TokenInfo:
-    def __init__(
-        self,
-        access_token: Optional[str] = None,
-        expires_in: Optional[int] = None,
-        token_type: Optional[str] = None,
-        refresh_token: Optional[str] = None,
-        scope: Optional[str] = None,
-        **kwargs,
-    ):
-        self.access_token = access_token
-        self.expires_in = expires_in
-        self.token_type = token_type
-        self.refresh_token = refresh_token
-        self.scope = scope
-        self.expires_at = time.time() + self.expires_in if self.expires_in else None
-
-    def is_token_valid(self) -> bool:
-        if self.access_token and self.expires_at and self.expires_at > time.time():
-            return True
-        return False
-
-    def serialize(self):
-        return {
-            "access_token": self.access_token,
-            "expires_in": self.expires_in,
-            "expires_at": self.expires_at,
-            "scope": self.scope,
-            "refresh_token": self.refresh_token,
-            "token_type": self.token_type,
-        }
-
-    @classmethod
-    def from_file(cls, file_path: Path):
-        data: Dict[str, Any] = {}
-        try:
-            data = json.loads(file_path.read_text())
-        except (IOError, json.JSONDecodeError):
-            pass
-        return cls(**data)
 
 
 async def _refresh_token(client: "spotify.Client", refresh_token: str) -> TokenInfo:
@@ -131,7 +97,6 @@ class User(URIBase):  # pylint: disable=too-many-instance-attributes
         client: "spotify.Client",
         data: dict,
         token_info: Optional[TokenInfo] = None,
-        refresh: bool = False,
         **kwargs,
     ):
         self._refresh_task = None
@@ -144,22 +109,13 @@ class User(URIBase):  # pylint: disable=too-many-instance-attributes
         else:
             self.library = Library(client, self)
 
-        self.token_info: TokenInfo = token_info or TokenInfo()
+        self.token_info = token_info
 
         self._cache_path: Optional[Path] = kwargs.pop("cache_path", None)
-        if (
-            self._cache_path and not self._cache_path.exists()
-        ):  # make sure the file and folders exist
-            self._cache_path.parent.mkdir(parents=True, exist_ok=True)
-            self._cache_path.touch(exist_ok=True)
-        self._save_to_cache(self.token_info)
-
-        if refresh and self.token_info.refresh_token and self.token_info.expires_in:
-            coroutine: Coroutine = self._refreshing_token(
-                self.token_info.expires_in, self.token_info.refresh_token
-            )  # pylint: disable=protected-access
-
-            self._refresh_task = self.client.loop.create_task(coroutine)  #
+        if self._cache_path and not self._cache_path.exists():
+            raise FileNotFoundError("Cache file does not exist.")
+        elif self._cache_path and self.token_info:
+            self.token_info.save_to_file(self._cache_path)
 
         # Public user object attributes
         self.id = data.pop("id")  # pylint: disable=invalid-name
@@ -211,21 +167,11 @@ class User(URIBase):  # pylint: disable=too-many-instance-attributes
 
             self.token_info = await _refresh_token(self.client, token)
 
-            self._save_to_cache(self.token_info)
+            if self._cache_path:
+                self.token_info.save_to_file(self._cache_path)
 
             expires = self.token_info.expires_in or expires
             self.http.token = self.token_info.access_token
-
-    def _save_to_cache(self, token_info: TokenInfo) -> bool:
-        if not self._cache_path or not self._cache_path.exists():
-            return True
-
-        try:
-            self._cache_path.write_text(json.dumps(token_info.serialize()))
-        except IOError:
-            return False
-
-        return True
 
     ### Alternate constructors
 
@@ -314,7 +260,7 @@ class User(URIBase):  # pylint: disable=too-many-instance-attributes
                 access_token=token, expires_in=refresh[0], refresh_token=refresh[1]
             )
         else:
-            token_info = TokenInfo(access_token=token)
+            token_info = TokenInfo(access_token=token, expires_in=3600)
 
         return await cls.from_token_info(
             client, token_info, cache_path, refresh=bool(refresh)
@@ -352,33 +298,31 @@ class User(URIBase):  # pylint: disable=too-many-instance-attributes
         if cache_path and isinstance(cache_path, str):
             cache_path = Path(cache_path)
 
-        if not token_info.is_token_valid():
+        if not token_info.valid:
             # expired access token, need to use refresh token
             if not token_info.refresh_token:
                 raise Exception("Invalid access token and no refresh token provided")
 
-            headers = {
-                "Authorization": f"Basic {b64encode(':'.join((client.http.client_id, client.http.client_secret)).encode()).decode()}",
-                "Content-Type": "application/x-www-form-urlencoded",
-            }
-            route = (
-                "POST",
-                REFRESH_TOKEN_URL.format(refresh_token=token_info.refresh_token),
+            token_info = await _refresh_token(
+                client=client, refresh_token=token_info.refresh_token
             )
-            token_info = TokenInfo(**await client.http.request(route, headers=headers))
 
         http = HTTPUserClient(token_info.access_token)
 
         data = await http.current_user()
 
-        return cls(
-            client,
-            data=data,
-            http=http,
-            token_info=token_info,
-            refresh=refresh,
-            cache_path=cache_path,
+        self = cls(
+            client, data=data, http=http, token_info=token_info, cache_path=cache_path
         )
+
+        if refresh and token_info.refresh_token and token_info.expires_in:
+            coroutine: Coroutine = self._refreshing_token(
+                token_info.expires_in, token_info.refresh_token
+            )  # pylint: disable=protected-access
+
+            self._refresh_task = self.client.loop.create_task(coroutine)
+
+        return self
 
     @classmethod
     async def from_cache(
