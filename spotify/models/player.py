@@ -179,6 +179,7 @@ class Player(SpotifyBase):  # pylint: disable=too-many-instance-attributes
         *uris: SomeURIs,
         offset: Optional[Offset] = 0,
         device: Optional[SomeDevice] = None,
+        treat_as_tracks: Optional[bool] = False,
     ):
         """Start a new context or resume current playback on the user’s active device.
 
@@ -189,6 +190,7 @@ class Player(SpotifyBase):  # pylint: disable=too-many-instance-attributes
         ----------
         *uris : SomeURI
             When a single argument is passed in that argument is treated as a context.
+            This can be prevent by setting the treat_as_tracks argument to True.
             Valid contexts are: albums, artists, playlists.
             Album, Artist and Playlist objects are accepted too.
             Otherwise when multiple arguments are passed in they,
@@ -200,10 +202,12 @@ class Player(SpotifyBase):  # pylint: disable=too-many-instance-attributes
         device : Optional[:obj:`SomeDevice`]
             The Device object or id of the device this command is targeting.
             If not supplied, the user’s currently active device is the target.
+        treat_as_tracks : Optional[bool]
+            Forces the *uris to be treated as tracks, even if only one uri is given.
         """
         context_uri: Union[List[str], str]
 
-        if len(uris) > 1:
+        if len(uris) > 1 or treat_as_tracks:
             # Regular uris paramter
             context_uri = [str(uri) for uri in uris]
         else:
