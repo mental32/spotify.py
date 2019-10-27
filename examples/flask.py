@@ -37,7 +37,7 @@ def spotify_callback():
 
     return flask.redirect('/')
 
-@APP.route('spotify/failed')
+@APP.route('/spotify/failed')
 def spotify_failed():
     flask.session.pop('spotify_user_id', None)
     return 'Failed to authenticate with Spotify.'

@@ -1,10 +1,12 @@
+<div align=center>
+
 ![logo](/docs/source/_static/images/logo.png)
 
+![Version info](https://img.shields.io/pypi/v/spotify.svg?style=for-the-badge)![Github Issues](https://img.shields.io/github/issues/mental32/spotify.py?style=for-the-badge)![Github forks](https://img.shields.io/github/forks/mental32/spotify.py?style=for-the-badge)[![GitHub stars](https://img.shields.io/github/stars/mental32/spotify.py?style=for-the-badge)](https://github.com/mental32/spotify.py/stargazers)![License](https://img.shields.io/github/license/mental32/spotify.py?style=for-the-badge)![Discord](https://img.shields.io/discord/438465139197607939.svg?style=for-the-badge)![Travis](https://img.shields.io/travis/mental32/spotify.py?style=for-the-badge)
 
-![Version info](https://img.shields.io/pypi/v/spotify.svg)
-[![GitHub stars](https://img.shields.io/github/stars/mental32/spotify.py.svg)](https://github.com/mental32/spotify.py/stargazers)
-![Discord](https://img.shields.io/discord/438465139197607939.svg?style=flat-square)
-![Travis](https://api.travis-ci.org/mental32/spotify.py.svg?branch=master)
+<hr>
+
+</div>
 
 # spotify.py
 
@@ -28,7 +30,7 @@ import spotify.sync as spotify  # Nothing requires async/await now!
 
 To install the library simply clone it and run setup.py
 - `git clone https://github.com/mental32/spotify.py`
-- `pip3 -U install .`
+- `pip3 install -U .`
 
 or use pypi
 
@@ -45,21 +47,20 @@ import getpass
 import spotify
 
 async def main():
-    client = spotify.Client(client_id, secret)
-
-    playlist_uri = input("playlist_id: ")
+    playlist_uri = input("playlist_uri: ")
     client_id = input("client_id: ")
-    secret = getpass.getpass("application secret:")
-    token = getpass.getpass("user token:")
+    secret = getpass.getpass("application secret: ")
+    token = getpass.getpass("user token: ")
 
-    user = await spotify.User.from_token(client, token)
+    async with spotify.Client(client_id, secret) as client:
+        user = await spotify.User.from_token(client, token)
 
-    for playlist in await user.get_playlists():
-        if playlist.uri == playlist_uri:
-            await playlist.sort(reverse=True, key=(lambda track: track.popularity))
-            break
-    else:
-        print('No playlists were found!', file=sys.stderr)
+        for playlist in await user.get_playlists():
+            if playlist.uri == playlist_uri:
+                await playlist.sort(reverse=True, key=(lambda track: track.popularity))
+                break
+        else:
+            print('No playlists were found!', file=sys.stderr)
 
 if __name__ == '__main__':
     client.loop.run_until_complete(main())
@@ -69,13 +70,13 @@ if __name__ == '__main__':
 
 ```py
 import spotify
-from spotify.utils import get_scope_metadata
+from spotify.oauth import get_required_scopes
 
 # In order to call this method sucessfully the "user-modify-playback-state" scope is required.
-print(get_scope_metadata(spotify.Player.play))  # => ["user-modify-playback-state"]
+print(get_required_scopes(spotify.Player.play))  # => ["user-modify-playback-state"]
 
 # Some methods have no oauth scope requirements, so `None` will be returned instead.
-print(get_scope_metadata(spotify.Playlist.get_tracks))  # => None
+print(get_required_scopes(spotify.Playlist.get_tracks))  # => None
 ```
 
 ### Usage with flask
@@ -96,7 +97,7 @@ APP.config.from_mapping({'spotify_client': SPOTIFY_CLIENT})
 REDIRECT_URI: str = 'http://localhost:8888/spotify/callback'
 
 OAUTH2_SCOPES: Tuple[str] = ('user-modify-playback-state', 'user-read-currently-playing', 'user-read-playback-state')
-OAUTH2: spotify.OAuth2 = spotify.OAuth2(SPOTIFY_CLIENT.id, REDIRECT_URI, scope=OAUTH2_SCOPES)
+OAUTH2: spotify.OAuth2 = spotify.OAuth2(SPOTIFY_CLIENT.id, REDIRECT_URI, scopes=OAUTH2_SCOPES)
 
 SPOTIFY_USERS: Dict[str, spotify.User] = {}
 
@@ -120,7 +121,7 @@ def spotify_callback():
 
     return flask.redirect('/')
 
-@APP.route('spotify/failed')
+@APP.route('/spotify/failed')
 def spotify_failed():
     flask.session.pop('spotify_user_id', None)
     return 'Failed to authenticate with Spotify.'

@@ -1,4 +1,5 @@
 PYTHON := python3
+PIP := pip3
 LINTER := flake8
 
 FORMATTER := black
@@ -6,7 +7,7 @@ FORMATTER := black
 .PHONY: install pypi test lint clean format doc mypy
 
 install:
-	$(PYTHON) setup.py install --user
+	$(PIP) install -U .
 
 clean:
 	@rm -rf dist spotify.egg* build .mypy_*
