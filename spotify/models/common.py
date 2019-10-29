@@ -1,7 +1,10 @@
 import json
 import time
 from pathlib import Path
-from typing import Optional, Any, Dict
+from typing import Optional, Any, Dict, Union
+
+_CACHE_FILE_FIELDS = {"access_token", "expires_at", "refresh_token"}
+_CACHE_FILE_ERR = "Bad cache file! Missing the following fields: {}"
 
 
 class Image:
@@ -133,6 +136,8 @@ class TokenInfo:
     expires_at : :class:`float`
         Time at which the access token expires as a unix timestamp in seconds.
         Computed from expires_in and the current time at object instantiation.
+    cache_file: Optional[:class:`Path`]
+        File path where to cache the token information.
     """
 
     __slots__ = (
@@ -142,6 +147,7 @@ class TokenInfo:
         "token_type",
         "scope",
         "expires_at",
+        "cache_file",
     )
 
     def __init__(
@@ -152,6 +158,7 @@ class TokenInfo:
         token_type: Optional[str] = None,
         scope: Optional[str] = None,
         expires_at: Optional[float] = None,
+        cache_file: Optional[Union[Path, str]] = None,
     ):
         self.access_token = access_token
         self.expires_in = expires_in
@@ -160,11 +167,31 @@ class TokenInfo:
         self.scope = scope
         self.expires_at = expires_at or time.time() + self.expires_in
 
+        if isinstance(cache_file, str):
+            cache_file = Path(cache_file)
+        self.cache_file = cache_file
+
     @property
     def valid(self) -> bool:
+        """Check if the current token is valid,
+        i.e. if it has expired.
+
+        Returns
+        ----------
+        valid : bool
+        """
         return self.expires_at > time.time()
 
-    def serialize(self):
+    def serialize(self) -> dict:
+        """Create a serialized dict that contains
+        essential information about the token to
+        be used when e.g. caching to a file.
+
+        Returns
+        ----------
+        serialized : dict
+            dict representation of the token information
+        """
         return {
             "access_token": self.access_token,
             "expires_in": self.expires_in,
@@ -185,28 +212,24 @@ class TokenInfo:
         """
         data = json.loads(file_path.read_text())
 
-        if not all(k in data for k in ("access_token", "expires_in", "refresh_token")):
-            raise KeyError("Cache file is missing information")
+        fields = set(data.keys())
 
-        return cls(**data)
+        if not _CACHE_FILE_FIELDS.issubset(fields):
+            raise ValueError(
+                _CACHE_FILE_ERR.format(_CACHE_FILE_FIELDS.difference(fields).pop())
+            )
 
-    def save_to_file(self, file_path: Path) -> bool:
-        """Save token information to specified file path as a json file.
+        return cls(cache_file=file_path, **data)
+
+    def save_to_file(self) -> None:
+        """Save token information to cache file as a json file.
         The file must exist for the operation to be successful.
-        Will return True if the operation was successful, False if
-        an error occurred or the file does not exist.
-
-        Parameters
-        ----------
-        file_path : :class `Path`
-            File path to store the token information.
+        Will raise FileNotFoundError if the file does not exist.
         """
-        if not file_path.exists():
-            return False
+        if not self.cache_file:
+            return
 
-        try:
-            file_path.write_text(json.dumps(self.serialize()))
-        except IOError:
-            return False
+        if not self.cache_file.exists():
+            raise FileNotFoundError("Cache file does not exist.")
 
-        return True
+        self.cache_file.write_text(json.dumps(self.serialize()))

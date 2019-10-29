@@ -111,12 +111,6 @@ class User(URIBase):  # pylint: disable=too-many-instance-attributes
 
         self.token_info = token_info
 
-        self._cache_path: Optional[Path] = kwargs.pop("cache_path", None)
-        if self._cache_path and not self._cache_path.exists():
-            raise FileNotFoundError("Cache file does not exist.")
-        elif self._cache_path and self.token_info:
-            self.token_info.save_to_file(self._cache_path)
-
         # Public user object attributes
         self.id = data.pop("id")  # pylint: disable=invalid-name
         self.uri = data.pop("uri")
@@ -168,7 +162,7 @@ class User(URIBase):  # pylint: disable=too-many-instance-attributes
             self.token_info = await _refresh_token(self.client, token)
 
             if self._cache_path:
-                self.token_info.save_to_file(self._cache_path)
+                self.token_info.save_to_file()
 
             expires = self.token_info.expires_in or expires
             self.http.token = self.token_info.access_token
