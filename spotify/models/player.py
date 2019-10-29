@@ -188,7 +188,8 @@ class Player(SpotifyBase):  # pylint: disable=too-many-instance-attributes
         Parameters
         ----------
         *uris : SomeURI
-            When a single argument is passed in that argument is treated as a context.
+            When a single argument is passed in that argument is treated
+            as a context (except if it is a track or track uri).
             Valid contexts are: albums, artists, playlists.
             Album, Artist and Playlist objects are accepted too.
             Otherwise when multiple arguments are passed in they,
@@ -203,7 +204,7 @@ class Player(SpotifyBase):  # pylint: disable=too-many-instance-attributes
         """
         context_uri: Union[List[str], str]
 
-        if len(uris) > 1:
+        if (len(uris) > 1 or isinstance(uris[0], Track) or (isinstance(uris[0], str) and "track" in uris[0])):
             # Regular uris paramter
             context_uri = [str(uri) for uri in uris]
         else:
