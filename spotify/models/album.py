@@ -50,6 +50,8 @@ class Album(URIBase):  # pylint: disable=too-many-instance-attributes
 
         if self.artists:
             self.artist = self.artists[0]
+        else:
+            self.artist = None
 
         self.markets = data.pop("avaliable_markets", None)
         self.url = data.pop("external_urls").get("spotify", None)
