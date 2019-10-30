@@ -1,7 +1,7 @@
 from .oauth import *
 from .utils import clean as _clean_namespace
 
-__version__ = "0.8.0"  # noqa
+__version__ = "0.8.1"  # noqa
 
 from .errors import *
 from .models import *
