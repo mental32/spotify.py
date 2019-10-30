@@ -19,23 +19,8 @@ class Player(SpotifyBase):  # pylint: disable=too-many-instance-attributes
         "off", "track", "context"
     shuffle_state : :class:`bool`
         If shuffle is on or off.
-    context : :class:`spotify.Context`
-        The context of the current player.
-    timestamp : :class:`int`
-        Unix Millisecond Timestamp when data was fetched.
-    progress_ms : :class:`int`
-        Progress into the currently playing track.
-        Can be None (e.g. If private session is enabled this will be None).
     is_playing : :class:`bool`
         If something is currently playing.
-    item : :class:`spotify.Track`
-        The currently playing track.
-        Can be None (e.g. If private session is enabled this will be None).
-    currently_playing_type : :class:`str`
-        The object type of the currently playing item. #
-        Can be one of "track", "episode", "ad" or "unknown".
-    actions : List[:class:`str`]
-        A list of disallowed actions.
     """
 
     def __init__(self, client, user, data):
@@ -43,22 +28,9 @@ class Player(SpotifyBase):  # pylint: disable=too-many-instance-attributes
         self.__user = user
 
         self.repeat_state = data.get("repeat_state", None)
-        self.timestamp = data.pop("timestamp", None)
-        self.progress_ms = data.pop("progress_ms", None)
         self.shuffle_state = data.pop("shuffle_state", None)
         self.is_playing = data.pop("is_playing", None)
-
-        context = data.pop("context", None)
-        if context:
-            self.context = Context(context)
-
-        device = data.pop("device", None)
-        if device:
-            self.device = Device(device)
-
-        item = data.pop("item", None)
-        if item:
-            self.item = Track(client, item)
+        self.device = data.pop("device", None)
 
     def __repr__(self):
         return f"<spotify.Player: {self.user!r}>"
