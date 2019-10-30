@@ -1066,12 +1066,16 @@ class HTTPClient:
         """
         route = self.route("PUT", "/me/player/play")
         payload: Dict[str, Any] = {"position_ms": position_ms}
+        params: Dict[str, Any] = {}
+        can_set_offset: bool = False
 
         if isinstance(context_uri, str):
             payload["context_uri"] = context_uri
+            can_set_offset = "playlist" in context_uri or "album" in context_uri
 
         elif hasattr(context_uri, "__iter__"):
-            payload["uris"] = list(*context_uri)
+            payload["uris"] = list(context_uri)
+            can_set_offset = True
 
         elif context_uri is None:
             pass  # Do nothing, context_uri == None is allowed and intended for resume's
@@ -1080,11 +1084,6 @@ class HTTPClient:
             raise TypeError(
                 f"`context_uri` must be a string or an iterable object, got {type(context_uri)}"
             )
-
-        can_set_offset = context_uri is not None and (
-            ("playlist" in payload["context_uri"] or "album" in payload["context_uri"])
-            or "uris" in payload
-        )
 
         if offset is not None:
             if can_set_offset:
@@ -1108,10 +1107,9 @@ class HTTPClient:
                 )
 
         if device_id is not None:
-            payload["device_id"] = device_id
+            params["device_id"] = device_id
 
-        return self.request(route, json=payload)
-
+        return self.request(route, params=params, json=payload)
     def shuffle_playback(
         self, state: bool, *, device_id: Optional[str] = None
     ) -> Awaitable:
@@ -1125,9 +1123,8 @@ class HTTPClient:
         device_id : Optional[:class:`str`]
             The id of the device this command is targeting. If not supplied, the user’s currently active device is the target.
         """
-        route = self.route("PUT", "/me/player/seek")
-        payload: Dict[str, Any] = {"state": state}
-
+        route = self.route("PUT", "/me/player/shuffle")
+        payload: Dict[str, Any] = {"state": f"{bool(state)}".lower()}
         if device_id is not None:
             payload["device_id"] = device_id
 
