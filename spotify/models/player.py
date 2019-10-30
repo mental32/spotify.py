@@ -176,7 +176,11 @@ class Player(SpotifyBase):  # pylint: disable=too-many-instance-attributes
         """
         context_uri: Union[List[str], str]
 
-        if (len(uris) > 1 or isinstance(uris[0], Track) or (isinstance(uris[0], str) and "track" in uris[0])):
+        if (
+            len(uris) > 1
+            or isinstance(uris[0], Track)
+            or (isinstance(uris[0], str) and "track" in uris[0])
+        ):
             # Regular uris paramter
             context_uri = [str(uri) for uri in uris]
         else:

@@ -1110,6 +1110,7 @@ class HTTPClient:
             params["device_id"] = device_id
 
         return self.request(route, params=params, json=payload)
+
     def shuffle_playback(
         self, state: bool, *, device_id: Optional[str] = None
     ) -> Awaitable:
