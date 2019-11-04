@@ -114,7 +114,7 @@ class Client:
     ) -> str:
         """Generate an outh2 url for user authentication.
 
-        This is an alias to :meth:`OAuth2.url_` but the
+        This is an alias to :meth:`OAuth2.url_only` but the
         difference is that the client id is autmatically
         passed in to the constructor.
 
