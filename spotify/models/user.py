@@ -25,8 +25,6 @@ if TYPE_CHECKING:
 
 T = TypeVar("T", Artist, Track)  # pylint: disable=invalid-name
 
-REFRESH_TOKEN_URL = "https://accounts.spotify.com/api/token?grant_type=refresh_token&refresh_token={refresh_token}"
-
 
 def ensure_http(func):
     func.__ensure_http__ = True
@@ -64,11 +62,8 @@ class User(URIBase, AsyncIterable):  # pylint: disable=too-many-instance-attribu
         (The subscription level “open” can be considered the same as “free”.)
     """
 
-    _refresh_task: Optional[asyncio.Task]
-
     def __init__(self, client: "spotify.Client", data: dict, **kwargs):
         self.refresh_token = kwargs.pop("refresh_token", None)
-        self._refresh_task = None
         self.__client = self.client = client
 
         if "http" not in kwargs:
@@ -127,25 +122,6 @@ class User(URIBase, AsyncIterable):  # pylint: disable=too-many-instance-attribu
 
         return [klass(self.__client, item) for item in resp["items"]]
 
-    async def _refreshing_token(self, expires: int, token: str):
-        while True:
-            await asyncio.sleep(expires - 1)
-
-            client_id = self.client.http.client_id
-            client_secret = self.client.http.client_secret
-
-            headers = {
-                "Authorization": f"Basic {b64encode(':'.join((client_id, client_secret)).encode()).decode()}",
-                "Content-Type": "application/x-www-form-urlencoded",
-            }
-
-            route = ("POST", REFRESH_TOKEN_URL.format(refresh_token=token))
-            data = await self.client.http.request(route, headers=headers)
-
-            expires = data["expires_in"]
-            assert self.http is not None
-            self.http.token = data["access_token"]  # type: ignore
-
     ### Alternate constructors
 
     @classmethod
@@ -155,7 +131,6 @@ class User(URIBase, AsyncIterable):  # pylint: disable=too-many-instance-attribu
         code: str,
         *,
         redirect_uri: str,
-        refresh: bool = False,
     ):
         """Create a :class:`User` object from an authorization code.
 
@@ -167,8 +142,6 @@ class User(URIBase, AsyncIterable):  # pylint: disable=too-many-instance-attribu
             The authorization code to use to further authenticate the user.
         redirect_uri : :class:`str`
             The rediriect URI to use in tandem with the authorization code.
-        refresh : :class:`bool`
-            Wether to keep the http session authorized.
         """
         route = ("POST", "https://accounts.spotify.com/api/token")
         payload = {
@@ -188,22 +161,16 @@ class User(URIBase, AsyncIterable):  # pylint: disable=too-many-instance-attribu
         raw = await client.http.request(route, headers=headers, params=payload)
 
         token = raw["access_token"]
+        refresh_token = raw["refresh_token"]
 
-        refresh_: Optional[Tuple[int, str]]
-        if refresh:
-            refresh_ = (raw["expires_in"], raw["refresh_token"])
-        else:
-            refresh_ = None
-
-        return await cls.from_token(client, token, refresh=refresh_)
+        return await cls.from_token(client, token, refresh_token)
 
     @classmethod
     async def from_token(
         cls,
         client: "spotify.Client",
-        token: str,
-        *,
-        refresh: Optional[Tuple[int, str]] = None,
+        token: str = None,
+        refresh_token: str = None,
     ):
         """Create a :class:`User` object from an access token.
 
@@ -213,42 +180,18 @@ class User(URIBase, AsyncIterable):  # pylint: disable=too-many-instance-attribu
             The spotify client to associate the user with.
         token : :class:`str`
             The access token to use for http requests.
-        refresh: Optional[Tuple[:class:`int`, :class:`str`]
-            When provided the refresh argument must be a tuple
-            of an integer representing the number of seconds until
-            the access token expires and a string representing the
-            refresh token to use to generate a new access token.
+        refresh_token : :class:`str`
+            Used to acquire new token when token expires.
         """
-        http = HTTPUserClient(token)
-
-        if refresh is not None:
-            if not isinstance(refresh, tuple):
-                raise ValueError(f"refresh must be a tuple of an int and str.")
-
-            if not len(refresh) == 2:
-                raise ValueError(f"refresh must have exactly two elements.")
-
+        client_id = client.http.client_id
+        client_secret = client.http.client_secret
+        http = HTTPUserClient(client_id, client_secret, token, refresh_token)
         data = await http.current_user()
-
-        self = cls(client, data=data, http=http, token=token)
-
-        if refresh is not None:
-            expires_in, refresh_token, = refresh
-            self.refresh_token = refresh_token
-
-            coroutine: Coroutine = self._refreshing_token(
-                expires_in, refresh_token
-            )  # pylint: disable=protected-access
-
-            self._refresh_task = self.client.loop.create_task(
-                coroutine
-            )  # pylint: disable=protected-access
-
-        return self
+        return cls(client, data=data, http=http)
 
     @classmethod
     async def from_refresh_token(
-        cls, client: "spotify.Client", refresh_token: str, *, refresh: bool = False
+        cls, client: "spotify.Client", refresh_token: str
     ):
         """Create a :class:`User` object from a refresh token.
         It will poll the spotify API for a new access token and
@@ -261,36 +204,8 @@ class User(URIBase, AsyncIterable):  # pylint: disable=too-many-instance-attribu
         refresh_token: str
             Refresh token to be used for retrieval of the initial
             access token.
-        refresh : bool
-            Wether to keep the http session authorized.
         """
-        client_id = client.http.client_id
-        client_secret = client.http.client_secret
-
-        headers = {
-            "Authorization": f"Basic {b64encode(':'.join((client_id, client_secret)).encode()).decode()}",
-            "Content-Type": "application/x-www-form-urlencoded",
-        }
-        route = ("POST", REFRESH_TOKEN_URL.format(refresh_token=refresh_token))
-        data = await client.http.request(route, headers=headers)
-
-        expires = data["expires_in"]
-        token = data["access_token"]
-
-        refresh_task: Optional[Tuple[int, str]]
-        if refresh:
-            refresh_task = (expires, refresh_token)
-        else:
-            refresh_task = None
-
-        return await cls.from_token(client, token=token, refresh=refresh_task)
-
-    ### Attributes
-
-    @property
-    def refresh(self):
-        """Optional[:class:`asyncio.Task`] - An asyncio task that is handling the session refresh or None if not refreshing."""
-        return self._refresh_task
+        return await cls.from_token(client, None, refresh_token)
 
     ### Contextual methods
 
