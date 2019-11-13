@@ -1590,9 +1590,10 @@ class HTTPClient:
             Provide this parameter if you want to apply Track Relinking.
         """
         route = self.route("GET", "/tracks/{id}", id=track_id)
+        payload: Dict[str, Any] = {}
 
         if market is not None:
-            payload: Dict[str, Any] = {"market": market}
+            payload["market"] = market
 
         return self.request(route, params=payload)
 
