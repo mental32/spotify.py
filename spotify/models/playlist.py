@@ -297,12 +297,13 @@ class Playlist(URIBase):  # pylint: disable=too-many-instance-attributes
 
         head: Tuple[str, ...]
         tail: Tuple[str, ...]
-        head, tracks = body[:100], body[100:]
+        head, tail = body[:100], body[100:]
 
-        await self.__http.replace_playlist_tracks(self.id, tracks=head)
+        if head:
+            await self.__http.replace_playlist_tracks(self.id, tracks=head)
 
-        while tracks:
-            head, tracks = tracks[:100], tracks[100:]
+        while tail:
+            head, tail = tail[:100], tail[100:]
             await self.extend(head)
 
     @set_required_scopes("playlist-modify-public", "playlist-modify-private")
