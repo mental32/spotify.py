@@ -1,5 +1,4 @@
 from urllib.parse import quote_plus as quote
-from types import MappingProxyType
 from typing import Optional, Dict, Iterable, Union, Set, Callable, Tuple, Any
 
 VALID_SCOPES = (

@@ -1,5 +1,5 @@
 import asyncio
-from typing import Optional, List, Iterable, Dict, Union, NamedTuple, Type
+from typing import Optional, List, Iterable, NamedTuple, Type
 
 from .http import HTTPClient
 from .utils import to_id

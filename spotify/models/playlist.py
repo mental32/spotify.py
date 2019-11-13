@@ -24,7 +24,7 @@ class MutableTracks:
         self.tracks = tracks = playlist.tracks
 
         if tracks is not None:
-            self.was_empty = self.is_empty = not len(tracks)
+            self.was_empty = self.is_empty = not tracks
 
         self.replace_tracks = playlist.replace_tracks
         self.get_all_tracks = playlist.get_all_tracks
@@ -32,7 +32,7 @@ class MutableTracks:
     async def __aenter__(self):
         if self.tracks is None:
             self.tracks = tracks = list(await self.get_all_tracks())
-            self.was_empty = self.is_empty = not len(tracks)
+            self.was_empty = self.is_empty = not tracks
         else:
             tracks = list(self.tracks)
 

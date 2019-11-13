@@ -21,9 +21,9 @@ class SpotifyBase:
             )
 
         if hasattr(client, "__client_thread__"):
-            cls = getattr(
+            cls = getattr(  # pylint: disable=self-cls-assignment
                 spotify.sync.models, cls.__name__
-            )  # pylint: disable=self-cls-assignment
+            )
 
         return object.__new__(cls)
 
@@ -54,9 +54,9 @@ class SpotifyBase:
             )
 
         if hasattr(self, "http"):
-            return await self.http.request(
-                ("GET", self.href)
-            )  # pylint: disable=no-member
+            return await self.http.request(  # pylint: disable=no-member
+                ("GET", self.href)  # pylint: disable=no-member
+            )
 
         klass = type(self)
 

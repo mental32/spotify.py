@@ -11,7 +11,6 @@ from typing import (
     Tuple,
     Type,
     TypeVar,
-    Union,
     Coroutine,
     TYPE_CHECKING,
 )
@@ -23,7 +22,7 @@ from . import URIBase, Image, Device, Context, Player, Playlist, Track, Artist, 
 if TYPE_CHECKING:
     import spotify
 
-T = TypeVar("T", Artist, Track)
+T = TypeVar("T", Artist, Track)  # pylint: disable=invalid-name
 
 REFRESH_TOKEN_URL = "https://accounts.spotify.com/api/token?grant_type=refresh_token&refresh_token={refresh_token}"
 
@@ -242,7 +241,7 @@ class User(URIBase):  # pylint: disable=too-many-instance-attributes
 
     @classmethod
     async def from_refresh_token(
-        cls, client: "spotify.Client", refresh_token: str, refresh: bool = False, *args
+        cls, client: "spotify.Client", refresh_token: str, *, refresh: bool = False
     ):
         """Create a :class:`User` object from a refresh token.
         It will poll the spotify API for a new access token and

@@ -1,7 +1,7 @@
 from typing import Union, Optional, List
 
 from ..oauth import set_required_scopes
-from . import SpotifyBase, Context, Device, Track
+from . import SpotifyBase, Device, Track
 from .typing import SomeURIs
 
 Offset = Union[int, str, Track]
