@@ -1,3 +1,5 @@
+# pylint: skip-file
+
 import asyncio
 import sys
 import json
