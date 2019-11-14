@@ -63,7 +63,6 @@ class User(URIBase, AsyncIterable):  # pylint: disable=too-many-instance-attribu
     """
 
     def __init__(self, client: "spotify.Client", data: dict, **kwargs):
-        self.refresh_token = kwargs.pop("refresh_token", None)
         self.__client = self.client = client
 
         if "http" not in kwargs:
@@ -181,7 +180,7 @@ class User(URIBase, AsyncIterable):  # pylint: disable=too-many-instance-attribu
         token : :class:`str`
             The access token to use for http requests.
         refresh_token : :class:`str`
-            Used to acquire new token when token expires.
+            Used to acquire new token when it expires.
         """
         client_id = client.http.client_id
         client_secret = client.http.client_secret
@@ -202,8 +201,7 @@ class User(URIBase, AsyncIterable):  # pylint: disable=too-many-instance-attribu
         client : :class:`spotify.Client`
             The spotify client to associate the user with.
         refresh_token: str
-            Refresh token to be used for retrieval of the initial
-            access token.
+            Used to acquire token.
         """
         return await cls.from_token(client, None, refresh_token)
 
