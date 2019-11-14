@@ -169,8 +169,8 @@ class User(URIBase, AsyncIterable):  # pylint: disable=too-many-instance-attribu
     async def from_token(
         cls,
         client: "spotify.Client",
-        token: str = None,
-        refresh_token: str = None,
+        token: Optional[str],
+        refresh_token: Optional[str] = None,
     ):
         """Create a :class:`User` object from an access token.
 

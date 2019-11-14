@@ -78,7 +78,7 @@ class HTTPClient:
         self.client_id = client_id
         self.client_secret = client_secret
 
-        self.bearer_info = None
+        self.bearer_info: Optional[Dict[str, str]] = None
 
     @staticmethod
     def route(
