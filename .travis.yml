@@ -15,6 +15,6 @@ install: ./.travis.install.sh
 script:
   - make doc
   - make mypy
-  - make test
+  - 'if [ "$TRAVIS_PULL_REQUEST" = "false" ]; then make test; fi'
 
 cache: pip
