@@ -5,6 +5,7 @@ Welcome to spotify.py's documentation!
 
 What is `spotify.py`?
 ---------------------
+
 Spotify.py is a modern, friendly, and Pythonic API library for the Spotify API.
 
 .. toctree::
@@ -12,9 +13,7 @@ Spotify.py is a modern, friendly, and Pythonic API library for the Spotify API.
    :caption: Contents:
 
    introduction
-   quickstart
    api
-   changelog
 
 Indices and tables
 ==================
