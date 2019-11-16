@@ -63,7 +63,7 @@ html_theme_options = {
     "logo": "/images/logo.png",
     "logo_name": True,
     "logo_text_align": "center",
-    "description": "Pythonic asyncronous spotify api library",
+    "description": "Pythonic asynchronous spotify api library",
     "github_user": "mental32",
     "github_repo": "spotify.py",
     "travis_button": True,
