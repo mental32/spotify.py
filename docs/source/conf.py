@@ -24,7 +24,7 @@ exclude_patterns = []
 
 # autodoc_member_order = "groupwise"
 # autodoc_default_flags = ["members"]
-# html_baseurl = "https://"
+html_baseurl = "https://github.com/mental32/spotify.py"
 todo_include_todos = True
 
 intersphinx_mapping = {"python": ("https://docs.python.org/3", None)}
