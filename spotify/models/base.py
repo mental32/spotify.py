@@ -61,7 +61,7 @@ class SpotifyBase:
         klass = type(self)
 
         try:
-            client = getattr(self, "_{0}__client".format(klass.__name__))
+            client = getattr(self, f"_{klass.__name__}__client")
         except AttributeError:
             raise TypeError("Spotify object has no way to access a HTTPClient.")
         else:
