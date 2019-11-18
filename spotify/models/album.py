@@ -2,10 +2,10 @@ from functools import partial
 from typing import Optional, List
 
 from ..oauth import set_required_scopes
-from . import URIBase, Image, Artist, Track
+from . import AsyncIterable, URIBase, Image, Artist, Track
 
 
-class Album(URIBase):  # pylint: disable=too-many-instance-attributes
+class Album(URIBase, AsyncIterable):  # pylint: disable=too-many-instance-attributes
     """A Spotify Album.
 
     Attributes
@@ -72,28 +72,12 @@ class Album(URIBase):  # pylint: disable=too-many-instance-attributes
         self.popularity = data.pop("popularity", None)
         self.total_tracks = data.pop("total_tracks", None)
 
+        # AsyncIterable attrs
+        self.__aiter_klass__ = Track
+        self.__aiter_fetch__ = partial(self.__client.http.album_tracks, self.id, limit=50)
+
     def __repr__(self):
         return f"<spotify.Album: {(self.name or self.id or self.uri)!r}>"
-
-    async def __aiter__(self):
-        total = self.total_tracks or None
-        processed = offset = 0
-
-        fetch = partial(self.__client.http.album_tracks, self.id, limit=50)
-
-        while total is None or processed < total:
-            data = await fetch(offset=offset)
-
-            if total is None:
-                assert "total" in data
-                total = data["total"]
-
-            assert "items" in data
-            for item in data["items"]:
-                processed += 1
-                yield Track(self.__client, item)
-
-            offset += 50
 
     # Public
 

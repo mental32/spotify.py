@@ -4,7 +4,7 @@ from typing import List, Optional, Union, Callable, Tuple, Iterable, TYPE_CHECKI
 
 from ..oauth import set_required_scopes
 from ..http import HTTPUserClient, HTTPClient
-from . import URIBase, Track, PlaylistTrack, Image
+from . import AsyncIterable, URIBase, Track, PlaylistTrack, Image
 
 if TYPE_CHECKING:
     import spotify
@@ -51,7 +51,7 @@ class MutableTracks:
         setattr(self.playlist, "_Playlist__tracks", tuple(self.tracks))
 
 
-class Playlist(URIBase):  # pylint: disable=too-many-instance-attributes
+class Playlist(URIBasem, AsyncIterable):  # pylint: disable=too-many-instance-attributes
     """A Spotify Playlist.
 
     Attributes
@@ -134,31 +134,15 @@ class Playlist(URIBase):  # pylint: disable=too-many-instance-attributes
             for name in filter((lambda name: name[0] != "_"), Playlist.__slots__):
                 setattr(self, name, getattr(data, name))
 
+        # AsyncIterable attrs
+        self.__aiter_klass__ = PlaylistTrack
+        self.__aiter_fetch__ = partial(client.http.get_playlist_tracks, self.id, limit=50)
+
     def __repr__(self):
         return f'<spotify.Playlist: {getattr(self, "name", None) or self.id}>'
 
     def __len__(self):
         return self.total_tracks
-
-    async def __aiter__(self):
-        total = self.total_tracks or None
-        processed = offset = 0
-
-        fetch = partial(self.__client.http.get_playlist_tracks, self.id, limit=50)
-
-        while total is None or processed < total:
-            data = await fetch(offset=offset)
-
-            if total is None:
-                assert "total" in data
-                total = data["total"]
-
-            assert "items" in data
-            for item in data["items"]:
-                processed += 1
-                yield PlaylistTrack(self.__client, item)
-
-            offset += 50
 
     # Internals
 

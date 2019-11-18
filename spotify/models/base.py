@@ -100,3 +100,46 @@ class URIBase(SpotifyBase):
 
     def __str__(self):
         return self.uri  # pylint: disable=no-member
+
+
+class AsyncIterable(SpotifyBase):
+    """Base class intended for all models that can be asynchronously iterated over.
+
+    This class implements two magic class vars:
+
+     * `__aiter_fetch__` ~ A coroutine function that accepts a keyword argument named `option`
+     * `__aiter_klass__` ~ A spotify model class, essentially a type that subclasses `SpotifyBase`
+
+    Additionally the class implements `__aiter__` that will exhaust the paging
+    objects returned by the `__aiter_fetch__` calls and yield each data item in
+    said paging objects as an instance of `__aiter_klass__`.
+    """
+
+    __aiter_fetch__: Optional[Callable[[int], Coroutine]] = None
+    __aiter_klass__: Optional[Type[SpotifyBase]] = None
+
+    async def __aiter__(self):
+        client = getattr(f"_{type(self).__name__}__client")
+
+        assert self.__aiter__fetch__ is not None
+        fetch = self.__aiter__fetch__
+
+        assert self.__aiter__klass__ is not None
+        klass = self.__aiter__klass__
+
+        total = None
+        processed = offset = 0
+
+        while total is None or processed < total:
+            data = await fetch(offset=offset)
+
+            if total is None:
+                assert "total" in data
+                total = data["total"]
+
+            assert "items" in data
+            for item in data["items"]:
+                processed += 1
+                yield klass(client, item)
+
+            offset += 50

@@ -18,7 +18,7 @@ from typing import (
 
 from ..utils import to_id
 from ..http import HTTPUserClient
-from . import URIBase, Image, Device, Context, Player, Playlist, Track, Artist, Library
+from . import AsyncIterable, URIBase, Image, Device, Context, Player, Playlist, Track, Artist, Library
 
 if TYPE_CHECKING:
     import spotify
@@ -33,7 +33,7 @@ def ensure_http(func):
     return func
 
 
-class User(URIBase):  # pylint: disable=too-many-instance-attributes
+class User(URIBase, AsyncIterable):  # pylint: disable=too-many-instance-attributes
     """A Spotify User.
 
     Attributes
@@ -93,6 +93,10 @@ class User(URIBase):  # pylint: disable=too-many-instance-attributes
         self.birthdate = data.pop("birthdate", None)
         self.product = data.pop("product", None)
 
+        # AsyncIterable attrs
+        self.__aiter_klass__ = Playlist
+        self.__aiter_fetch__ = partial(self.__client.http.get_playlists, self.id, limit=50)
+
     def __repr__(self):
         return f"<spotify.User: {(self.display_name or self.id)!r}>"
 
@@ -109,26 +113,6 @@ class User(URIBase):  # pylint: disable=too-many-instance-attributes
 
             return _raise
         return value
-
-    async def __aiter__(self):
-        total = self.total_tracks or None
-        processed = offset = 0
-
-        fetch = partial(self.__client.http.get_playlists, self.id, limit=50)
-
-        while total is None or processed < total:
-            data = await fetch(offset=offset)
-
-            if total is None:
-                assert "total" in data
-                total = data["total"]
-
-            assert "items" in data
-            for item in data["items"]:
-                processed += 1
-                yield Playlist(self.__client, item)
-
-            offset += 50
 
     # Internals
 
