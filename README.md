@@ -55,12 +55,11 @@ async def main():
     async with spotify.Client(client_id, secret) as client:
         user = await spotify.User.from_token(client, token)
 
-        for playlist in await user.get_playlists():
+        async for playlist in user:
             if playlist.uri == playlist_uri:
-                await playlist.sort(reverse=True, key=(lambda track: track.popularity))
-                break
-        else:
-            print('No playlists were found!', file=sys.stderr)
+                return await playlist.sort(reverse=True, key=(lambda track: track.popularity))
+
+        print('No playlists were found!', file=sys.stderr)
 
 if __name__ == '__main__':
     client.loop.run_until_complete(main())
