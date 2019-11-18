@@ -39,13 +39,13 @@ The HTTP submodule is ultimately comprised of two main components:
 
 All the models are located under ``spotify.models``.
 
- - ``spotify.SpotifyBase
+ - ``spotify.SpotifyBase``
  - ``spotify.URIBase``
- - ``spotify.Device
- - ``spotify.Context
+ - ``spotify.Device``
+ - ``spotify.Context``
  - ``spotify.Image``
  - ``spotify.Artist``
- - ``spotify.Track
+ - ``spotify.Track``
  - ``spotify.PlaylistTrack``
  - ``spotify.Player``
  - ``spotify.Album``
