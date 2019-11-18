@@ -2,6 +2,7 @@
 
 import asyncio
 import functools
+from functools import partial
 from base64 import b64encode
 from typing import (
     Optional,
@@ -108,6 +109,28 @@ class User(URIBase):  # pylint: disable=too-many-instance-attributes
 
             return _raise
         return value
+
+    async def __aiter__(self):
+        total = self.total_tracks or None
+        processed = offset = 0
+
+        fetch = partial(self.__client.http.get_playlists, self.id, limit=50)
+
+        while total is None or processed < total:
+            data = await fetch(offset=offset)
+
+            if total is None:
+                assert "total" in data
+                total = data["total"]
+
+            assert "items" in data
+            for item in data["items"]:
+                processed += 1
+                yield Playlist(self.__client, item)
+
+            offset += 50
+
+    # Internals
 
     async def _get_top(self, klass: Type[T], kwargs: dict) -> List[T]:
         target = {Artist: "artists", Track: "tracks"}[klass]

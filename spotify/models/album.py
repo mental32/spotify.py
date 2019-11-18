@@ -1,3 +1,4 @@
+from functools import partial
 from typing import Optional, List
 
 from ..oauth import set_required_scopes
@@ -74,6 +75,28 @@ class Album(URIBase):  # pylint: disable=too-many-instance-attributes
     def __repr__(self):
         return f"<spotify.Album: {(self.name or self.id or self.uri)!r}>"
 
+    async def __aiter__(self):
+        total = self.total_tracks or None
+        processed = offset = 0
+
+        fetch = partial(self.__client.http.album_tracks, self.id, limit=50)
+
+        while total is None or processed < total:
+            data = await fetch(offset=offset)
+
+            if total is None:
+                assert "total" in data
+                total = data["total"]
+
+            assert "items" in data
+            for item in data["items"]:
+                processed += 1
+                yield Track(self.__client, item)
+
+            offset += 50
+
+    # Public
+
     @set_required_scopes(None)
     async def get_tracks(
         self, *, limit: Optional[int] = 20, offset: Optional[int] = 0
@@ -111,22 +134,4 @@ class Album(URIBase):  # pylint: disable=too-many-instance-attributes
         tracks : List[:class:`spotify.Track`]
             The tracks of the artist.
         """
-        tracks: List[Track] = []
-        offset = 0
-        total = self.total_tracks or None
-
-        while True:
-            data = await self.__client.http.album_tracks(
-                self.id, limit=50, offset=offset, market=market
-            )
-
-            if total is None:
-                total = data["total"]
-
-            offset += 50
-            tracks += list(Track(self.__client, item) for item in data["items"])
-
-            if len(tracks) >= total:
-                break
-
-        return tracks
+        return [track async for track in self]

@@ -1,3 +1,4 @@
+from functools import partial
 from itertools import islice
 from typing import List, Optional, Union, Callable, Tuple, Iterable, TYPE_CHECKING
 
@@ -138,6 +139,26 @@ class Playlist(URIBase):  # pylint: disable=too-many-instance-attributes
 
     def __len__(self):
         return self.total_tracks
+
+    async def __aiter__(self):
+        total = self.total_tracks or None
+        processed = offset = 0
+
+        fetch = partial(self.__client.http.get_playlist_tracks, self.id, limit=50)
+
+        while total is None or processed < total:
+            data = await fetch(offset=offset)
+
+            if total is None:
+                assert "total" in data
+                total = data["total"]
+
+            assert "items" in data
+            for item in data["items"]:
+                processed += 1
+                yield PlaylistTrack(self.__client, item)
+
+            offset += 50
 
     # Internals
 
