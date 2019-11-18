@@ -71,11 +71,10 @@ class User(URIBase, AsyncIterable):  # pylint: disable=too-many-instance-attribu
         self._refresh_task = None
         self.__client = self.client = client
 
-        try:
-            self.http = kwargs.pop("http")
-        except KeyError:
-            pass  # TODO: Failing silently here, we should take some action.
+        if "http" not in kwargs:
+            self.library = self.http = None
         else:
+            self.http = kwargs.pop("http")
             self.library = Library(client, self)
 
         # Public user object attributes
@@ -103,7 +102,7 @@ class User(URIBase, AsyncIterable):  # pylint: disable=too-many-instance-attribu
     def __getattr__(self, attr):
         value = object.__getattribute__(self, attr)
 
-        if hasattr(value, "__ensure_http__") and not hasattr(self, "http"):
+        if hasattr(value, "__ensure_http__") and getattr(self, "http", None) is not None:
 
             @functools.wraps(value)
             def _raise(*args, **kwargs):
