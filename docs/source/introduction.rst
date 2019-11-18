@@ -8,14 +8,76 @@ Getting Started
 API Coverage
 ************
 
- - `Spotify HTTP REST API`
- - `Spotify Connect Web API`
+Currently the library offers full http api coverage, this includes the regular
+REST API and the Connect Web API (used for maniplulating playback smoothly.)
+
+If there is missing coverage of a Spotify API feature feel free to open a 
+Github Issue and we can sort out the implementation from there.
 
 Concepts
 ********
 
-Writing a Query - Guidelines
-============================
+Abstractions!
+~~~~~~~~~~~~~
+
+The library is abstracted into mainly three components:
+
+ - The very low level (``spotify.http``)
+ - The very high level (``spotify.models``, ``spotify.oauth`` and ``spotify.utils``)
+ - The synchronous interface (``spotify.sync``)
+
+``spotify.http``
+~~~~~~~~~~~~~~~~
+
+The HTTP submodule is ultimately comprised of two main components:
+
+ - ``spotify.http.HTTPClient``
+ - ``spotify.http.HTTPUserClient``
+ 
+``spotify.models``
+~~~~~~~~~~~~~~~~~~
+
+All the models are located under ``spotify.models``.
+
+ - ``spotify.SpotifyBase
+ - ``spotify.URIBase``
+ - ``spotify.Device
+ - ``spotify.Context
+ - ``spotify.Image``
+ - ``spotify.Artist``
+ - ``spotify.Track
+ - ``spotify.PlaylistTrack``
+ - ``spotify.Player``
+ - ``spotify.Album``
+ - ``spotify.Library``
+ - ``spotify.Playlist``
+ - ``spotify.User``
+
+``spotify.oauth``
+~~~~~~~~~~~~~~~~~
+
+The oauth module concerns itself will all OAuth2 related logic.
+
+ - ``spotify.OAuth2``
+ - ``spotify.get_required_scopes``
+
+``spotify.utils``
+~~~~~~~~~~~~~~~~~
+
+The utils module aims to provide usefull helpers.
+
+ - ``spotify.to_id``
+
+``spotify.sync``
+~~~~~~~~~~~~~~~~~
+
+The sync module aims to provide a one to one interface with the regular module.
+
+Guidelines
+**********
+
+Writing a Query
+~~~~~~~~~~~~~~~
 
 Keyword matching
 ----------------
