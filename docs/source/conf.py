@@ -13,7 +13,7 @@ project = "spotify.py"
 author = "mental"
 year = datetime.datetime.today().year
 copyright = "%s, %s" % (year, author)
-release = "0.8.0"
+release = "0.8.2"
 master_doc = "index"
 
 # -- General configuration ---------------------------------------------------
