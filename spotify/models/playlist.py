@@ -51,7 +51,7 @@ class MutableTracks:
         setattr(self.playlist, "_Playlist__tracks", tuple(self.tracks))
 
 
-class Playlist(URIBasem, AsyncIterable):  # pylint: disable=too-many-instance-attributes
+class Playlist(URIBase, AsyncIterable):  # pylint: disable=too-many-instance-attributes
     """A Spotify Playlist.
 
     Attributes

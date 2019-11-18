@@ -1,3 +1,5 @@
+from typing import Optional, Callable, Type
+
 import spotify
 
 
@@ -115,23 +117,23 @@ class AsyncIterable(SpotifyBase):
     said paging objects as an instance of `__aiter_klass__`.
     """
 
-    __aiter_fetch__: Optional[Callable[[int], Coroutine]] = None
+    __aiter_fetch__: Optional[Callable] = None
     __aiter_klass__: Optional[Type[SpotifyBase]] = None
 
     async def __aiter__(self):
         client = getattr(f"_{type(self).__name__}__client")
 
-        assert self.__aiter__fetch__ is not None
-        fetch = self.__aiter__fetch__
+        assert self.__aiter_fetch__ is not None
+        fetch = self.__aiter_fetch__
 
-        assert self.__aiter__klass__ is not None
-        klass = self.__aiter__klass__
+        assert self.__aiter_klass__ is not None
+        klass = self.__aiter_klass__
 
         total = None
         processed = offset = 0
 
         while total is None or processed < total:
-            data = await fetch(offset=offset)
+            data = await fetch(offset=offset)  # pylint: disable=not-callable
 
             if total is None:
                 assert "total" in data
@@ -140,6 +142,6 @@ class AsyncIterable(SpotifyBase):
             assert "items" in data
             for item in data["items"]:
                 processed += 1
-                yield klass(client, item)
+                yield klass(client, item)  # pylint: disable=not-callable
 
             offset += 50

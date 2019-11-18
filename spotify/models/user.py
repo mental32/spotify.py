@@ -123,7 +123,7 @@ class User(URIBase, AsyncIterable):  # pylint: disable=too-many-instance-attribu
             if key in ("limit", "offset", "time_range")
         }
 
-        resp = await self.http.top_artists_or_tracks(target, **data)
+        resp = await self.http.top_artists_or_tracks(target, **data)  # type: ignore
 
         return [klass(self.__client, item) for item in resp["items"]]
 
@@ -143,7 +143,8 @@ class User(URIBase, AsyncIterable):  # pylint: disable=too-many-instance-attribu
             data = await self.client.http.request(route, headers=headers)
 
             expires = data["expires_in"]
-            self.http.token = data["access_token"]
+            assert self.http is not None
+            self.http.token = data["access_token"]  # type: ignore
 
     ### Alternate constructors
 
@@ -302,7 +303,7 @@ class User(URIBase, AsyncIterable):  # pylint: disable=too-many-instance-attribu
         context, track : Dict[str, Union[Track, Context, str]]
             A tuple of the context and track.
         """
-        data = await self.http.currently_playing()
+        data = await self.http.currently_playing()  # type: ignore
 
         if "item" in data:
             context = data.pop("context", None)
@@ -325,7 +326,7 @@ class User(URIBase, AsyncIterable):  # pylint: disable=too-many-instance-attribu
         player : :class:`Player`
             A player object representing the current playback.
         """
-        player = Player(self.__client, self, await self.http.current_player())
+        player = Player(self.__client, self, await self.http.current_player())  # type: ignore
         return player
 
     @ensure_http
@@ -337,7 +338,7 @@ class User(URIBase, AsyncIterable):  # pylint: disable=too-many-instance-attribu
         devices : List[:class:`Device`]
             The devices the user has available.
         """
-        data = await self.http.available_devices()
+        data = await self.http.available_devices()  # type: ignore
         return [Device(item) for item in data["devices"]]
 
     @ensure_http
@@ -350,7 +351,7 @@ class User(URIBase, AsyncIterable):  # pylint: disable=too-many-instance-attribu
             A list of playlist history object.
             Each object is a dict with a timestamp, track and context field.
         """
-        data = await self.http.recently_played()
+        data = await self.http.recently_played()  # type: ignore
         client = self.__client
 
         # List[T] where T: {'track': Track, 'content': Context: 'timestamp': ISO8601}
@@ -381,7 +382,7 @@ class User(URIBase, AsyncIterable):  # pylint: disable=too-many-instance-attribu
         snapshot_id : :class:`str`
             The snapshot id of the playlist.
         """
-        data = await self.http.add_playlist_tracks(
+        data = await self.http.add_playlist_tracks(  # type: ignore
             to_id(str(playlist)), tracks=(str(track) for track in tracks)
         )
         return data["snapshot_id"]
@@ -399,7 +400,7 @@ class User(URIBase, AsyncIterable):  # pylint: disable=too-many-instance-attribu
         tracks : Sequence[Union[:class:`str`, Track]]
             Tracks to place in the playlist
         """
-        await self.http.replace_playlist_tracks(
+        await self.http.replace_playlist_tracks(  # type: ignore
             to_id(str(playlist)), tracks=",".join(str(track) for track in tracks)
         )
 
@@ -419,7 +420,7 @@ class User(URIBase, AsyncIterable):  # pylint: disable=too-many-instance-attribu
         snapshot_id : :class:`str`
             The snapshot id of the playlist.
         """
-        data = await self.http.remove_playlist_tracks(
+        data = await self.http.remove_playlist_tracks(  # type: ignore
             to_id(str(playlist)), tracks=(str(track) for track in tracks)
         )
         return data["snapshot_id"]
@@ -448,7 +449,7 @@ class User(URIBase, AsyncIterable):  # pylint: disable=too-many-instance-attribu
         snapshot_id : :class:`str`
             The snapshot id of the playlist.
         """
-        data = await self.http.reorder_playlists_tracks(
+        data = await self.http.reorder_playlists_tracks(  # type: ignore
             to_id(str(playlist)), start, length, insert_before, snapshot_id=snapshot_id
         )
         return data["snapshot_id"]
@@ -489,7 +490,7 @@ class User(URIBase, AsyncIterable):  # pylint: disable=too-many-instance-attribu
         if description:
             data["description"] = description
 
-        await self.http.change_playlist_details(self.id, to_id(str(playlist)), **data)
+        await self.http.change_playlist_details(self.id, to_id(str(playlist)), **data)  # type: ignore
 
     @ensure_http
     async def create_playlist(
@@ -519,7 +520,7 @@ class User(URIBase, AsyncIterable):  # pylint: disable=too-many-instance-attribu
         if description:
             data["description"] = description
 
-        playlist_data = await self.http.create_playlist(self.id, **data)
+        playlist_data = await self.http.create_playlist(self.id, **data)  # type: ignore
         return Playlist(self.__client, playlist_data, http=self.http)
 
     @ensure_http
@@ -536,7 +537,7 @@ class User(URIBase, AsyncIterable):  # pylint: disable=too-many-instance-attribu
             The public/private status of the playlist.
             `True` for public, `False` for private.
         """
-        await self.http.follow_playlist(to_id(str(playlist)), public=public)
+        await self.http.follow_playlist(to_id(str(playlist)), public=public)  # type: ignore
 
     @ensure_http
     async def get_playlists(
@@ -556,7 +557,7 @@ class User(URIBase, AsyncIterable):  # pylint: disable=too-many-instance-attribu
         playlists : List[Playlist]
             A list of the users playlists.
         """
-        data = await self.http.get_playlists(self.id, limit=limit, offset=offset)
+        data = await self.http.get_playlists(self.id, limit=limit, offset=offset)  # type: ignore
 
         return [
             Playlist(self.__client, playlist_data, http=self.http)
@@ -577,7 +578,7 @@ class User(URIBase, AsyncIterable):  # pylint: disable=too-many-instance-attribu
         offset = 0
 
         while True:
-            data = await self.http.get_playlists(self.id, limit=50, offset=offset)
+            data = await self.http.get_playlists(self.id, limit=50, offset=offset)  # type: ignore
 
             if total is None:
                 total = data["total"]
