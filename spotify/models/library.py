@@ -186,4 +186,4 @@ class Library(SpotifyBase):
             A sequence of track objects or spotify IDs
         """
         _tracks = [(obj if isinstance(obj, str) else obj.id) for obj in tracks]
-        await self.user.http.save_tracks(",".join(_tracks))
+        await self.user.http.save_tracks(_tracks)
