@@ -323,11 +323,7 @@ class Client:
         if not types_.issubset(_SEARCH_TYPES):
             raise ValueError(_SEARCH_TYPE_ERR % types_.difference(_SEARCH_TYPES).pop())
 
-        q = q
         query_type = ",".join(tp.strip() for tp in types)
-        market = market
-        limit = limit
-        offset = offset
 
         include_external: Optional[str]
         if should_include_external:

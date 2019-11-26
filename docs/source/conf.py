@@ -13,7 +13,7 @@ project = "spotify.py"
 author = "mental"
 year = datetime.datetime.today().year
 copyright = "%s, %s" % (year, author)
-release = "0.8.0"
+release = "0.8.2"
 master_doc = "index"
 
 # -- General configuration ---------------------------------------------------
@@ -24,7 +24,7 @@ exclude_patterns = []
 
 # autodoc_member_order = "groupwise"
 # autodoc_default_flags = ["members"]
-# html_baseurl = "https://"
+html_baseurl = "https://github.com/mental32/spotify.py"
 todo_include_todos = True
 
 intersphinx_mapping = {"python": ("https://docs.python.org/3", None)}
@@ -63,7 +63,7 @@ html_theme_options = {
     "logo": "/images/logo.png",
     "logo_name": True,
     "logo_text_align": "center",
-    "description": "Pythonic asyncronous spotify api library",
+    "description": "Pythonic asynchronous spotify api library",
     "github_user": "mental32",
     "github_repo": "spotify.py",
     "travis_button": True,

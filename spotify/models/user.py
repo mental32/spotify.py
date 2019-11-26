@@ -2,6 +2,7 @@
 
 import asyncio
 import functools
+from functools import partial
 from base64 import b64encode
 from typing import (
     Optional,
@@ -17,14 +18,12 @@ from typing import (
 
 from ..utils import to_id
 from ..http import HTTPUserClient
-from . import URIBase, Image, Device, Context, Player, Playlist, Track, Artist, Library
+from . import AsyncIterable, URIBase, Image, Device, Context, Player, Playlist, Track, Artist, Library
 
 if TYPE_CHECKING:
     import spotify
 
 T = TypeVar("T", Artist, Track)  # pylint: disable=invalid-name
-
-REFRESH_TOKEN_URL = "https://accounts.spotify.com/api/token?grant_type=refresh_token&refresh_token={refresh_token}"
 
 
 def ensure_http(func):
@@ -32,7 +31,7 @@ def ensure_http(func):
     return func
 
 
-class User(URIBase):  # pylint: disable=too-many-instance-attributes
+class User(URIBase, AsyncIterable):  # pylint: disable=too-many-instance-attributes
     """A Spotify User.
 
     Attributes
@@ -63,18 +62,13 @@ class User(URIBase):  # pylint: disable=too-many-instance-attributes
         (The subscription level “open” can be considered the same as “free”.)
     """
 
-    _refresh_task: Optional[asyncio.Task]
-
     def __init__(self, client: "spotify.Client", data: dict, **kwargs):
-        self.refresh_token = kwargs.pop("refresh_token", None)
-        self._refresh_task = None
         self.__client = self.client = client
 
-        try:
-            self.http = kwargs.pop("http")
-        except KeyError:
-            pass  # TODO: Failing silently here, we should take some action.
+        if "http" not in kwargs:
+            self.library = self.http = None
         else:
+            self.http = kwargs.pop("http")
             self.library = Library(client, self)
 
         # Public user object attributes
@@ -92,13 +86,17 @@ class User(URIBase):  # pylint: disable=too-many-instance-attributes
         self.birthdate = data.pop("birthdate", None)
         self.product = data.pop("product", None)
 
+        # AsyncIterable attrs
+        self.__aiter_klass__ = Playlist
+        self.__aiter_fetch__ = partial(self.__client.http.get_playlists, self.id, limit=50)
+
     def __repr__(self):
         return f"<spotify.User: {(self.display_name or self.id)!r}>"
 
     def __getattr__(self, attr):
         value = object.__getattribute__(self, attr)
 
-        if hasattr(value, "__ensure_http__") and not hasattr(self, "http"):
+        if hasattr(value, "__ensure_http__") and getattr(self, "http", None) is not None:
 
             @functools.wraps(value)
             def _raise(*args, **kwargs):
@@ -109,6 +107,8 @@ class User(URIBase):  # pylint: disable=too-many-instance-attributes
             return _raise
         return value
 
+    # Internals
+
     async def _get_top(self, klass: Type[T], kwargs: dict) -> List[T]:
         target = {Artist: "artists", Track: "tracks"}[klass]
         data = {
@@ -117,27 +117,9 @@ class User(URIBase):  # pylint: disable=too-many-instance-attributes
             if key in ("limit", "offset", "time_range")
         }
 
-        resp = await self.http.top_artists_or_tracks(target, **data)
+        resp = await self.http.top_artists_or_tracks(target, **data)  # type: ignore
 
         return [klass(self.__client, item) for item in resp["items"]]
-
-    async def _refreshing_token(self, expires: int, token: str):
-        while True:
-            await asyncio.sleep(expires - 1)
-
-            client_id = self.client.http.client_id
-            client_secret = self.client.http.client_secret
-
-            headers = {
-                "Authorization": f"Basic {b64encode(':'.join((client_id, client_secret)).encode()).decode()}",
-                "Content-Type": "application/x-www-form-urlencoded",
-            }
-
-            route = ("POST", REFRESH_TOKEN_URL.format(refresh_token=token))
-            data = await self.client.http.request(route, headers=headers)
-
-            expires = data["expires_in"]
-            self.http.token = data["access_token"]
 
     ### Alternate constructors
 
@@ -148,7 +130,6 @@ class User(URIBase):  # pylint: disable=too-many-instance-attributes
         code: str,
         *,
         redirect_uri: str,
-        refresh: bool = False,
     ):
         """Create a :class:`User` object from an authorization code.
 
@@ -160,8 +141,6 @@ class User(URIBase):  # pylint: disable=too-many-instance-attributes
             The authorization code to use to further authenticate the user.
         redirect_uri : :class:`str`
             The rediriect URI to use in tandem with the authorization code.
-        refresh : :class:`bool`
-            Wether to keep the http session authorized.
         """
         route = ("POST", "https://accounts.spotify.com/api/token")
         payload = {
@@ -181,22 +160,16 @@ class User(URIBase):  # pylint: disable=too-many-instance-attributes
         raw = await client.http.request(route, headers=headers, params=payload)
 
         token = raw["access_token"]
+        refresh_token = raw["refresh_token"]
 
-        refresh_: Optional[Tuple[int, str]]
-        if refresh:
-            refresh_ = (raw["expires_in"], raw["refresh_token"])
-        else:
-            refresh_ = None
-
-        return await cls.from_token(client, token, refresh=refresh_)
+        return await cls.from_token(client, token, refresh_token)
 
     @classmethod
     async def from_token(
         cls,
         client: "spotify.Client",
-        token: str,
-        *,
-        refresh: Optional[Tuple[int, str]] = None,
+        token: Optional[str],
+        refresh_token: Optional[str] = None,
     ):
         """Create a :class:`User` object from an access token.
 
@@ -206,42 +179,18 @@ class User(URIBase):  # pylint: disable=too-many-instance-attributes
             The spotify client to associate the user with.
         token : :class:`str`
             The access token to use for http requests.
-        refresh: Optional[Tuple[:class:`int`, :class:`str`]
-            When provided the refresh argument must be a tuple
-            of an integer representing the number of seconds until
-            the access token expires and a string representing the
-            refresh token to use to generate a new access token.
+        refresh_token : :class:`str`
+            Used to acquire new token when it expires.
         """
-        http = HTTPUserClient(token)
-
-        if refresh is not None:
-            if not isinstance(refresh, tuple):
-                raise ValueError(f"refresh must be a tuple of an int and str.")
-
-            if not len(refresh) == 2:
-                raise ValueError(f"refresh must have exactly two elements.")
-
+        client_id = client.http.client_id
+        client_secret = client.http.client_secret
+        http = HTTPUserClient(client_id, client_secret, token, refresh_token)
         data = await http.current_user()
-
-        self = cls(client, data=data, http=http, token=token)
-
-        if refresh is not None:
-            expires_in, refresh_token, = refresh
-            self.refresh_token = refresh_token
-
-            coroutine: Coroutine = self._refreshing_token(
-                expires_in, refresh_token
-            )  # pylint: disable=protected-access
-
-            self._refresh_task = self.client.loop.create_task(
-                coroutine
-            )  # pylint: disable=protected-access
-
-        return self
+        return cls(client, data=data, http=http)
 
     @classmethod
     async def from_refresh_token(
-        cls, client: "spotify.Client", refresh_token: str, *, refresh: bool = False
+        cls, client: "spotify.Client", refresh_token: str
     ):
         """Create a :class:`User` object from a refresh token.
         It will poll the spotify API for a new access token and
@@ -252,38 +201,9 @@ class User(URIBase):  # pylint: disable=too-many-instance-attributes
         client : :class:`spotify.Client`
             The spotify client to associate the user with.
         refresh_token: str
-            Refresh token to be used for retrieval of the initial
-            access token.
-        refresh : bool
-            Wether to keep the http session authorized.
+            Used to acquire token.
         """
-        client_id = client.http.client_id
-        client_secret = client.http.client_secret
-
-        headers = {
-            "Authorization": f"Basic {b64encode(':'.join((client_id, client_secret)).encode()).decode()}",
-            "Content-Type": "application/x-www-form-urlencoded",
-        }
-        route = ("POST", REFRESH_TOKEN_URL.format(refresh_token=refresh_token))
-        data = await client.http.request(route, headers=headers)
-
-        expires = data["expires_in"]
-        token = data["access_token"]
-
-        refresh_task: Optional[Tuple[int, str]]
-        if refresh:
-            refresh_task = (expires, refresh_token)
-        else:
-            refresh_task = None
-
-        return await cls.from_token(client, token=token, refresh=refresh_task)
-
-    ### Attributes
-
-    @property
-    def refresh(self):
-        """Optional[:class:`asyncio.Task`] - An asyncio task that is handling the session refresh or None if not refreshing."""
-        return self._refresh_task
+        return await cls.from_token(client, None, refresh_token)
 
     ### Contextual methods
 
@@ -296,7 +216,7 @@ class User(URIBase):  # pylint: disable=too-many-instance-attributes
         context, track : Dict[str, Union[Track, Context, str]]
             A tuple of the context and track.
         """
-        data = await self.http.currently_playing()
+        data = await self.http.currently_playing()  # type: ignore
 
         if "item" in data:
             context = data.pop("context", None)
@@ -319,7 +239,7 @@ class User(URIBase):  # pylint: disable=too-many-instance-attributes
         player : :class:`Player`
             A player object representing the current playback.
         """
-        player = Player(self.__client, self, await self.http.current_player())
+        player = Player(self.__client, self, await self.http.current_player())  # type: ignore
         return player
 
     @ensure_http
@@ -331,7 +251,7 @@ class User(URIBase):  # pylint: disable=too-many-instance-attributes
         devices : List[:class:`Device`]
             The devices the user has available.
         """
-        data = await self.http.available_devices()
+        data = await self.http.available_devices()  # type: ignore
         return [Device(item) for item in data["devices"]]
 
     @ensure_http
@@ -344,7 +264,7 @@ class User(URIBase):  # pylint: disable=too-many-instance-attributes
             A list of playlist history object.
             Each object is a dict with a timestamp, track and context field.
         """
-        data = await self.http.recently_played()
+        data = await self.http.recently_played()  # type: ignore
         client = self.__client
 
         # List[T] where T: {'track': Track, 'content': Context: 'timestamp': ISO8601}
@@ -375,7 +295,7 @@ class User(URIBase):  # pylint: disable=too-many-instance-attributes
         snapshot_id : :class:`str`
             The snapshot id of the playlist.
         """
-        data = await self.http.add_playlist_tracks(
+        data = await self.http.add_playlist_tracks(  # type: ignore
             to_id(str(playlist)), tracks=(str(track) for track in tracks)
         )
         return data["snapshot_id"]
@@ -393,7 +313,7 @@ class User(URIBase):  # pylint: disable=too-many-instance-attributes
         tracks : Sequence[Union[:class:`str`, Track]]
             Tracks to place in the playlist
         """
-        await self.http.replace_playlist_tracks(
+        await self.http.replace_playlist_tracks(  # type: ignore
             to_id(str(playlist)), tracks=",".join(str(track) for track in tracks)
         )
 
@@ -413,7 +333,7 @@ class User(URIBase):  # pylint: disable=too-many-instance-attributes
         snapshot_id : :class:`str`
             The snapshot id of the playlist.
         """
-        data = await self.http.remove_playlist_tracks(
+        data = await self.http.remove_playlist_tracks(  # type: ignore
             to_id(str(playlist)), tracks=(str(track) for track in tracks)
         )
         return data["snapshot_id"]
@@ -442,7 +362,7 @@ class User(URIBase):  # pylint: disable=too-many-instance-attributes
         snapshot_id : :class:`str`
             The snapshot id of the playlist.
         """
-        data = await self.http.reorder_playlists_tracks(
+        data = await self.http.reorder_playlists_tracks(  # type: ignore
             to_id(str(playlist)), start, length, insert_before, snapshot_id=snapshot_id
         )
         return data["snapshot_id"]
@@ -483,7 +403,7 @@ class User(URIBase):  # pylint: disable=too-many-instance-attributes
         if description:
             data["description"] = description
 
-        await self.http.change_playlist_details(self.id, to_id(str(playlist)), **data)
+        await self.http.change_playlist_details(self.id, to_id(str(playlist)), **data)  # type: ignore
 
     @ensure_http
     async def create_playlist(
@@ -513,7 +433,7 @@ class User(URIBase):  # pylint: disable=too-many-instance-attributes
         if description:
             data["description"] = description
 
-        playlist_data = await self.http.create_playlist(self.id, **data)
+        playlist_data = await self.http.create_playlist(self.id, **data)  # type: ignore
         return Playlist(self.__client, playlist_data, http=self.http)
 
     @ensure_http
@@ -530,7 +450,7 @@ class User(URIBase):  # pylint: disable=too-many-instance-attributes
             The public/private status of the playlist.
             `True` for public, `False` for private.
         """
-        await self.http.follow_playlist(to_id(str(playlist)), public=public)
+        await self.http.follow_playlist(to_id(str(playlist)), public=public)  # type: ignore
 
     @ensure_http
     async def get_playlists(
@@ -550,7 +470,7 @@ class User(URIBase):  # pylint: disable=too-many-instance-attributes
         playlists : List[Playlist]
             A list of the users playlists.
         """
-        data = await self.http.get_playlists(self.id, limit=limit, offset=offset)
+        data = await self.http.get_playlists(self.id, limit=limit, offset=offset)  # type: ignore
 
         return [
             Playlist(self.__client, playlist_data, http=self.http)
@@ -571,7 +491,7 @@ class User(URIBase):  # pylint: disable=too-many-instance-attributes
         offset = 0
 
         while True:
-            data = await self.http.get_playlists(self.id, limit=50, offset=offset)
+            data = await self.http.get_playlists(self.id, limit=50, offset=offset)  # type: ignore
 
             if total is None:
                 total = data["total"]

@@ -1,13 +1,14 @@
+from functools import partial
 from typing import Optional, List, TYPE_CHECKING
 
 from ..oauth import set_required_scopes
-from . import URIBase, Image
+from . import AsyncIterable, URIBase, Image
 
 if TYPE_CHECKING:
     import spotify
 
 
-class Artist(URIBase):  # pylint: disable=too-many-instance-attributes
+class Artist(URIBase, AsyncIterable):  # pylint: disable=too-many-instance-attributes
     """A Spotify Artist.
 
     Attributes
@@ -51,8 +52,15 @@ class Artist(URIBase):  # pylint: disable=too-many-instance-attributes
         self.popularity = data.pop("popularity", None)
         self.images = list(Image(**image) for image in data.pop("images", []))
 
+        # AsyncIterable attrs
+        from .album import Album
+        self.__aiter_klass__ = Album
+        self.__aiter_fetch__ = partial(self.__client.http.artist_albums, self.id, limit=50)
+
     def __repr__(self):
         return f"<spotify.Artist: {self.name!r}>"
+
+    # Public
 
     @set_required_scopes(None)
     async def get_albums(

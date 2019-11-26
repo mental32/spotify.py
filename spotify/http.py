@@ -78,7 +78,7 @@ class HTTPClient:
         self.client_id = client_id
         self.client_secret = client_secret
 
-        self.bearer_info = None
+        self.bearer_info: Optional[Dict[str, str]] = None
 
     @staticmethod
     def route(
@@ -166,17 +166,20 @@ class HTTPClient:
 
         method, url, = route
 
-        if self.bearer_info is None:
-            self.bearer_info = bearer_info = await self.get_bearer_info()
-            access_token = bearer_info["access_token"]
-        else:
-            access_token = self.bearer_info["access_token"]
+        headers = kwargs.pop("headers", {})
+        if "Authorization" not in headers:
+            if self.bearer_info is None:
+                self.bearer_info = bearer_info = await self.get_bearer_info()
+                access_token = bearer_info["access_token"]
+            else:
+                access_token = self.bearer_info["access_token"]
+
+            headers["Authorization"] = "Bearer " + access_token
 
         headers = {
-            "Authorization": "Bearer " + access_token,
             "Content-Type": kwargs.pop("content_type", "application/json"),
             "User-Agent": self.user_agent,
-            **kwargs.pop("headers", {}),
+            **headers,
         }
 
         if "json" in kwargs:
@@ -1702,13 +1705,28 @@ class HTTPClient:
         return self.request(route, params=payload)
 
 
+REFRESH_TOKEN_URL = "https://accounts.spotify.com/api/token?grant_type=refresh_token&refresh_token={refresh_token}"
+
+
 class HTTPUserClient(HTTPClient):
     """HTTPClient for access to user endpoints."""
 
-    def __init__(self, token, loop=None):
-        super().__init__(client_id=None, client_secret=None, loop=loop)
-        self.bearer_info = {"access_token": token}
-        self.token = token
+    def __init__(self, client_id: str, client_secret: str, token: str = None, refresh_token: str = None, loop=None):
+        assert token or refresh_token
+        super().__init__(client_id, client_secret, loop=loop)
+        if token:
+            self.bearer_info = {"access_token": token}
+        self.refresh_token = refresh_token
 
     async def get_bearer_info(self, *_, **__):
-        return {"access_token": self.token}
+        if not self.refresh_token:
+            # Should only happen if User.from_token didn't receive refresh_token
+            raise SpotifyException("Access token expired and no refresh token was provided")
+
+        headers = {
+            "Authorization": f"Basic {b64encode(':'.join((self.client_id, self.client_secret)).encode()).decode()}",
+            "Content-Type": "application/x-www-form-urlencoded",
+        }
+
+        route = ("POST", REFRESH_TOKEN_URL.format(refresh_token=self.refresh_token))
+        return await self.request(route, headers=headers)

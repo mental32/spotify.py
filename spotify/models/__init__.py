@@ -1,7 +1,7 @@
 from .. import _clean_namespace
 from . import typing
 
-from .base import SpotifyBase, URIBase
+from .base import AsyncIterable, SpotifyBase, URIBase
 from .common import Device, Context, Image
 from .artist import Artist
 from .track import Track, PlaylistTrack

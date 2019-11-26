@@ -1,9 +1,10 @@
+from functools import partial
 from itertools import islice
 from typing import List, Optional, Union, Callable, Tuple, Iterable, TYPE_CHECKING
 
 from ..oauth import set_required_scopes
 from ..http import HTTPUserClient, HTTPClient
-from . import URIBase, Track, PlaylistTrack, Image
+from . import AsyncIterable, URIBase, Track, PlaylistTrack, Image
 
 if TYPE_CHECKING:
     import spotify
@@ -50,7 +51,7 @@ class MutableTracks:
         setattr(self.playlist, "_Playlist__tracks", tuple(self.tracks))
 
 
-class Playlist(URIBase):  # pylint: disable=too-many-instance-attributes
+class Playlist(URIBase, AsyncIterable):  # pylint: disable=too-many-instance-attributes
     """A Spotify Playlist.
 
     Attributes
@@ -132,6 +133,10 @@ class Playlist(URIBase):  # pylint: disable=too-many-instance-attributes
         else:
             for name in filter((lambda name: name[0] != "_"), Playlist.__slots__):
                 setattr(self, name, getattr(data, name))
+
+        # AsyncIterable attrs
+        self.__aiter_klass__ = PlaylistTrack
+        self.__aiter_fetch__ = partial(client.http.get_playlist_tracks, self.id, limit=50)
 
     def __repr__(self):
         return f'<spotify.Playlist: {getattr(self, "name", None) or self.id}>'
