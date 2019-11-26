@@ -1711,7 +1711,14 @@ REFRESH_TOKEN_URL = "https://accounts.spotify.com/api/token?grant_type=refresh_t
 class HTTPUserClient(HTTPClient):
     """HTTPClient for access to user endpoints."""
 
-    def __init__(self, client_id: str, client_secret: str, token: str = None, refresh_token: str = None, loop=None):
+    def __init__(
+        self,
+        client_id: str,
+        client_secret: str,
+        token: str = None,
+        refresh_token: str = None,
+        loop=None,
+    ):
         assert token or refresh_token
         super().__init__(client_id, client_secret, loop=loop)
         if token:
@@ -1721,7 +1728,9 @@ class HTTPUserClient(HTTPClient):
     async def get_bearer_info(self, *_, **__):
         if not self.refresh_token:
             # Should only happen if User.from_token didn't receive refresh_token
-            raise SpotifyException("Access token expired and no refresh token was provided")
+            raise SpotifyException(
+                "Access token expired and no refresh token was provided"
+            )
 
         headers = {
             "Authorization": f"Basic {b64encode(':'.join((self.client_id, self.client_secret)).encode()).decode()}",

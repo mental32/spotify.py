@@ -18,7 +18,18 @@ from typing import (
 
 from ..utils import to_id
 from ..http import HTTPUserClient
-from . import AsyncIterable, URIBase, Image, Device, Context, Player, Playlist, Track, Artist, Library
+from . import (
+    AsyncIterable,
+    URIBase,
+    Image,
+    Device,
+    Context,
+    Player,
+    Playlist,
+    Track,
+    Artist,
+    Library,
+)
 
 if TYPE_CHECKING:
     import spotify
@@ -88,7 +99,9 @@ class User(URIBase, AsyncIterable):  # pylint: disable=too-many-instance-attribu
 
         # AsyncIterable attrs
         self.__aiter_klass__ = Playlist
-        self.__aiter_fetch__ = partial(self.__client.http.get_playlists, self.id, limit=50)
+        self.__aiter_fetch__ = partial(
+            self.__client.http.get_playlists, self.id, limit=50
+        )
 
     def __repr__(self):
         return f"<spotify.User: {(self.display_name or self.id)!r}>"
@@ -96,7 +109,10 @@ class User(URIBase, AsyncIterable):  # pylint: disable=too-many-instance-attribu
     def __getattr__(self, attr):
         value = object.__getattribute__(self, attr)
 
-        if hasattr(value, "__ensure_http__") and getattr(self, "http", None) is not None:
+        if (
+            hasattr(value, "__ensure_http__")
+            and getattr(self, "http", None) is not None
+        ):
 
             @functools.wraps(value)
             def _raise(*args, **kwargs):
@@ -125,11 +141,7 @@ class User(URIBase, AsyncIterable):  # pylint: disable=too-many-instance-attribu
 
     @classmethod
     async def from_code(
-        cls,
-        client: "spotify.Client",
-        code: str,
-        *,
-        redirect_uri: str,
+        cls, client: "spotify.Client", code: str, *, redirect_uri: str,
     ):
         """Create a :class:`User` object from an authorization code.
 
@@ -189,9 +201,7 @@ class User(URIBase, AsyncIterable):  # pylint: disable=too-many-instance-attribu
         return cls(client, data=data, http=http)
 
     @classmethod
-    async def from_refresh_token(
-        cls, client: "spotify.Client", refresh_token: str
-    ):
+    async def from_refresh_token(cls, client: "spotify.Client", refresh_token: str):
         """Create a :class:`User` object from a refresh token.
         It will poll the spotify API for a new access token and
         use that to initialize the spotify user.

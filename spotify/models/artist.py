@@ -54,8 +54,11 @@ class Artist(URIBase, AsyncIterable):  # pylint: disable=too-many-instance-attri
 
         # AsyncIterable attrs
         from .album import Album
+
         self.__aiter_klass__ = Album
-        self.__aiter_fetch__ = partial(self.__client.http.artist_albums, self.id, limit=50)
+        self.__aiter_fetch__ = partial(
+            self.__client.http.artist_albums, self.id, limit=50
+        )
 
     def __repr__(self):
         return f"<spotify.Artist: {self.name!r}>"

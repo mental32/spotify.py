@@ -74,7 +74,9 @@ class Album(URIBase, AsyncIterable):  # pylint: disable=too-many-instance-attrib
 
         # AsyncIterable attrs
         self.__aiter_klass__ = Track
-        self.__aiter_fetch__ = partial(self.__client.http.album_tracks, self.id, limit=50)
+        self.__aiter_fetch__ = partial(
+            self.__client.http.album_tracks, self.id, limit=50
+        )
 
     def __repr__(self):
         return f"<spotify.Album: {(self.name or self.id or self.uri)!r}>"

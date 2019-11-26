@@ -136,7 +136,9 @@ class Playlist(URIBase, AsyncIterable):  # pylint: disable=too-many-instance-att
 
         # AsyncIterable attrs
         self.__aiter_klass__ = PlaylistTrack
-        self.__aiter_fetch__ = partial(client.http.get_playlist_tracks, self.id, limit=50)
+        self.__aiter_fetch__ = partial(
+            client.http.get_playlist_tracks, self.id, limit=50
+        )
 
     def __repr__(self):
         return f'<spotify.Playlist: {getattr(self, "name", None) or self.id}>'
