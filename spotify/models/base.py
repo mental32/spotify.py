@@ -121,7 +121,7 @@ class AsyncIterable(SpotifyBase):
     __aiter_klass__: Optional[Type[SpotifyBase]] = None
 
     async def __aiter__(self):
-        client = getattr(f"_{type(self).__name__}__client")
+        client = getattr(self, f"_{type(self).__name__}__client")
 
         assert self.__aiter_fetch__ is not None
         fetch = self.__aiter_fetch__
