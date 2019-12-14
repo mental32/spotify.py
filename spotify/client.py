@@ -112,7 +112,7 @@ class Client:
         scope: Optional[str] = None,
         state: Optional[str] = None,
     ) -> str:
-        """Generate an outh2 url for user authentication.
+        """Generate an oauth2 url for user authentication.
 
         This is an alias to :meth:`OAuth2.url_only` but the
         difference is that the client id is autmatically
