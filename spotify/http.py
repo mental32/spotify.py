@@ -1217,12 +1217,14 @@ class HTTPClient:
         """
         route = self.route("PUT", "/playlists/{playlist_id}", playlist_id=playlist_id)
 
-        payload: Dict[str, Any] = filter_items({
-            "name": name,
-            "public": public,
-            "collaborative": collaborative,
-            "description": description,
-        })
+        payload: Dict[str, Any] = filter_items(
+            {
+                "name": name,
+                "public": public,
+                "collaborative": collaborative,
+                "description": description,
+            }
+        )
 
         return self.request(route, json=payload)
 

@@ -401,7 +401,7 @@ class User(URIBase, AsyncIterable):  # pylint: disable=too-many-instance-attribu
             "name": name,
             "public": public,
             "collaborative": collaborative,
-            "description": description
+            "description": description,
         }
 
         await self.http.change_playlist_details(to_id(str(playlist)), **kwargs)  # type: ignore

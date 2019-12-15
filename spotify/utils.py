@@ -34,6 +34,7 @@ def filter_items(data: Dict[K, V]) -> Dict[K, V]:
     """Filter the items of a dict where the value is not None."""
     return _cached_filter_items((*data.items(),))
 
+
 def to_id(value: str) -> str:
     """Get a spotify ID from a URI or open.spotify URL.
 
