@@ -3,7 +3,7 @@ from functools import lru_cache
 from contextlib import contextmanager
 from typing import Iterable, Hashable, TypeVar, Dict, Callable, Tuple, List
 
-__all__ = {"clean", "filter_items", "to_id"}
+__all__ = ("clean", "filter_items", "to_id")
 
 _URI_RE = re_compile(r"^.*:([a-zA-Z0-9]+)$")
 _OPEN_RE = re_compile(r"http[s]?:\/\/open\.spotify\.com\/(.*)\/(.*)")
