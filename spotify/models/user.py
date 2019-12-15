@@ -1,6 +1,5 @@
 """Source implementation for a spotify User"""
 
-import asyncio
 import functools
 from functools import partial
 from base64 import b64encode
@@ -9,10 +8,8 @@ from typing import (
     Dict,
     Union,
     List,
-    Tuple,
     Type,
     TypeVar,
-    Coroutine,
     TYPE_CHECKING,
 )
 
