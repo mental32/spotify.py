@@ -1,5 +1,5 @@
 import asyncio
-from typing import Optional, List, Iterable, NamedTuple, Type
+from typing import Optional, List, Iterable, NamedTuple, Type, Union, Dict
 
 from .http import HTTPClient
 from .utils import to_id
@@ -109,10 +109,10 @@ class Client:
     def oauth2_url(
         self,
         redirect_uri: str,
-        scope: Optional[str] = None,
+        scopes: Optional[Union[Iterable[str], Dict[str, bool]]] = None,
         state: Optional[str] = None,
     ) -> str:
-        """Generate an outh2 url for user authentication.
+        """Generate an oauth2 url for user authentication.
 
         This is an alias to :meth:`OAuth2.url_only` but the
         difference is that the client id is autmatically
@@ -122,8 +122,8 @@ class Client:
         ----------
         redirect_uri : :class:`str`
             Where spotify should redirect the user to after authentication.
-        scope : Optional[:class:`str`]
-            Space seperated spotify scopes for different levels of access.
+        scopes : Optional[Iterable[:class:`str`], Dict[:class:`str`, :class:`bool`]]
+            The scopes to be requested.
         state : Optional[:class:`str`]
             Using a state value can increase your assurance that an incoming connection is the result of an
             authentication request.
@@ -136,7 +136,7 @@ class Client:
         return OAuth2.url_only(
             client_id=self.http.client_id,
             redirect_uri=redirect_uri,
-            scope=scope,
+            scopes=scopes,
             state=state,
         )
 

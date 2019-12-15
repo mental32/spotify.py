@@ -1,8 +1,10 @@
+__version__ = "0.8.3"
+__title__ = "spotify"
+__author__ = "mental"
+__license__ = "MIT"
+
 from .oauth import *
 from .utils import clean as _clean_namespace
-
-__version__ = "0.8.2"  # noqa
-
 from .errors import *
 from .models import *
 from .client import *
@@ -10,10 +12,6 @@ from .models import SpotifyBase
 from .http import HTTPClient, HTTPUserClient
 
 __all__ = tuple(name for name in locals() if name[0] != "_")
-
-__title__ = "spotify"
-__author__ = "mental"
-__license__ = "MIT"
 
 _locals = locals()  # pylint: disable=invalid-name
 
