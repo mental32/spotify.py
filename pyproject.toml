@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "spotify"
-version = "0.8.2"
+version = "0.8.3"
 description = "spotify.py is an asynchronous API wrapper for Spotify written in Python."
 authors = ["mental <m3nta1@yahoo.com>"]
 license = "MIT"
