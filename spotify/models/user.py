@@ -396,21 +396,15 @@ class User(URIBase, AsyncIterable):  # pylint: disable=too-many-instance-attribu
         description : Optional[:class:`str`]
             The new playlist description
         """
-        data = {}
 
-        if name:
-            data["name"] = name
+        kwargs = {
+            "name": name,
+            "public": public,
+            "collaborative": collaborative,
+            "description": description
+        }
 
-        if public:
-            data["public"] = public
-
-        if collaborative:
-            data["collaborative"] = collaborative
-
-        if description:
-            data["description"] = description
-
-        await self.http.change_playlist_details(self.id, to_id(str(playlist)), **data)  # type: ignore
+        await self.http.change_playlist_details(to_id(str(playlist)), **kwargs)  # type: ignore
 
     @ensure_http
     async def create_playlist(
