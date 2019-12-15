@@ -1,9 +1,12 @@
-import re
+from re import compile as re_compile
+from functools import lru_cache
 from contextlib import contextmanager
-from typing import Iterable, Hashable
+from typing import Iterable, Hashable, TypeVar, Dict, Callable, Tuple, List
 
-_URI_RE = re.compile(r"^.*:([a-zA-Z0-9]+)$")
-_OPEN_RE = re.compile(r"http[s]?:\/\/open\.spotify\.com\/(.*)\/(.*)")
+__all__ = {"clean", "filter_items", "to_id"}
+
+_URI_RE = re_compile(r"^.*:([a-zA-Z0-9]+)$")
+_OPEN_RE = re_compile(r"http[s]?:\/\/open\.spotify\.com\/(.*)\/(.*)")
 
 
 @contextmanager
@@ -13,6 +16,23 @@ def clean(mapping: dict, *keys: Iterable[Hashable]):
     for key in keys:
         mapping.pop(key)
 
+
+K = TypeVar("K")
+V = TypeVar("V")
+
+
+@lru_cache(maxsize=1024)
+def _cached_filter_items(data: Tuple[Tuple[K, V], ...]) -> Dict[K, V]:
+    data_ = {}
+    for key, value in data:
+        if value is not None:
+            data_[key] = value
+    return data_
+
+
+def filter_items(data: Dict[K, V]) -> Dict[K, V]:
+    """Filter the items of a dict where the value is not None."""
+    return _cached_filter_items((*data.items(),))
 
 def to_id(value: str) -> str:
     """Get a spotify ID from a URI or open.spotify URL.

@@ -20,6 +20,7 @@ from urllib.parse import quote
 import aiohttp
 
 from . import __version__
+from .utils import filter_items
 from .errors import (
     HTTPException,
     Forbidden,
@@ -1191,10 +1192,10 @@ class HTTPClient:
         self,
         playlist_id: str,
         *,
-        name: str,
-        public: Optional[bool] = True,
-        collaborative: Optional[bool] = False,
-        description: Optional[str] = "",
+        name: Optional[str] = None,
+        public: Optional[bool] = None,
+        collaborative: Optional[bool] = None,
+        description: Optional[str] = None,
     ) -> Awaitable:
         """Change a playlist’s name and public/private state. (The user must, of course, own the playlist.)
 
@@ -1216,12 +1217,12 @@ class HTTPClient:
         """
         route = self.route("PUT", "/playlists/{playlist_id}", playlist_id=playlist_id)
 
-        payload: Dict[str, Any] = {
+        payload: Dict[str, Any] = filter_items({
             "name": name,
             "public": public,
             "collaborative": collaborative,
             "description": description,
-        }
+        })
 
         return self.request(route, json=payload)
 
