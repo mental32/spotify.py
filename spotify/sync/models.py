@@ -1,4 +1,3 @@
-import inspect
 from functools import wraps
 from inspect import getmembers, iscoroutinefunction
 from contextlib import suppress
@@ -80,18 +79,3 @@ class Client(_Client, metaclass=Synchronous):
 
         super().__init__(*args, **kwargs)
         self.__thread = self.__client_thread__ = thread
-
-
-def _install(types):
-    for name, obj in types.items():
-
-        class Mock(
-            obj, metaclass=Synchronous
-        ):  # pylint: disable=too-few-public-methods
-            __slots__ = {"__client_thread__"}
-
-        Mock.__name__ = obj.__name__
-        Mock.__qualname__ = obj.__qualname__
-        Mock.__doc__ = obj.__doc__
-
-        yield name, Mock
