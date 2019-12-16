@@ -1,92 +1,94 @@
 import inspect
-import functools
+from functools import wraps
+from inspect import getmembers, iscoroutinefunction
+from contextlib import suppress
+from typing import Type, Callable, Optional
 
-from . import Client as _Client
-from .thread import SyncExecution
+from .. import Client as _Client
+from .thread import EventLoopThread
 
 
-class SyncMeta(type):
+def _infer_initializer(base: Type, name: str) -> Callable[..., None]:
+    """Infer the __init__ to use for a given :class:`typing.Type` base and :class:`str` name."""
+    if name in {"HTTPClient", "HTTPUserClient"}:
+
+        def initializer(self: "HTTPClient", *args, **kwargs) -> None:
+            base.__init__(self, *args, **kwargs)
+            self.__client_thread__ = kwargs["loop"].__spotify_thread__
+
+    else:
+        assert name != "Client"
+
+        def initializer(self: "SpotifyBase", client: _Client, *args, **kwargs) -> None:
+            base.__init__(self, client, *args, **kwargs)
+            self.__client_thread__ = client.__client_thread__
+
+    return initializer
+
+
+def _coroutine_function_decorator(corofunc):
+    if isinstance(corofunc, classmethod):
+
+        @classmethod
+        @wraps(corofunc)
+        def wrapped(_, client, *args, **kwargs):
+            assert isinstance(client, _Client)
+            client.__client_thread__.run_coroutine_threadsafe(
+                corofunc(klass, client, *args, **kwargs)
+            )
+
+    else:
+
+        @wraps(corofunc)
+        def wrapped(self, *args, **kwargs):
+            return self.__client_thread__.run_coroutine_threadsafe(
+                corofunc(self, *args, **kwargs)
+            )
+
+    return wrapped
+
+
+class Synchronous(type):
     """Metaclass used for overloading coroutine functions on models."""
 
-    def __new__(cls, name, bases, dct):
+    def __new__(cls, name, bases, dct) -> type:
         klass = super().__new__(cls, name, bases, dct)
 
         base = bases[0]
-        base_name = base.__name__
+        name = base.__name__
 
-        if base_name in ("HTTPClient", "HTTPUserClient"):
+        if name != "Client":
+            # Models and the HTTP classes get their __init__ overloaded.
+            initializer = _infer_initializer(base, name)
+            setattr(klass, "__init__", initializer)
 
-            def __init__(self, *args, **kwargs):
-                base.__init__(self, *args, **kwargs)
-                self.__client_thread__ = kwargs[
-                    "loop"
-                ]._thread  # pylint: disable=protected-access
+        for ident, obj in getmembers(base):
+            if not iscoroutinefunction(obj):
+                continue
 
-        elif base_name != "Client":
+            setattr(klass, ident, _coroutine_function_decorator(obj))
 
-            def __init__(self, client, *args, **kwargs):  # type: ignore
-                base.__init__(self, client, *args, **kwargs)
-                self.__client_thread__ = client.__client_thread__
-
-        try:
-            setattr(klass, "__init__", __init__)
-        except NameError:
-            pass
-
-        for ident, func in inspect.getmembers(base):
-
-            if inspect.iscoroutinefunction(func):
-                _func = getattr(base, ident)
-
-                def wrap(func):
-                    if isinstance(func, classmethod):
-
-                        @classmethod
-                        @functools.wraps(func)
-                        def wrapper(
-                            cls, client, *args, **kwargs
-                        ):  # pylint: disable=unused-argument
-                            assert isinstance(
-                                client, _Client
-                            ), "First argument of classmethod was not a `spotify.Client` instance"
-                            client.__client_thread__.run_coro(
-                                func,
-                                client,
-                                *args,
-                                **kwargs  # TODO: investigate if this is correct.
-                            )
-
-                    else:
-
-                        @functools.wraps(func)
-                        def wrapper(self, *args, **kwargs):
-                            return self.__client_thread__.run_coro(
-                                func(self, *args, **kwargs)
-                            )
-
-                    return wrapper
-
-                setattr(klass, ident, wrap(_func))
-            del ident
         return klass
 
 
-class Client(_Client, metaclass=SyncMeta):
+class Client(_Client, metaclass=Synchronous):
     def __init__(self, *args, **kwargs):
-        thread = SyncExecution()
+        thread = EventLoopThread()
         thread.start()
 
-        kwargs["loop"] = thread._loop  # pylint: disable=protected-access
+        kwargs["loop"] = thread.loop  # pylint: disable=protected-access
 
         super().__init__(*args, **kwargs)
         self.__thread = self.__client_thread__ = thread
 
 
-def _install(_types):
-    for name, obj in _types.items():
+def _install(types):
+    for name, obj in types.items():
 
-        class Mock(obj, metaclass=SyncMeta):  # pylint: disable=too-few-public-methods
-            __slots__ = ("__client_thread__",)
+        class Mock(
+            obj, metaclass=Synchronous
+        ):  # pylint: disable=too-few-public-methods
+            __slots__ = {"__client_thread__"}
 
         Mock.__name__ = obj.__name__
         Mock.__qualname__ = obj.__qualname__
