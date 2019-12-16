@@ -27,7 +27,7 @@ class EventLoopThread(Thread):
     # Public API
 
     def run_coroutine_threadsafe(self, coro: Coroutine) -> Any:
-        """Like :func:`asyncio.run_coroutine_threadsafe` but for this specifcic thread."""
+        """Like :func:`asyncio.run_coroutine_threadsafe` but for this specific thread."""
 
         # If the current thread is the same
         # as the event loop Thread.
