@@ -25,7 +25,7 @@ def _infer_initializer(base: Type, name: str) -> Callable[..., None]:
     return initializer
 
 
-def _coroutine_function_decorator(corofunc):
+def _normalize_coroutine_function(corofunc):
     if isinstance(corofunc, classmethod):
 
         @classmethod
@@ -65,7 +65,7 @@ class Synchronous(type):
             if not iscoroutinefunction(obj):
                 continue
 
-            setattr(klass, ident, _coroutine_function_decorator(obj))
+            setattr(klass, ident, _normalize_coroutine_function(obj))
 
         return klass
 
