@@ -9,7 +9,7 @@ from .models import Client, Synchronous as _Sync
 with _clean_namespace(locals(), "name", "base", "Mock"):
     for name, base in _types.items():
 
-        class Mock(base, metaclass=_Sync):  # pylint: disable=too-few-public-methods
+        class Mock(base, metaclass=_Sync):  # type: ignore
             __slots__ = {"__client_thread__"}
 
         Mock.__name__ = base.__name__

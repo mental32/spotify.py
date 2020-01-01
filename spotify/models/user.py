@@ -304,7 +304,7 @@ class User(URIBase, AsyncIterable):  # pylint: disable=too-many-instance-attribu
             The snapshot id of the playlist.
         """
         data = await self.http.add_playlist_tracks(  # type: ignore
-            to_id(str(playlist)), tracks=(str(track) for track in tracks)
+            to_id(str(playlist)), tracks=[str(track) for track in tracks]
         )
         return data["snapshot_id"]
 

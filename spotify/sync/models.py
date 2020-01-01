@@ -1,26 +1,29 @@
 from functools import wraps
 from inspect import getmembers, iscoroutinefunction
 from contextlib import suppress
-from typing import Type, Callable, Optional
+from typing import Type, Callable, Optional, Union, TYPE_CHECKING
 
 from .. import Client as _Client
 from .thread import EventLoopThread
+
+if TYPE_CHECKING:
+    import spotify
 
 
 def _infer_initializer(base: Type, name: str) -> Callable[..., None]:
     """Infer the __init__ to use for a given :class:`typing.Type` base and :class:`str` name."""
     if name in {"HTTPClient", "HTTPUserClient"}:
 
-        def initializer(self: "HTTPClient", *args, **kwargs) -> None:
+        def initializer(self: "spotify.HTTPClient", *args, **kwargs) -> None:
             base.__init__(self, *args, **kwargs)
-            self.__client_thread__ = kwargs["loop"].__spotify_thread__
+            self.__client_thread__ = kwargs["loop"].__spotify_thread__  # type: ignore
 
     else:
         assert name != "Client"
 
-        def initializer(self: "SpotifyBase", client: _Client, *args, **kwargs) -> None:
+        def initializer(self: "spotify.SpotifyBase", client: _Client, *args, **kwargs) -> None:  # type: ignore
             base.__init__(self, client, *args, **kwargs)
-            self.__client_thread__ = client.__client_thread__
+            self.__client_thread__ = client.__client_thread__  # type: ignore
 
     return initializer
 
@@ -50,7 +53,7 @@ def _normalize_coroutine_function(corofunc):
 class Synchronous(type):
     """Metaclass used for overloading coroutine functions on models."""
 
-    def __new__(cls, name, bases, dct) -> type:
+    def __new__(cls, name, bases, dct):
         klass = super().__new__(cls, name, bases, dct)
 
         base = bases[0]
@@ -67,7 +70,7 @@ class Synchronous(type):
 
             setattr(klass, ident, _normalize_coroutine_function(obj))
 
-        return klass
+        return klass  # type: ignore
 
 
 class Client(_Client, metaclass=Synchronous):
