@@ -5,6 +5,7 @@ from typing import Any, Coroutine
 
 class EventLoopThread(Thread):
     """A surrogate thread that spins an asyncio event loop."""
+
     def __init__(self):
         super().__init__(daemon=True)
 

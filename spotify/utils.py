@@ -1,7 +1,7 @@
 from re import compile as re_compile
 from functools import lru_cache
 from contextlib import contextmanager
-from typing import Iterable, Hashable, TypeVar, Dict, Callable, Tuple, List
+from typing import Iterable, Hashable, TypeVar, Dict, Tuple
 
 __all__ = ("clean", "filter_items", "to_id")
 
@@ -17,8 +17,8 @@ def clean(mapping: dict, *keys: Iterable[Hashable]):
         mapping.pop(key)
 
 
-K = TypeVar("K")
-V = TypeVar("V")
+K = TypeVar("K")  # pylint: disable=invalid-name
+V = TypeVar("V")  # pylint: disable=invalid-name
 
 
 @lru_cache(maxsize=1024)

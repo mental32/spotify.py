@@ -107,7 +107,7 @@ class Album(URIBase, AsyncIterable):  # pylint: disable=too-many-instance-attrib
         return list(Track(self.__client, item) for item in data["items"])
 
     @set_required_scopes(None)
-    async def get_all_tracks(self, *, market: Optional[str] = "US") -> List[Track]:
+    async def get_all_tracks(self, *, market: Optional[str] = "US") -> List[Track]:  # pylint: disable=unused-argument
         """loads all of the albums tracks, depending on how many the album has this may be a long operation.
 
         Parameters

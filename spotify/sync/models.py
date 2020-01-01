@@ -1,7 +1,6 @@
 from functools import wraps
 from inspect import getmembers, iscoroutinefunction
-from contextlib import suppress
-from typing import Type, Callable, Optional, Union, TYPE_CHECKING
+from typing import Type, Callable, TYPE_CHECKING
 
 from .. import Client as _Client
 from .thread import EventLoopThread
@@ -33,10 +32,10 @@ def _normalize_coroutine_function(corofunc):
 
         @classmethod
         @wraps(corofunc)
-        def wrapped(_, client, *args, **kwargs):
+        def wrapped(cls, client, *args, **kwargs):
             assert isinstance(client, _Client)
             client.__client_thread__.run_coroutine_threadsafe(
-                corofunc(klass, client, *args, **kwargs)
+                corofunc(cls, client, *args, **kwargs)
             )
 
     else:
