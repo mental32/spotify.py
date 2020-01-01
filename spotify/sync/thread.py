@@ -1,74 +1,47 @@
-import asyncio
-import threading
-import time
-import queue
+from asyncio import new_event_loop, run_coroutine_threadsafe, set_event_loop
+from threading import Thread, RLock, get_ident
 from typing import Any, Coroutine
 
 
-class SyncExecution(threading.Thread):
+class EventLoopThread(Thread):
+    """A surrogate thread that spins an asyncio event loop."""
     def __init__(self):
         super().__init__(daemon=True)
 
-        self.channel = queue.Queue(maxsize=1)
-
-        self.__lock = threading.RLock()
-        self.__loop = loop = asyncio.new_event_loop()
-
-        loop._thread = self  # pylint: disable=protected-access
+        self.__lock = RLock()
+        self.__loop = loop = new_event_loop()
+        loop.__spotify_thread__ = self
 
     # Properties
 
     @property
-    def _loop(self):
+    def loop(self):
         return self.__loop
 
-    # threading.Thread
+    # Overloads
 
     def run(self):
-        asyncio.set_event_loop(self.__loop)
-
-        async def poll():
-            channel = self.channel
-
-            while True:
-                await asyncio.sleep(0.0001)
-
-                if channel.full():
-                    coro, out = channel.get()
-                    out.put(self.__loop.create_task(coro))
-
-        self.__loop.create_task(poll())
+        set_event_loop(self.__loop)
         self.__loop.run_forever()
 
     # Public API
 
-    def run_coro(self, coro: Coroutine) -> Any:
-        ident = threading.get_ident()
+    def run_coroutine_threadsafe(self, coro: Coroutine) -> Any:
+        """Like :func:`asyncio.run_coroutine_threadsafe` but for this specific thread."""
 
         # If the current thread is the same
-        # as the SyncExecution Thread. then
-        # we are making nested calls to await
-        # other stuff and should pass back
-        # the coroutine as it should be.
-        if ident == self.ident:
+        # as the event loop Thread.
+        #
+        # then we're in the process of making
+        # nested calls to await other coroutines
+        # and should pass back the coroutine as it should be.
+        if get_ident() == self.ident:
             return coro
 
-        # Critical work happens here.
-        # the purpose of this block is
-        # only for scheduling the coroutine
-        # to run and getting back the task object.
+        # Double lock because I haven't looked
+        # into whether this deadlocks under whatever
+        # conditions, Best to play it safe.
         with self.__lock:
-            output: queue.Queue = queue.Queue(maxsize=1)
-            self.channel.put((coro, output))
-            task = output.get()
+            future = run_coroutine_threadsafe(coro, self.__loop)
 
-        while not task.done():
-            # Spinlock that plays nice with other processes on linux systems.
-            # See: https://stackoverflow.com/q/7273474/9171481
-            time.sleep(0)
-
-        err = task.exception()
-
-        if err:
-            raise err
-        return task.result()
+        return future.result()

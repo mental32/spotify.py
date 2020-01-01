@@ -74,7 +74,8 @@ class User(URIBase, AsyncIterable):  # pylint: disable=too-many-instance-attribu
         self.__client = self.client = client
 
         if "http" not in kwargs:
-            self.library = self.http = None
+            self.library = None
+            self.http = client.http
         else:
             self.http = kwargs.pop("http")
             self.library = Library(client, self)
