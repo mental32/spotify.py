@@ -1,4 +1,4 @@
-__version__ = "0.8.3"
+__version__ = "0.8.4"
 __title__ = "spotify"
 __author__ = "mental"
 __license__ = "MIT"
