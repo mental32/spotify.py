@@ -850,7 +850,7 @@ class HTTPClient:
         if time_range is not None:
             payload["time_range"] = time_range
 
-        return self.request(route)
+        return self.request(route, params=payload)
 
     def available_devices(self) -> Awaitable:
         """Get information about a user’s available devices."""
