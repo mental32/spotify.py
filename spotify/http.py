@@ -3,6 +3,7 @@
 import asyncio
 import sys
 import json
+import time
 from typing import (
     Optional,
     List,
@@ -18,6 +19,7 @@ from base64 import b64encode
 from urllib.parse import quote
 
 import aiohttp
+import backoff
 
 from . import __version__
 from .utils import filter_items
@@ -27,6 +29,7 @@ from .errors import (
     NotFound,
     SpotifyException,
     BearerTokenError,
+    RateLimitedException,
 )
 
 __all__ = ("HTTPClient", "HTTPUserClient")
@@ -80,6 +83,10 @@ class HTTPClient:
         self.client_secret = client_secret
 
         self.bearer_info: Optional[Dict[str, str]] = None
+
+        self.__request_barrier_lock = asyncio.Lock()
+        self.__request_barrier = asyncio.Event()
+        self.__request_barrier.set()
 
     @staticmethod
     def route(
@@ -147,11 +154,13 @@ class HTTPClient:
             "https://accounts.spotify.com/api/token", data=data, headers=headers
         ) as response:
             bearer_info = json.loads(await response.text(encoding="utf-8"))
+
             if "error" in bearer_info.keys():
                 raise BearerTokenError(response=response, message=bearer_info)
 
         return bearer_info
 
+    @backoff.on_exception(backoff.expo, RateLimitedException)
     async def request(self, route, **kwargs):
         r"""Make a request to the spotify API with the current bearer credentials.
 
@@ -189,10 +198,13 @@ class HTTPClient:
                 kwargs.pop("json"), separators=(",", ":"), ensure_ascii=True
             )
 
-        for _ in range(self.RETRY_AMOUNT):
+        for current_retry in range(self.RETRY_AMOUNT):
+            await self.__request_barrier.wait()
+
             response = await self._session.request(
                 method, url, headers=headers, **kwargs
             )
+
             try:
                 status = response.status
 
@@ -211,8 +223,17 @@ class HTTPClient:
 
                 if status == 429:
                     # we're being rate limited.
-                    amount = response.headers.get("Retry-After")
-                    await asyncio.sleep(int(amount), loop=self.loop)
+
+                    self.__request_barrier.clear()
+                    amount = int(response.headers.get("Retry-After"))
+                    checkpoint = int(time.time())
+
+                    async with self.__request_barrier_lock:
+                        if (int(time.time()) - checkpoint) < amount:
+                            self.__request_barrier.clear()
+                            await asyncio.sleep(int(amount), loop=self.loop)
+                            self.__request_barrier.set()
+
                     continue
 
                 if status in (502, 503):
@@ -226,6 +247,10 @@ class HTTPClient:
                     raise NotFound(response, data)
             finally:
                 await response.release()
+
+        if response.status == 429:
+            raise RateLimitedException((amount, _max_retries - current_retry))
+
         raise HTTPException(response, data)
 
     async def close(self):
