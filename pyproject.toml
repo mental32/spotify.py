@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "spotify"
-version = "0.8.5"
+version = "0.8.6"
 description = "spotify.py is an asynchronous API wrapper for Spotify written in Python."
 authors = ["mental <m3nta1@yahoo.com>"]
 license = "MIT"
@@ -27,6 +27,7 @@ python = "^3.6"
 aiohttp = "^3.6"
 
 # [tool.poetry.scripts]
+backoff = "^1.10.0"
 # spy = "spotify:__main__:console"
 
 [tool.poetry.dev-dependencies]

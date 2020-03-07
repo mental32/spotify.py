@@ -35,3 +35,6 @@ class NotFound(HTTPException):
 
 class BearerTokenError(HTTPException):
     """An exception that's thrown when Spotify could not provide a valid Bearer Token"""
+
+class RateLimitedException(Exception):
+    """An exception that gets thrown when a rate limit is encountered."""
