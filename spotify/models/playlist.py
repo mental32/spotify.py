@@ -22,7 +22,7 @@ class MutableTracks:
 
     def __init__(self, playlist: "Playlist") -> None:
         self.playlist = playlist
-        self.tracks = None
+        self.tracks = tracks = getattr(playlist, "_Playlist__tracks")
 
         if tracks is not None:
             self.was_empty = self.is_empty = not tracks
@@ -256,7 +256,7 @@ class Playlist(URIBase, AsyncIterable):  # pylint: disable=too-many-instance-att
         return data["snapshot_id"]
 
     @set_required_scopes("playlist-modify-public", "playlist-modify-private")
-    async def remove_tracks(self, *tracks):
+    async def remove_tracks(self, *tracks: Union[str, Track, Tuple[Union[str, Track], List[int]]]):
         """Remove one or more tracks from a user’s playlist.
 
         Parameters
@@ -269,9 +269,28 @@ class Playlist(URIBase, AsyncIterable):  # pylint: disable=too-many-instance-att
         snapshot_id : :class:`str`
             The snapshot id of the playlist.
         """
-        data = await self.__http.remove_playlist_tracks(
-            self.id, tracks=[str(track) for track in tracks]
-        )
+        tracks_ = []
+
+        for part in tracks:
+            if not isinstance(part, (Track, str, tuple)):
+                raise TypeError("Track argument of tracks parameter must be a Track instance, string or a tuple of those and an iterator of positive integers.")
+
+            if isinstance(part, (Track, str)):
+                tracks_.append(str(part))
+                continue
+
+            track, positions, = part
+
+            if not isinstance(track, (Track, str)):
+                raise TypeError("Track argument of tuple track parameter must be a Track instance or a string.")
+
+            if not hasattr(positions, "__iter__"):
+                raise TypeError("Positions element of track tuple must be a iterator.")
+
+            elem = {"uri": str(track), "positions": positions}
+            tracks_.append(elem)
+
+        data = await self.__http.remove_playlist_tracks(self.id, tracks=tracks_)
         return data["snapshot_id"]
 
     @set_required_scopes("playlist-modify-public", "playlist-modify-private")
