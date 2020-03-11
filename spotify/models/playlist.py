@@ -22,7 +22,7 @@ class MutableTracks:
 
     def __init__(self, playlist: "Playlist") -> None:
         self.playlist = playlist
-        self.tracks = tracks = playlist.tracks
+        self.tracks = None
 
         if tracks is not None:
             self.was_empty = self.is_empty = not tracks
@@ -178,12 +178,6 @@ class Playlist(URIBase, AsyncIterable):  # pylint: disable=too-many-instance-att
         self.total_tracks = (
             len(tracks) if tracks is not None else data["tracks"]["total"]
         )
-
-    # Properties
-
-    @property
-    def tracks(self):
-        return self.__tracks
 
     # Track retrieval
 
