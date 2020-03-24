@@ -263,7 +263,13 @@ class User(URIBase, AsyncIterable):  # pylint: disable=too-many-instance-attribu
         return [Device(item) for item in data["devices"]]
 
     @ensure_http
-    async def recently_played(self) -> List[Dict[str, Union[Track, Context, str]]]:
+    async def recently_played(
+        self,
+        *,
+        limit: int = 20,
+        before: Optional[str] = None,
+        after: Optional[str] = None,
+    ) -> List[Dict[str, Union[Track, Context, str]]]:
         """Get tracks from the current users recently played tracks.
 
         Returns
@@ -272,7 +278,7 @@ class User(URIBase, AsyncIterable):  # pylint: disable=too-many-instance-attribu
             A list of playlist history object.
             Each object is a dict with a timestamp, track and context field.
         """
-        data = await self.http.recently_played()  # type: ignore
+        data = await self.http.recently_played(limit=limit, before=before, after=after)  # type: ignore
         client = self.__client
 
         # List[T] where T: {'track': Track, 'content': Context: 'timestamp': ISO8601}
