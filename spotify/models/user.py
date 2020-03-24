@@ -121,6 +121,12 @@ class User(URIBase, AsyncIterable):  # pylint: disable=too-many-instance-attribu
             return _raise
         return value
 
+    async def __aenter__(self) -> "User":
+        return self
+
+    async def __aexit__(self, _, __, ___):
+        await self.http.close()
+
     # Internals
 
     async def _get_top(self, klass: Type[T], kwargs: dict) -> List[T]:
