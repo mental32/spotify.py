@@ -19,7 +19,7 @@ from base64 import b64encode
 from urllib.parse import quote
 
 import aiohttp
-import backoff
+import backoff  # type: ignore
 
 from . import __version__
 from .utils import filter_items
@@ -1459,7 +1459,7 @@ class HTTPClient:
     def remove_playlist_tracks(
         self,
         playlist_id: str,
-        tracks: Sequence[Union[str, Dict[str, Union[str, int]]]],
+        tracks: Sequence[Union[str, Dict[str, Any]]],
         *,
         snapshot_id: str = None,
     ) -> Awaitable:
