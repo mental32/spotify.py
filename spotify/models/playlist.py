@@ -256,7 +256,9 @@ class Playlist(URIBase, AsyncIterable):  # pylint: disable=too-many-instance-att
         return data["snapshot_id"]
 
     @set_required_scopes("playlist-modify-public", "playlist-modify-private")
-    async def remove_tracks(self, *tracks: Union[str, Track, Tuple[Union[str, Track], List[int]]]):
+    async def remove_tracks(
+        self, *tracks: Union[str, Track, Tuple[Union[str, Track], List[int]]]
+    ):
         """Remove one or more tracks from a user’s playlist.
 
         Parameters
@@ -273,7 +275,9 @@ class Playlist(URIBase, AsyncIterable):  # pylint: disable=too-many-instance-att
 
         for part in tracks:
             if not isinstance(part, (Track, str, tuple)):
-                raise TypeError("Track argument of tracks parameter must be a Track instance, string or a tuple of those and an iterator of positive integers.")
+                raise TypeError(
+                    "Track argument of tracks parameter must be a Track instance, string or a tuple of those and an iterator of positive integers."
+                )
 
             if isinstance(part, (Track, str)):
                 tracks_.append(str(part))
@@ -282,7 +286,9 @@ class Playlist(URIBase, AsyncIterable):  # pylint: disable=too-many-instance-att
             track, positions, = part
 
             if not isinstance(track, (Track, str)):
-                raise TypeError("Track argument of tuple track parameter must be a Track instance or a string.")
+                raise TypeError(
+                    "Track argument of tuple track parameter must be a Track instance or a string."
+                )
 
             if not hasattr(positions, "__iter__"):
                 raise TypeError("Positions element of track tuple must be a iterator.")
