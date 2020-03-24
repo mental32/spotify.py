@@ -1,6 +1,6 @@
 from functools import partial
 from itertools import islice
-from typing import List, Optional, Union, Callable, Tuple, Iterable, TYPE_CHECKING
+from typing import List, Optional, Union, Callable, Tuple, Iterable, TYPE_CHECKING, Any, Dict, Set
 
 from ..oauth import set_required_scopes
 from ..http import HTTPUserClient, HTTPClient
@@ -271,7 +271,7 @@ class Playlist(URIBase, AsyncIterable):  # pylint: disable=too-many-instance-att
         snapshot_id : :class:`str`
             The snapshot id of the playlist.
         """
-        tracks_ = []
+        tracks_: List[Union[str, Dict[str, Union[str, Set[int]]]]] = []
 
         for part in tracks:
             if not isinstance(part, (Track, str, tuple)):
@@ -293,7 +293,10 @@ class Playlist(URIBase, AsyncIterable):  # pylint: disable=too-many-instance-att
             if not hasattr(positions, "__iter__"):
                 raise TypeError("Positions element of track tuple must be a iterator.")
 
-            elem = {"uri": str(track), "positions": positions}
+            if not all(isinstance(index, int) for index in positions):
+                raise TypeError("Members of the positions iterator must be integers.")
+
+            elem: Dict[str, Union[str, Set[int]]] = {"uri": str(track), "positions": set(positions)}
             tracks_.append(elem)
 
         data = await self.__http.remove_playlist_tracks(self.id, tracks=tracks_)
