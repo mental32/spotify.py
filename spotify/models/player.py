@@ -146,6 +146,32 @@ class Player(SpotifyBase):  # pylint: disable=too-many-instance-attributes
         return await self.user.http.skip_previous(device_id=device_id)
 
     @set_required_scopes("user-modify-playback-state")
+    async def enqueue(self, uri: SomeURI, device: Optional[SomeDevice]):
+        """Add an item to the end of the user’s current playback queue.
+
+        Parameters
+        ----------
+        uri : Union[:class:`spotify.URIBase`, :class:`str`]
+            The uri of the item to add to the queue. Must be a track or an
+            episode uri.
+        device_id : Optional[Union[Device, :class:`str`]]
+            The id of the device this command is targeting. If not supplied,
+            the user’s currently active device is the target.
+        """
+        device_id: Optional[str]
+        if device is not None:
+            if not isinstance(device, (Device, str)):
+                raise TypeError(
+                    f"Expected `device` to either be a spotify.Device or a string. got {type(device)!r}"
+                )
+
+            device_id = str(device)
+        else:
+            device_id = None
+
+        await self.user.http.playback_queue(uri=str(uri), device_id=device_id)
+
+    @set_required_scopes("user-modify-playback-state")
     async def play(
         self,
         *uris: SomeURIs,
