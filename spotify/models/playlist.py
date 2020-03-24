@@ -1,6 +1,6 @@
 from functools import partial
 from itertools import islice
-from typing import List, Optional, Union, Callable, Tuple, Iterable, TYPE_CHECKING
+from typing import List, Optional, Union, Callable, Tuple, Iterable, TYPE_CHECKING, Any, Dict, Set
 
 from ..oauth import set_required_scopes
 from ..http import HTTPUserClient, HTTPClient
@@ -256,7 +256,9 @@ class Playlist(URIBase, AsyncIterable):  # pylint: disable=too-many-instance-att
         return data["snapshot_id"]
 
     @set_required_scopes("playlist-modify-public", "playlist-modify-private")
-    async def remove_tracks(self, *tracks: Union[str, Track, Tuple[Union[str, Track], List[int]]]):
+    async def remove_tracks(
+        self, *tracks: Union[str, Track, Tuple[Union[str, Track], List[int]]]
+    ):
         """Remove one or more tracks from a user’s playlist.
 
         Parameters
@@ -269,11 +271,13 @@ class Playlist(URIBase, AsyncIterable):  # pylint: disable=too-many-instance-att
         snapshot_id : :class:`str`
             The snapshot id of the playlist.
         """
-        tracks_ = []
+        tracks_: List[Union[str, Dict[str, Union[str, Set[int]]]]] = []
 
         for part in tracks:
             if not isinstance(part, (Track, str, tuple)):
-                raise TypeError("Track argument of tracks parameter must be a Track instance, string or a tuple of those and an iterator of positive integers.")
+                raise TypeError(
+                    "Track argument of tracks parameter must be a Track instance, string or a tuple of those and an iterator of positive integers."
+                )
 
             if isinstance(part, (Track, str)):
                 tracks_.append(str(part))
@@ -282,12 +286,17 @@ class Playlist(URIBase, AsyncIterable):  # pylint: disable=too-many-instance-att
             track, positions, = part
 
             if not isinstance(track, (Track, str)):
-                raise TypeError("Track argument of tuple track parameter must be a Track instance or a string.")
+                raise TypeError(
+                    "Track argument of tuple track parameter must be a Track instance or a string."
+                )
 
             if not hasattr(positions, "__iter__"):
                 raise TypeError("Positions element of track tuple must be a iterator.")
 
-            elem = {"uri": str(track), "positions": positions}
+            if not all(isinstance(index, int) for index in positions):
+                raise TypeError("Members of the positions iterator must be integers.")
+
+            elem: Dict[str, Union[str, Set[int]]] = {"uri": str(track), "positions": set(positions)}
             tracks_.append(elem)
 
         data = await self.__http.remove_playlist_tracks(self.id, tracks=tracks_)
