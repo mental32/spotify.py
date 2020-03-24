@@ -31,6 +31,7 @@ backoff = "^1.10.0"
 # spy = "spotify:__main__:console"
 
 [tool.poetry.dev-dependencies]
+twine = "^3.1.1"
 
 [build-system]
 requires = ["poetry>=0.12"]
