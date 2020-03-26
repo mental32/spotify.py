@@ -30,7 +30,7 @@ class Player(SpotifyBase):  # pylint: disable=too-many-instance-attributes
         self.repeat_state = data.get("repeat_state", None)
         self.shuffle_state = data.pop("shuffle_state", None)
         self.is_playing = data.pop("is_playing", None)
-        self.device = data.pop("device", None)
+        self.device = Device(data=data.pop("device", None))
 
     def __repr__(self):
         return f"<spotify.Player: {self.user!r}>"
@@ -146,7 +146,7 @@ class Player(SpotifyBase):  # pylint: disable=too-many-instance-attributes
         return await self.user.http.skip_previous(device_id=device_id)
 
     @set_required_scopes("user-modify-playback-state")
-    async def enqueue(self, uri: SomeURI, device: Optional[SomeDevice]):
+    async def enqueue(self, uri: SomeURI, device: Optional[SomeDevice] = None):
         """Add an item to the end of the user’s current playback queue.
 
         Parameters
