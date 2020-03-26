@@ -146,7 +146,7 @@ class Player(SpotifyBase):  # pylint: disable=too-many-instance-attributes
         return await self.user.http.skip_previous(device_id=device_id)
 
     @set_required_scopes("user-modify-playback-state")
-    async def enqueue(self, uri: SomeURI, device: Optional[SomeDevice]):
+    async def enqueue(self, uri: SomeURI, device: Optional[SomeDevice] = None):
         """Add an item to the end of the user’s current playback queue.
 
         Parameters

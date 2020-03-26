@@ -898,7 +898,7 @@ class HTTPClient:
 
         return self.request(route, params=payload)
 
-    def playback_queue(self, *, uri: str, device_id: str) -> Awaitable:
+    def playback_queue(self, *, uri: str, device_id: Optional[str] = None) -> Awaitable:
         """Add an item to the end of the user’s current playback queue.
 
         Parameters
@@ -911,7 +911,11 @@ class HTTPClient:
             the user’s currently active device is the target.
         """
         route = self.route("POST", "/me/player/queue")
-        params = {"uri": uri, "device_id": device_id}
+        params = {"uri": uri}
+
+        if device_id is not None:
+            params["device_id"] = device_id
+
         return self.request(route, params=params)
 
     def recently_played(
