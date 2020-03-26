@@ -1,6 +1,7 @@
 """Source implementation for spotify Tracks, and any other semantically relevent, implementation."""
 
 import datetime
+from itertools import starmap
 
 from ..oauth import set_required_scopes
 from . import URIBase, Image, Artist
@@ -54,8 +55,8 @@ class Track(URIBase):  # pylint: disable=too-many-instance-attributes
         )
         self.artist = artists[0]
 
-        album = data.pop("album", None)
-        self.album = Album(client, album) if album is not None else None
+        album_ = data.pop("album", None)
+        self.album = album = album_ and Album(client, album_)
 
         self.id = data.pop("id", None)  # pylint: disable=invalid-name
         self.name = data.pop("name", None)
@@ -69,8 +70,12 @@ class Track(URIBase):  # pylint: disable=too-many-instance-attributes
         self.is_local = data.pop("is_local", None)
         self.popularity = data.pop("popularity", None)
         self.preview_url = data.pop("preview_url", None)
-        self.images = list(Image(**image) for image in data.pop("images", []))
         self.markets = data.pop("available_markets", [])
+
+        if "images" in data:
+            self.images = list(starmap(Image, data.pop("images")))
+        else:
+            self.images = album.images.copy()
 
     def __repr__(self):
         return f"<spotify.Track: {self.name!r}>"
