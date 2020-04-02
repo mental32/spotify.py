@@ -12,8 +12,8 @@
 
 An API library for the spotify client and the Spotify Web API written in Python.
 
-Spotify.py is an asyncronous API library for Spotify. While maintaining an
-emphasis on being purely asyncronous the library provides syncronous
+Spotify.py is an asynchronous API library for Spotify. While maintaining an
+emphasis on being purely asynchronous the library provides syncronous
 functionality with the `spotify.sync` module.
 
 ```python
