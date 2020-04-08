@@ -197,6 +197,6 @@ class OAuth2:
         for scope_name, state in scopes.items():
             scope_name = scope_name.replace("_","-")
             if state:
-                self.__scopes.add(scope_name))
+                self.__scopes.add(scope_name)
             else:
                 self.__scopes.remove(scope_name)
