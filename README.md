@@ -112,8 +112,7 @@ def spotify_callback():
         SPOTIFY_USERS[key] = spotify.User.from_code(
             SPOTIFY_CLIENT,
             code,
-            redirect_uri=REDIRECT_URI,
-            refresh=True
+            redirect_uri=REDIRECT_URI
         )
 
         flask.session['spotify_user_id'] = key
