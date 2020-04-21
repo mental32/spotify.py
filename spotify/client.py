@@ -280,7 +280,7 @@ class Client:
         """Access the spotify search functionality.
 
         >>> results = client.search('Cadet', types=['artist'])
-        >>> for artist in result.get('artists', []):
+        >>> for artist in result.artists:
         ...     if artist.name.lower() == 'cadet':
         ...         print(repr(artist))
         ...         break
