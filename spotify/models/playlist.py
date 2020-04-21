@@ -1,6 +1,16 @@
 from functools import partial
 from itertools import islice
-from typing import List, Optional, Union, Callable, Tuple, Iterable, TYPE_CHECKING, Any, Dict, Set
+from typing import (
+    List,
+    Optional,
+    Union,
+    Callable,
+    Tuple,
+    Iterable,
+    TYPE_CHECKING,
+    Dict,
+    Set,
+)
 
 from ..oauth import set_required_scopes
 from ..http import HTTPUserClient, HTTPClient
@@ -296,7 +306,10 @@ class Playlist(URIBase, AsyncIterable):  # pylint: disable=too-many-instance-att
             if not all(isinstance(index, int) for index in positions):
                 raise TypeError("Members of the positions iterator must be integers.")
 
-            elem: Dict[str, Union[str, Set[int]]] = {"uri": str(track), "positions": set(positions)}
+            elem: Dict[str, Union[str, Set[int]]] = {
+                "uri": str(track),
+                "positions": set(positions),
+            }
             tracks_.append(elem)
 
         data = await self.__http.remove_playlist_tracks(self.id, tracks=tracks_)
