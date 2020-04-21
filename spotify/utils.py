@@ -1,7 +1,7 @@
 from re import compile as re_compile
 from functools import lru_cache
 from contextlib import contextmanager
-from typing import Iterable, Hashable, TypeVar, Dict, Tuple
+from typing import Iterable, Hashable, TypeVar, Dict, Tuple, Optional
 
 __all__ = ("clean", "filter_items", "to_id")
 
@@ -22,7 +22,7 @@ V = TypeVar("V")  # pylint: disable=invalid-name
 
 
 @lru_cache(maxsize=1024)
-def _cached_filter_items(data: Tuple[Tuple[K, V], ...]) -> Dict[K, V]:
+def _cached_filter_items(data: Tuple[Tuple[K, Optional[V]], ...]) -> Dict[K, V]:
     data_ = {}
     for key, value in data:
         if value is not None:
@@ -30,7 +30,7 @@ def _cached_filter_items(data: Tuple[Tuple[K, V], ...]) -> Dict[K, V]:
     return data_
 
 
-def filter_items(data: Dict[K, V]) -> Dict[K, V]:
+def filter_items(data: Dict[K, Optional[V]]) -> Dict[K, V]:
     """Filter the items of a dict where the value is not None."""
     return _cached_filter_items((*data.items(),))
 
