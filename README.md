@@ -9,6 +9,12 @@
 </div>
 
 # spotify.py
+> *Maintenance status: Passively Maintained*
+>
+> What does this mean?
+>
+>   There are no plans for new features, but the maintainer intends to respond
+>   to issues that get filed.
 
 An API library for the spotify client and the Spotify Web API written in Python.
 
