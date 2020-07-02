@@ -185,8 +185,9 @@ class OAuth2:
         r"""Modify the scopes for the current oauth2 object.
 
         Add or remove certain scopes from this oauth2 instance.
+        Since hypens are not allowed, replace the _ with -.
 
-        >>> oauth2.set_scopes(user_read_playback_state=True, user-modify-playback-state=False)
+        >>> oauth2.set_scopes(user_read_playback_state=True)
 
         Parameters
         ----------
@@ -194,6 +195,7 @@ class OAuth2:
             The scopes to enable or disable.
         """
         for scope_name, state in scopes.items():
+            scope_name = scope_name.replace("_","-")
             if state:
                 self.__scopes.add(scope_name)
             else:
