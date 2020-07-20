@@ -35,7 +35,8 @@ import spotify.sync as spotify  # Nothing requires async/await now!
 ## Installing
 
 To install the library simply clone it and run pip.
-- `git clone https://github.com/mental32/spotify.py`
+- `git clone https://github.com/mental32/spotify.py spotify_py`
+- `cd spotify_py`
 - `pip3 install -U .`
 
 or use pypi
