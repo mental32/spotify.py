@@ -31,7 +31,10 @@ async def main():
 
     # REFRESHING: enabling a refreshing session is controlled through a kwarg `refresh` that takes a `bool`
 
-    User.from_code(client, 'somecode', redirect_uri='some://redirect', refresh=False)
+    authed_user = await User.from_code(client, 'somecode', redirect_uri='some://redirect', refresh=False)
+
+    # Get refresh token, to use in future to authenticate User.from_token
+    ref_token = authed_user.get_refresh_token()
 
     ## User.from_token
 

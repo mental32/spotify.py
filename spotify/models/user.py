@@ -198,6 +198,8 @@ class User(URIBase, AsyncIterable):  # pylint: disable=too-many-instance-attribu
         refresh_token : :class:`str`
             Used to acquire new token when it expires.
         """
+        cls.token = token
+        cls.refresh_token = refresh_token
         client_id = client.http.client_id
         client_secret = client.http.client_secret
         http = HTTPUserClient(client_id, client_secret, token, refresh_token)
@@ -220,6 +222,12 @@ class User(URIBase, AsyncIterable):  # pylint: disable=too-many-instance-attribu
         return await cls.from_token(client, None, refresh_token)
 
     ### Contextual methods
+
+    def get_token(self):
+        return self.token
+
+    def get_refresh_token(self):
+        return self.refresh_token
 
     @ensure_http
     async def currently_playing(self) -> Dict[str, Union[Track, Context, str]]:
