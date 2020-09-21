@@ -179,7 +179,7 @@ class Artist(URIBase, AsyncIterable):  # pylint: disable=too-many-instance-attri
 
         Returns
         -------
-        artists : List[Artits]
+        artists : List[Artist]
             The artists deemed similar.
         """
         related = await self.__client.http.artist_related_artists(self.id)
