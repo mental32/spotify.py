@@ -75,7 +75,7 @@ class Track(URIBase):  # pylint: disable=too-many-instance-attributes
         if "images" in data:
             self.images = list(starmap(Image, data.pop("images")))
         else:
-            self.images = album.images.copy()
+            self.images = album.images.copy() if album is not None else []
 
     def __repr__(self):
         return f"<spotify.Track: {self.name!r}>"
