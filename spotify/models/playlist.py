@@ -99,6 +99,7 @@ class Playlist(URIBase, AsyncIterable):  # pylint: disable=too-many-instance-att
         "name",
         "owner",
         "public",
+        "snapshot_id",
         "uri",
         "total_tracks",
         "__client",
@@ -164,6 +165,7 @@ class Playlist(URIBase, AsyncIterable):  # pylint: disable=too-many-instance-att
         self.followers = data.pop("followers", {}).get("total", None)
         self.href = data.pop("href")
         self.name = data.pop("name")
+        self.snapshot_id = data.pop("snapshot_id")
         self.url = data.pop("external_urls").get("spotify", None)
         self.uri = data.pop("uri")
 
