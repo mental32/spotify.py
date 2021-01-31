@@ -178,7 +178,7 @@ class User(URIBase, AsyncIterable):  # pylint: disable=too-many-instance-attribu
         token = raw["access_token"]
         refresh_token = raw["refresh_token"]
 
-        return await cls.from_token(client, token, refresh_token)
+        return cls.from_token(client, token, refresh_token)
 
     @classmethod
     async def from_token(
