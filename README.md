@@ -9,12 +9,6 @@
 </div>
 
 # spotify.py
-> *Maintenance status: Passively Maintained*
->
-> What does this mean?
->
->   There are no plans for new features, but the maintainer intends to respond
->   to issues that get filed.
 
 An API library for the spotify client and the Spotify Web API written in Python.
 
@@ -25,6 +19,21 @@ functionality with the `spotify.sync` module.
 ```python
 import spotify.sync as spotify  # Nothing requires async/await now!
 ```
+
+## Notice: Looking For Maintainers
+
+The author of spotify.py considers it deprecated and is provided "as is".
+
+_(of course depending on the user it may be considered feature complete)_
+
+The author does not intend to continue working on it or providing support,
+it may work or may not for the purposes it was designed for.
+
+If you encounter an issue:
+
+* open an issue and wait for a PR to come along and fix (you may be waiting a while)
+* open a PR that introduces the fix directly (the author is happy to click a button labeled "merge")
+
 
 ## Index
 
