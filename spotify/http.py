@@ -1822,6 +1822,35 @@ class HTTPClient:
 
         return self.request(route, params=payload)
 
+    def get_shows_episodes(
+        self,
+        spotify_id: str,
+        market: Optional[str] = "US",
+        limit: int = 20,
+        offset: int = 0,
+    ) -> Awaitable:
+        """Get Spotify catalog information about an show’s episodes.
+        Optional parameters can be used to limit the number of episodes returned.
+
+        Parameters
+        ----------
+        spotify_id : str
+            The spotify_id to for the show.
+        market : Optional[str]
+            An ISO 3166-1 alpha-2 country code.
+        limit : Optional[int]
+            The maximum number of items to return. Default: 20. Minimum: 1. Maximum: 50.
+        offset : Optiona[int]
+            The offset of which Spotify should start yielding from.
+        """
+        route = self.route("GET", "/shows/{spotify_id}/episodes", spotify_id=spotify_id)
+        payload: Dict[str, Any] = {"limit": limit, "offset": offset}
+
+        if market:
+            payload["market"] = market
+
+        return self.request(route, params=payload)
+
 
 REFRESH_TOKEN_URL = "https://accounts.spotify.com/api/token?grant_type=refresh_token&refresh_token={refresh_token}"
 
