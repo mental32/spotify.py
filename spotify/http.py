@@ -713,7 +713,7 @@ class HTTPClient:
 
         return self.request(route)
 
-    def is_saved_album(self, ids) -> Awaitable:
+    def is_saved_album(self, ids: List[str]) -> Awaitable:
         """Check if one or more albums is already saved in the current Spotify user’s ‘Your Music’ library.
 
         Parameters

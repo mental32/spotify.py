@@ -11,7 +11,7 @@ _TYPES = {"artist": Artist, "album": Album, "playlist": Playlist, "track": Track
 
 _SEARCH_TYPES = {"track", "playlist", "artist", "album"}
 _SEARCH_TYPE_ERR = (
-    'Bad queary type! got "%s" expected any of: track, playlist, artist, album'
+    'Bad query type! got "%s" expected any of: track, playlist, artist, album'
 )
 
 
