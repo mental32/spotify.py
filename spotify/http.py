@@ -1802,6 +1802,26 @@ class HTTPClient:
 
         return self.request(route, params=payload)
 
+    def get_multiple_shows(
+        self, ids: List[str], market: Optional[str] = "US"
+    ) -> Awaitable:
+        """Get Spotify catalog information for several shows based on their Spotify IDs.
+
+        Parameters
+        ----------
+        ids : List[:class:`str`]
+            A list of the Spotify IDs.
+        market : Optional[str]
+            An ISO 3166-1 alpha-2 country code.
+        """
+        route = self.route("GET", "/shows")
+        payload: Dict[str, Any] = {"ids": ",".join(ids)}
+
+        if market:
+            payload["market"] = market
+
+        return self.request(route, params=payload)
+
 
 REFRESH_TOKEN_URL = "https://accounts.spotify.com/api/token?grant_type=refresh_token&refresh_token={refresh_token}"
 
