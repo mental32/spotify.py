@@ -1864,6 +1864,27 @@ class HTTPClient:
 
         return self.request(route, params=payload)
 
+    def remove_saved_shows(
+        self, ids: List[str], market: Optional[str] = "US"
+    ) -> Awaitable:
+        """Delete one or more shows from current Spotify user’s library.
+
+        Parameters
+        ----------
+        ids : List[:class:`str`]
+            A list of the Spotify IDs.
+        market : Optional[str]
+            An ISO 3166-1 alpha-2 country code.
+        """
+
+        route = self.route("GET", "/me/shows")
+        payload: Dict[str, Any] = {"ids": ",".join(ids)}
+
+        if market:
+            payload["market"] = market
+
+        return self.request(route, params=payload)
+
 
 REFRESH_TOKEN_URL = "https://accounts.spotify.com/api/token?grant_type=refresh_token&refresh_token={refresh_token}"
 
