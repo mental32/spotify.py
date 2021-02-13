@@ -1767,6 +1767,22 @@ class HTTPClient:
 
         return self.request(route, params=payload)
 
+    def get_saved_shows(self, limit: int = 20, offset: int = 0) -> Awaitable:
+        """Get a list of shows saved in the current Spotify user’s library.
+        Optional parameters can be used to limit the number of shows returned.
+
+        Parameters
+        ----------
+        limit : Optional[int]
+            The maximum number of items to return. Default: 20. Minimum: 1. Maximum: 50.
+        offset : Optiona[int]
+            The offset of which Spotify should start yielding from.
+        """
+        route = self.route("GET", "/me/shows")
+        payload: Dict[str, Any] = {"limit": limit, "offset": offset}
+
+        return self.request(route, params=payload)
+
 
 REFRESH_TOKEN_URL = "https://accounts.spotify.com/api/token?grant_type=refresh_token&refresh_token={refresh_token}"
 
