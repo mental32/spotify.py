@@ -1783,6 +1783,25 @@ class HTTPClient:
 
         return self.request(route, params=payload)
 
+    def get_show(self, spotify_id: str, market: Optional[str] = "US") -> Awaitable:
+        """Get Spotify catalog information for a single show identified by its unique Spotify ID.
+
+        Parameters
+        ----------
+        spotify_id : str
+            The spotify_id to for the show.
+        market : Optional[str]
+            An ISO 3166-1 alpha-2 country code.
+        """
+
+        route = self.route("GET", "/shows/{spotify_id}", spotify_id=spotify_id)
+        payload: Dict[str, Any] = {}
+
+        if market:
+            payload["market"] = market
+
+        return self.request(route, params=payload)
+
 
 REFRESH_TOKEN_URL = "https://accounts.spotify.com/api/token?grant_type=refresh_token&refresh_token={refresh_token}"
 
