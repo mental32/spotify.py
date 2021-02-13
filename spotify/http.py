@@ -1851,6 +1851,19 @@ class HTTPClient:
 
         return self.request(route, params=payload)
 
+    def check_saved_shows(self, ids: List[str]) -> Awaitable:
+        """Check if one or more shows is already saved in the current Spotify user’s library.
+
+        Parameters
+        ----------
+        ids : List[:class:`str`]
+            A list of the Spotify IDs.
+        """
+        route = self.route("GET", "/shows/contains")
+        payload: Dict[str, Any] = {"ids": ",".join(ids)}
+
+        return self.request(route, params=payload)
+
 
 REFRESH_TOKEN_URL = "https://accounts.spotify.com/api/token?grant_type=refresh_token&refresh_token={refresh_token}"
 
