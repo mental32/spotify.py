@@ -1877,7 +1877,7 @@ class HTTPClient:
             An ISO 3166-1 alpha-2 country code.
         """
 
-        route = self.route("GET", "/me/shows")
+        route = self.route("DELETE", "/me/shows")
         payload: Dict[str, Any] = {"ids": ",".join(ids)}
 
         if market:
