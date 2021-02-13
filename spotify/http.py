@@ -1752,6 +1752,21 @@ class HTTPClient:
 
         return self.request(route, params=payload)
 
+    # Shows & Episode related endpoints
+
+    def save_shows(self, ids: List[str]) -> Awaitable:
+        """Save one or more shows to current Spotify user’s library.
+
+        Parameters
+        ----------
+        ids : List[:class:`str`]
+            A list of the Spotify IDs.
+        """
+        route = self.route("PUT", "/me/shows")
+        payload: Dict[str, Any] = {"ids": ",".join(ids)}
+
+        return self.request(route, params=payload)
+
 
 REFRESH_TOKEN_URL = "https://accounts.spotify.com/api/token?grant_type=refresh_token&refresh_token={refresh_token}"
 
