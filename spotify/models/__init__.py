@@ -10,6 +10,7 @@ from .album import Album
 from .library import Library
 from .playlist import Playlist
 from .user import User
+from .podcast import Podcast
 
 __all__ = (
     "User",
@@ -23,4 +24,5 @@ __all__ = (
     "Device",
     "Context",
     "Image",
+    "Podcast",
 )
