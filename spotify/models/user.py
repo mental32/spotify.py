@@ -580,7 +580,7 @@ class User(URIBase, AsyncIterable):  # pylint: disable=too-many-instance-attribu
             The saved podcasts of the user.
         """
 
-        data = await self.http.get_saved_shows(self.id, limit=limit, offset=offset)  # type: ignore
+        data = await self.http.get_saved_shows(limit=limit, offset=offset)  # type: ignore
 
         return [
             Podcast(self.__client, podcast_data, http=self.http)
