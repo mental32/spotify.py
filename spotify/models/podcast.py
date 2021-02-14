@@ -105,3 +105,31 @@ class Podcast(URIBase, AsyncIterable):
         self.added_at = data.pop("added_at", None)
 
         self.show = Show(client, data.pop("show", None))
+
+    @set_required_scopes("user-read-playback-position")
+    async def get_all_episodes(self) -> List[Episode]:
+        """Get all playlist tracks from the playlist.
+
+        Returns
+        -------
+        tracks : Tuple[:class:`PlaylistTrack`]
+            The playlists tracks.
+        """
+        episodes: List[Episode] = []
+        offset = 0
+
+        if self.show.total_episodes is None:
+            self.show.total_episodes = (
+                await self.__http.get_shows_episodes(self.id, limit=1, offset=0)
+            )["total"]
+
+        while len(episodes) < self.show.total_episodes:
+            data = await self.__http.get_shows_episodes(
+                self.show.id, limit=50, offset=offset
+            )
+
+            episodes += [Episode(self.__client, item) for item in data["items"]]
+            offset += 50
+
+        self.show.total_episodes = len(episodes)
+        return tuple(episodes)
