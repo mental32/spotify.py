@@ -230,7 +230,7 @@ class Library(SpotifyBase):
 
         Returns
         -------
-        playlists : List[bool]
+        bools : List[bool]
             A list of bool results whether the show is saved or not.
         """
 
@@ -249,8 +249,8 @@ class Library(SpotifyBase):
 
         Returns
         -------
-        playlists : List[bool]
-            A list of bool results whether the show is saved or not.
+        Result : Dict
+            An empty dictionary if the request is successful.
         """
 
         data = [str(obj) for obj in shows if obj]

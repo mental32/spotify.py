@@ -1,5 +1,5 @@
 from functools import partial
-from typing import List, Optional, Union
+from typing import Any, Dict, List, Optional, Union
 
 from ..http import HTTPClient
 from ..oauth import set_required_scopes
@@ -89,7 +89,7 @@ class Podcast(URIBase, AsyncIterable):
     def __init__(
         self,
         client: "spotify.Client",
-        data: Union[dict, "Podcast"],
+        data: Dict[str, Any],
         *,
         http: Optional[HTTPClient] = None,
     ):
@@ -117,15 +117,15 @@ class Podcast(URIBase, AsyncIterable):
 
         Returns
         -------
-        tracks : Tuple[:class:`PlaylistTrack`]
-            The playlists tracks.
+        episodes : List[:class:`Episode`]
+            The all episodes of a Podcast.
         """
         episodes: List[Episode] = []
         offset = 0
 
         if self.show.total_episodes is None:
             self.show.total_episodes = (
-                await self.__http.get_shows_episodes(self.id, limit=1, offset=0)
+                await self.__http.get_shows_episodes(self.show.id, limit=1, offset=0)
             )["total"]
 
         while len(episodes) < self.show.total_episodes:
@@ -137,4 +137,4 @@ class Podcast(URIBase, AsyncIterable):
             offset += 50
 
         self.show.total_episodes = len(episodes)
-        return tuple(episodes)
+        return episodes

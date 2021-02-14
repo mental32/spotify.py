@@ -358,6 +358,11 @@ class Client:
             A list of the Spotify IDs.
         market : Optional[str]
             An ISO 3166-1 alpha-2 country code.
+
+        Returns
+        -------
+        shows : List[:class: `Show`]
+            The shows from given IDs.
         """
 
         data = await self.http.get_multiple_shows(ids, market)
@@ -372,6 +377,12 @@ class Client:
             The spotify_id to for the show.
         market : Optional[str]
             An ISO 3166-1 alpha-2 country code.
+
+        Returns
+        -------
+        episode :class:`Episode`
+            The episode of the given ID.
+
         """
 
         data = await self.http.get_episode(id, market)
