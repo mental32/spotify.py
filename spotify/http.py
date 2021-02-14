@@ -1859,7 +1859,7 @@ class HTTPClient:
         ids : List[:class:`str`]
             A list of the Spotify IDs.
         """
-        route = self.route("GET", "/shows/contains")
+        route = self.route("GET", "/me/shows/contains")
         payload: Dict[str, Any] = {"ids": ",".join(ids)}
 
         return self.request(route, params=payload)
