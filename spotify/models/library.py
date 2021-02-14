@@ -210,7 +210,7 @@ class Library(SpotifyBase):
 
             offset += 50
             podcasts += [
-                Podcast(self.__client, podcast_data, http=self.http)
+                Podcast(self.__client, podcast_data, http=self.user.http)
                 for podcast_data in data["items"]
             ]
 

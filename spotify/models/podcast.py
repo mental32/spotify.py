@@ -7,7 +7,45 @@ from . import AsyncIterable, Image, URIBase
 
 
 class Episode(URIBase):
-    """A Spotify Episode Object."""
+    """A Spotify Episode.
+
+    Attributes
+    ----------
+    id : :class:`str`
+        The Spotify ID for the episode.
+    preview_url : :class:`str`
+        The preview URL for the Episode.
+    description : :class:`str`
+        The episode description.
+    duration : int
+        The episode length in milliseconds.
+    languages : :class:`str`
+        The languages that show is available to listen.
+    explicit : bool
+        Whether or not the episode has explicit
+        `True` if it does.
+        `False` if it does not (or unknown)
+    href : :class:`str`
+        A link to the Web API endpoint providing full details of the episode.
+    images : List[Image]
+        The images of the Episode.
+    url : :class:`str`
+        The open.spotify URL.
+    name : :class:`str`
+        The name of the episode.
+    type : :class:`str`
+        The type of the Episode.
+    uri : :class:`str`
+        The Spotify URI for the episode.
+    release_date : str
+        The date the episode was first released.
+    release_date_precision : str
+        The precision with which release_date value is known: year, month or day.
+    externally_hosted : bool
+        Whether or not the episode has externally hosted or not.
+        `True` if it does.
+        `False` if it does not (or unknown)
+    """
 
     def __init__(self, client, data):
 
@@ -45,7 +83,51 @@ class Episode(URIBase):
 
 
 class Show(URIBase, AsyncIterable):
-    """A Spotify Show Object."""
+    """A Spotify Show Object.
+
+    Attributes
+    ----------
+    id : :class:`str`
+        The Spotify ID for the show.
+    copyrights : List[Dict]
+        The copyright statements of the show.
+    description : :class:`str`
+        The show description.
+    languages : :class:`str`
+        The languages that show is available to listen.
+    duration : int
+        The show length in milliseconds.
+    explicit : bool
+        Whether or not the show has explicit
+        `True` if it does.
+        `False` if it does not (or unknown)
+    href : :class:`str`
+        A link to the Web API endpoint providing full details of the episodes.
+    images : List[Image]
+        The images of the show.
+    available_markets : List[:class:`str`]
+        The available markets for the show.
+    url : :class:`str`
+        The open.spotify URL.
+    name : :class:`str`
+        The name of the show.
+    type : :class:`str`
+        The type of the show.
+    uri : :class:`str`
+        The Spotify URI for the show.
+    total_episodes : :class:`int`
+        The number of total episodes.
+    media_type : :class:`string`
+        The media type to of the show.
+    externally_hosted : :class:`bool`
+        Whether or not the show is externally hosted or not.
+        `True` if it does.
+        `False` if it does not (or unknown)
+    publisher: :class:`str`
+        The publisher of the show.
+    episodes: :class:`List[spotify.Episode]`
+        A list of episodes.
+    """
 
     def __init__(self, client, data):
         self.__client = client
@@ -86,9 +168,17 @@ class Show(URIBase, AsyncIterable):
 
 
 class Podcast(URIBase, AsyncIterable):
+    """A Spotify Podcast.
+
+    date_added: :class:`str`
+        The publish date of the podcast.
+    show: :class:`spotify.Show`
+        A spotify Show object.
+    """
+
     def __init__(
         self,
-        client: "spotify.Client",
+        client,
         data: Dict[str, Any],
         *,
         http: Optional[HTTPClient] = None,
@@ -113,7 +203,7 @@ class Podcast(URIBase, AsyncIterable):
 
     @set_required_scopes("user-read-playback-position")
     async def get_all_episodes(self) -> List[Episode]:
-        """Get all playlist tracks from the playlist.
+        """Get all playlist episodess from the playlist.
 
         Returns
         -------
