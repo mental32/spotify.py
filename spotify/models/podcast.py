@@ -83,3 +83,30 @@ class Show(URIBase, AsyncIterable):
 
     def __str__(self):
         return self.id
+
+
+class Podcast(URIBase, AsyncIterable):
+    def __init__(
+        self,
+        client: "spotify.Client",
+        data: Union[dict, "Podcast"],
+        *,
+        http: Optional[HTTPClient] = None,
+    ):
+        self.__client = client
+        self.__http = http or client.http
+
+        assert self.__http is not None
+
+        if not isinstance(data, (Podcast, dict)):
+            raise TypeError("data must be a Podcast instance or a dict.")
+
+        if isinstance(data, dict):
+            self.__from_raw(data)
+
+    def __from_raw(self, data: dict) -> None:
+        client = self.__client
+        self.added_at = data.pop("added_at", None)
+
+        shows = list(Show(client, show) for show in data.pop("show", {}))
+        self.shows = shows
