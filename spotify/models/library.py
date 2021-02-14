@@ -4,6 +4,7 @@ from ..oauth import set_required_scopes
 from . import SpotifyBase
 from .track import Track
 from .album import Album
+from .podcast import Podcast, Show
 
 
 class Library(SpotifyBase):
@@ -217,3 +218,22 @@ class Library(SpotifyBase):
                 break
 
         return podcasts
+
+    @set_required_scopes("user-library-read")
+    async def check_saved_shows(self, *shows: Sequence[Union[str, Show]]) -> List[bool]:
+        """Check if one or more shows is already saved in the current Spotify user’s library.
+
+        Parameters
+        ----------
+        ids : List[:class: `Show`]
+            A list of the spotify.Show
+
+        Returns
+        -------
+        playlists : List[bool]
+            A list of bool results whether the show is saved or not.
+        """
+
+        data = [str(obj) for obj in shows]
+
+        return await self.user.http.check_saved_shows(data)
