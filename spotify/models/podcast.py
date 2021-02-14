@@ -68,8 +68,8 @@ class Show(URIBase, AsyncIterable):
         self.type = data.pop("type", None)
         self.uri = data.pop("uri", None)
 
-        self.episodes = data.pop(
-            list(Episode(client, episode) for episode in data.pop("episodes", []))
+        self.episodes = list(
+            Episode(client, episode) for episode in data.pop("episodes", {})
         )
 
         # AsyncIterable attrs
