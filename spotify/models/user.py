@@ -586,33 +586,3 @@ class User(URIBase, AsyncIterable):  # pylint: disable=too-many-instance-attribu
             Podcast(self.__client, podcast_data, http=self.http)
             for podcast_data in data["items"]
         ]
-
-    @ensure_http
-    async def get_all_podcasts(self) -> List[Podcast]:
-        """Get all of the users saved podcasts, shows from spotify.
-
-        Returns
-        -------
-        playlists : List[:class:`Podcast`]
-            A list of the users podcasts.
-        """
-        podcasts: List[Podcast] = []
-        total = None
-        offset = 0
-
-        while True:
-            data = await self.http.get_saved_shows(self.id, limit=50, offset=offset)  # type: ignore
-
-            if total is None:
-                total = data["total"]
-
-            offset += 50
-            podcasts += [
-                Podcast(self.__client, podcast_data, http=self.http)
-                for podcast_data in data["items"]
-            ]
-
-            if len(podcasts) >= total:
-                break
-
-        return podcasts

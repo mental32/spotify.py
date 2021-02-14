@@ -187,3 +187,33 @@ class Library(SpotifyBase):
         """
         _tracks = [(obj if isinstance(obj, str) else obj.id) for obj in tracks]
         await self.user.http.save_tracks(_tracks)
+
+    @set_required_scopes("user-library-read")
+    async def get_all_podcasts(self) -> List[Podcast]:
+        """Get all of the users saved podcasts, shows from spotify.
+
+        Returns
+        -------
+        playlists : List[:class:`Podcast`]
+            A list of the users podcasts.
+        """
+        podcasts: List[Podcast] = []
+        total = None
+        offset = 0
+
+        while True:
+            data = await self.user.http.get_saved_shows(limit=50, offset=offset)  # type: ignore
+
+            if total is None:
+                total = data["total"]
+
+            offset += 50
+            podcasts += [
+                Podcast(self.__client, podcast_data, http=self.http)
+                for podcast_data in data["items"]
+            ]
+
+            if len(podcasts) >= total:
+                break
+
+        return podcasts
