@@ -226,7 +226,7 @@ class Library(SpotifyBase):
         Parameters
         ----------
         ids : List[:class: `Show`]
-            A list of the spotify.Show
+            A list of the spotify.Show or unique spotify ids.
 
         Returns
         -------
@@ -237,3 +237,22 @@ class Library(SpotifyBase):
         data = [str(obj) for obj in shows]
 
         return await self.user.http.check_saved_shows(data)
+
+    @set_required_scopes("user-library-modify")
+    async def remove_saved_shows(self, *shows: Sequence[Union[str, Show]]):
+        """Delete one or more shows from current Spotify user’s library.
+
+        Parameters
+        ----------
+        ids : List[:class: `Show`]
+            A list of the spotify.Show or unique spotify ids.
+
+        Returns
+        -------
+        playlists : List[bool]
+            A list of bool results whether the show is saved or not.
+        """
+
+        data = [str(obj) for obj in shows if obj]
+
+        return await self.user.http.remove_saved_shows(data)
