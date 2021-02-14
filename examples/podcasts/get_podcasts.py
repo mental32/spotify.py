@@ -12,12 +12,7 @@ async def main():
 
     for podcast in podcasts:
         print(
-            "Added at:",
-            podcast.added_at,
-            "Name:",
-            podcast.show.name,
-            "Description:",
-            podcast.show.description,
+            f"Added at: {podcast.added_at}, Name: {podcast.show.name}, Description: {podcast.show.description}",
         )
 
 
