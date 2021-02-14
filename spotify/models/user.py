@@ -26,6 +26,7 @@ from . import (
     Track,
     Artist,
     Library,
+    Podcast,
 )
 
 if TYPE_CHECKING:
@@ -560,3 +561,28 @@ class User(URIBase, AsyncIterable):  # pylint: disable=too-many-instance-attribu
             The top tracks for the user.
         """
         return await self._get_top(Track, data)
+
+    @ensure_http
+    async def get_podcasts(self, *, limit: int = 20, offset: int = 0) -> List[Podcast]:
+        """Get the current user's saved podcasts, shows.
+
+
+        Parameters
+        ----------
+        limit : Optional[int]
+            The number of entities to return. Default: 20. Minimum: 1. Maximum: 50.
+        offset : Optional[int]
+            The index of the first entity to return. Default: 0
+
+        Returns
+        -------
+        podcasts : List[Podcast]
+            The saved podcasts of the user.
+        """
+
+        data = await self.http.get_saved_shows(limit=limit, offset=offset)  # type: ignore
+
+        return [
+            Podcast(self.__client, podcast_data, http=self.http)
+            for podcast_data in data["items"]
+        ]

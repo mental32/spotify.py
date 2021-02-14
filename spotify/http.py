@@ -1752,6 +1752,177 @@ class HTTPClient:
 
         return self.request(route, params=payload)
 
+    # Shows & Episode related endpoints
+
+    def save_shows(self, ids: List[str]) -> Awaitable:
+        """Save one or more shows to current Spotify user’s library.
+
+        Parameters
+        ----------
+        ids : List[:class:`str`]
+            A list of the Spotify IDs.
+        """
+        route = self.route("PUT", "/me/shows")
+        payload: Dict[str, Any] = {"ids": ",".join(ids)}
+
+        return self.request(route, params=payload)
+
+    def get_saved_shows(self, limit: int = 20, offset: int = 0) -> Awaitable:
+        """Get a list of shows saved in the current Spotify user’s library.
+        Optional parameters can be used to limit the number of shows returned.
+
+        Parameters
+        ----------
+        limit : Optional[int]
+            The maximum number of items to return. Default: 20. Minimum: 1. Maximum: 50.
+        offset : Optiona[int]
+            The offset of which Spotify should start yielding from.
+        """
+        route = self.route("GET", "/me/shows")
+        payload: Dict[str, Any] = {"limit": limit, "offset": offset}
+
+        return self.request(route, params=payload)
+
+    def get_show(self, spotify_id: str, market: Optional[str] = "US") -> Awaitable:
+        """Get Spotify catalog information for a single show identified by its unique Spotify ID.
+
+        Parameters
+        ----------
+        spotify_id : str
+            The spotify_id to for the show.
+        market : Optional[str]
+            An ISO 3166-1 alpha-2 country code.
+        """
+
+        route = self.route("GET", "/shows/{spotify_id}", spotify_id=spotify_id)
+        payload: Dict[str, Any] = {}
+
+        if market:
+            payload["market"] = market
+
+        return self.request(route, params=payload)
+
+    def get_multiple_shows(
+        self, ids: List[str], market: Optional[str] = "US"
+    ) -> Awaitable:
+        """Get Spotify catalog information for several shows based on their Spotify IDs.
+
+        Parameters
+        ----------
+        ids : List[:class:`str`]
+            A list of the Spotify IDs.
+        market : Optional[str]
+            An ISO 3166-1 alpha-2 country code.
+        """
+        route = self.route("GET", "/shows")
+        payload: Dict[str, Any] = {"ids": ",".join(ids)}
+
+        if market:
+            payload["market"] = market
+
+        return self.request(route, params=payload)
+
+    def get_shows_episodes(
+        self,
+        spotify_id: str,
+        market: Optional[str] = "US",
+        limit: int = 20,
+        offset: int = 0,
+    ) -> Awaitable:
+        """Get Spotify catalog information about an show’s episodes.
+        Optional parameters can be used to limit the number of episodes returned.
+
+        Parameters
+        ----------
+        spotify_id : str
+            The spotify_id to for the show.
+        market : Optional[str]
+            An ISO 3166-1 alpha-2 country code.
+        limit : Optional[int]
+            The maximum number of items to return. Default: 20. Minimum: 1. Maximum: 50.
+        offset : Optiona[int]
+            The offset of which Spotify should start yielding from.
+        """
+        route = self.route("GET", "/shows/{spotify_id}/episodes", spotify_id=spotify_id)
+        payload: Dict[str, Any] = {"limit": limit, "offset": offset}
+
+        if market:
+            payload["market"] = market
+
+        return self.request(route, params=payload)
+
+    def check_saved_shows(self, ids: List[str]) -> Awaitable:
+        """Check if one or more shows is already saved in the current Spotify user’s library.
+
+        Parameters
+        ----------
+        ids : List[:class:`str`]
+            A list of the Spotify IDs.
+        """
+        route = self.route("GET", "/me/shows/contains")
+        payload: Dict[str, Any] = {"ids": ",".join(ids)}
+
+        return self.request(route, params=payload)
+
+    def remove_saved_shows(
+        self, ids: List[str], market: Optional[str] = "US"
+    ) -> Awaitable:
+        """Delete one or more shows from current Spotify user’s library.
+
+        Parameters
+        ----------
+        ids : List[:class:`str`]
+            A list of the Spotify IDs.
+        market : Optional[str]
+            An ISO 3166-1 alpha-2 country code.
+        """
+
+        route = self.route("DELETE", "/me/shows")
+        payload: Dict[str, Any] = {"ids": ",".join(ids)}
+
+        if market:
+            payload["market"] = market
+
+        return self.request(route, params=payload)
+
+    def get_episode(self, spotify_id: str, market: Optional[str] = "US") -> Awaitable:
+        """Get Spotify catalog information for a single episode identified by its unique Spotify ID.
+
+        Parameters
+        ----------
+        spotify_id : str
+            The spotify_id to for the show.
+        market : Optional[str]
+            An ISO 3166-1 alpha-2 country code.
+        """
+        route = self.route("GET", "/episodes/{spotify_id}", spotify_id=spotify_id)
+        payload: Dict[str, Any] = {}
+
+        if market:
+            payload["market"] = market
+
+        return self.request(route, params=payload)
+
+    def get_multiple_episodes(
+        self, ids: List[str], market: Optional[str] = "US"
+    ) -> Awaitable:
+        """Get Spotify catalog information for several episodes based on their Spotify IDs.
+
+        Parameters
+        ----------
+        ids : List[:class:`str`]
+            A list of the Spotify IDs.
+        market : Optional[str]
+            An ISO 3166-1 alpha-2 country code.
+        """
+        route = self.route("GET", "/episodes")
+        payload: Dict[str, Any] = {"ids": ",".join(ids)}
+
+        if market:
+            payload["market"] = market
+
+        return self.request(route, params=payload)
+
 
 REFRESH_TOKEN_URL = "https://accounts.spotify.com/api/token?grant_type=refresh_token&refresh_token={refresh_token}"
 

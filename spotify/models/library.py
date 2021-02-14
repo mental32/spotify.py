@@ -4,6 +4,7 @@ from ..oauth import set_required_scopes
 from . import SpotifyBase
 from .track import Track
 from .album import Album
+from .podcast import Podcast, Show
 
 
 class Library(SpotifyBase):
@@ -187,3 +188,71 @@ class Library(SpotifyBase):
         """
         _tracks = [(obj if isinstance(obj, str) else obj.id) for obj in tracks]
         await self.user.http.save_tracks(_tracks)
+
+    @set_required_scopes("user-library-read")
+    async def get_all_podcasts(self) -> List[Podcast]:
+        """Get all of the users saved podcasts, shows from spotify.
+
+        Returns
+        -------
+        playlists : List[:class:`Podcast`]
+            A list of the users podcasts.
+        """
+        podcasts: List[Podcast] = []
+        total = None
+        offset = 0
+
+        while True:
+            data = await self.user.http.get_saved_shows(limit=50, offset=offset)  # type: ignore
+
+            if total is None:
+                total = data["total"]
+
+            offset += 50
+            podcasts += [
+                Podcast(self.__client, podcast_data, http=self.user.http)
+                for podcast_data in data["items"]
+            ]
+
+            if len(podcasts) >= total:
+                break
+
+        return podcasts
+
+    @set_required_scopes("user-library-read")
+    async def check_saved_shows(self, *shows: Sequence[Union[str, Show]]) -> List[bool]:
+        """Check if one or more shows is already saved in the current Spotify user’s library.
+
+        Parameters
+        ----------
+        ids : List[:class: `Show`]
+            A list of the spotify.Show or unique spotify ids.
+
+        Returns
+        -------
+        bools : List[bool]
+            A list of bool results whether the show is saved or not.
+        """
+
+        data = [str(obj) for obj in shows]
+
+        return await self.user.http.check_saved_shows(data)
+
+    @set_required_scopes("user-library-modify")
+    async def remove_saved_shows(self, *shows: Sequence[Union[str, Show]]):
+        """Delete one or more shows from current Spotify user’s library.
+
+        Parameters
+        ----------
+        ids : List[:class: `Show`]
+            A list of the spotify.Show or unique spotify ids.
+
+        Returns
+        -------
+        Result : Dict
+            An empty dictionary if the request is successful.
+        """
+
+        data = [str(obj) for obj in shows if obj]
+
+        return await self.user.http.remove_saved_shows(data)

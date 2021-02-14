@@ -3,7 +3,7 @@ from typing import Optional, List, Iterable, NamedTuple, Type, Union, Dict
 
 from .http import HTTPClient
 from .utils import to_id
-from . import OAuth2, Artist, Album, Track, User, Playlist
+from . import OAuth2, Artist, Album, Track, User, Playlist, Show, Episode
 
 __all__ = ("Client", "SearchResults")
 
@@ -346,3 +346,44 @@ class Client:
                 for key, value in data.items()
             }
         )
+
+    async def get_multiple_shows(
+        self, ids: List[str], market: Optional[str] = "US"
+    ) -> List[Show]:
+        """Get Spotify catalog information for several shows based on their Spotify IDs.
+
+        Parameters
+        ----------
+        ids : List[:class:`str`]
+            A list of the Spotify IDs.
+        market : Optional[str]
+            An ISO 3166-1 alpha-2 country code.
+
+        Returns
+        -------
+        shows : List[:class: `Show`]
+            The shows from given IDs.
+        """
+
+        data = await self.http.get_multiple_shows(ids, market)
+        return list(Show(self, show) for show in data["shows"])
+
+    async def get_episode(self, id: str, market: Optional[str] = "US") -> Episode:
+        """Get Spotify catalog information for a single episode identified by its unique Spotify ID.
+
+        Parameters
+        ----------
+        spotify_id : str
+            The spotify_id to for the show.
+        market : Optional[str]
+            An ISO 3166-1 alpha-2 country code.
+
+        Returns
+        -------
+        episode :class:`Episode`
+            The episode of the given ID.
+
+        """
+
+        data = await self.http.get_episode(id, market)
+        return Episode(self, data)
