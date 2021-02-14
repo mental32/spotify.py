@@ -2,8 +2,9 @@ from functools import partial
 from itertools import starmap
 from typing import List, Optional, Union
 
-from . import AsyncIterable, URIBase, Image
 from ..http import HTTPClient
+from ..oauth import set_required_scopes
+from . import AsyncIterable, Image, URIBase
 
 
 class Episode(URIBase):
@@ -22,7 +23,7 @@ class Episode(URIBase):
         self.id = data.pop("id", None)
         self.externally_hosted = data.pop("is_externally_hosted", None)
         self.playable = data.pop("is_playable", None)
-        self.language = data.pop("language", None)
+        self.languages = data.pop("languages", None)
         self.name = data.pop("name", None)
         self.release_date = data.pop("release_date", None)
         self.release_date_presicion = data.pop("release_date_precision", None)
@@ -33,7 +34,7 @@ class Episode(URIBase):
         self.show = show = show_ and Show(client, show_)
 
         if "images" in data:
-            self.images = list(starmap(Image, data.pop("images")))
+            self.images = list(Image(**img) for img in data.pop("images"))
         else:
             self.images = show.images.copy() if show is not None else []
 
