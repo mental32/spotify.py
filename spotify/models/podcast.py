@@ -1,5 +1,4 @@
 from functools import partial
-from itertools import starmap
 from typing import List, Optional, Union
 
 from ..http import HTTPClient
@@ -105,6 +104,12 @@ class Podcast(URIBase, AsyncIterable):
         self.added_at = data.pop("added_at", None)
 
         self.show = Show(client, data.pop("show", None))
+
+    def __str__(self) -> str:
+        return self.show.id
+
+    def __repr__(self) -> str:
+        return f"<spotify.Podcast: {self.show.name}>"
 
     @set_required_scopes("user-read-playback-position")
     async def get_all_episodes(self) -> List[Episode]:
