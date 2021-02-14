@@ -101,12 +101,6 @@ class Podcast(URIBase, AsyncIterable):
         if not isinstance(data, (Podcast, dict)):
             raise TypeError("data must be a Podcast instance or a dict.")
 
-        if isinstance(data, dict):
-            self.__from_raw(data)
-
-    def __from_raw(self, data: dict) -> None:
-        client = self.__client
         self.added_at = data.pop("added_at", None)
 
-        shows = list(Show(client, show) for show in data.pop("show", {}))
-        self.shows = shows
+        self.show = Show(client, data.pop("show", None))
