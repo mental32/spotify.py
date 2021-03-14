@@ -2,9 +2,13 @@
 
 import datetime
 from itertools import starmap
+from typing import Optional, TYPE_CHECKING
 
 from ..oauth import set_required_scopes
 from . import URIBase, Image, Artist
+
+if TYPE_CHECKING:
+    import spotify
 
 
 class Track(URIBase):  # pylint: disable=too-many-instance-attributes
@@ -45,18 +49,27 @@ class Track(URIBase):  # pylint: disable=too-many-instance-attributes
         The available markets for the Track.
     """
 
-    def __init__(self, client, data):
+    def __init__(self, client, data, *, album: Optional["spotify.Album"] = None):
         from .album import Album
 
         self.__client = client
 
-        self.artists = artists = list(
+        self.artists = artists = [
             Artist(client, artist) for artist in data.pop("artists", [])
-        )
+        ]
+
         self.artist = artists[-1] if artists else None
 
-        album_ = data.pop("album", None)
-        self.album = album = album_ and Album(client, album_)
+        if album is not None:
+            self.album = album
+        else:
+            album_ = data.pop("album", None)
+
+            if album_ is not None:
+                self.album = Album(client, album_)
+            else:
+                self.album = None
+
 
         self.id = data.pop("id", None)  # pylint: disable=invalid-name
         self.name = data.pop("name", None)
@@ -75,7 +88,7 @@ class Track(URIBase):  # pylint: disable=too-many-instance-attributes
         if "images" in data:
             self.images = list(starmap(Image, data.pop("images")))
         else:
-            self.images = album.images.copy() if album is not None else []
+            self.images = self.album.images.copy() if self.album is not None else []
 
     def __repr__(self):
         return f"<spotify.Track: {self.name!r}>"

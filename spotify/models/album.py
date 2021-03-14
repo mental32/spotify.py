@@ -104,7 +104,7 @@ class Album(URIBase, AsyncIterable):  # pylint: disable=too-many-instance-attrib
         data = await self.__client.http.album_tracks(
             self.id, limit=limit, offset=offset
         )
-        return list(Track(self.__client, item) for item in data["items"])
+        return list(Track(self.__client, item, album=self) for item in data["items"])
 
     @set_required_scopes(None)
     async def get_all_tracks(
