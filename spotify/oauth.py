@@ -195,7 +195,7 @@ class OAuth2:
             The scopes to enable or disable.
         """
         for scope_name, state in scopes.items():
-            scope_name = scope_name.replace("_","-")
+            scope_name = scope_name.replace("_", "-")
             if state:
                 self.__scopes.add(scope_name)
             else:

@@ -146,7 +146,11 @@ class User(URIBase, AsyncIterable):  # pylint: disable=too-many-instance-attribu
 
     @classmethod
     async def from_code(
-        cls, client: "spotify.Client", code: str, *, redirect_uri: str,
+        cls,
+        client: "spotify.Client",
+        code: str,
+        *,
+        redirect_uri: str,
     ):
         """Create a :class:`User` object from an authorization code.
 
