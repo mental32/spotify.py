@@ -1738,7 +1738,7 @@ class HTTPClient:
         """
         route = self.route("GET", "/search")
         payload: Dict[str, Any] = {
-            "q": quote(q),
+            "q": q,
             "type": query_type,
             "limit": limit,
             "offset": offset,
